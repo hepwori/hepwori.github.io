@@ -1,0 +1,19 @@
+.eo {
+    -webkit-transform: rotate(3deg);
+    -moz-transform: rotate(3deg);
+    -o-transform: rotate(3deg);
+    -ms-transform: rotate(3deg);
+    transform: rotate(3deg);
+    position: absolute;
+    left: 380px;
+    top: 290px;
+    width: 215px;
+    height: 240px;
+    text-shadow: 0 0 1px black;
+    /*color: transparent;*/
+    font-family: monospace;
+}
+
+#img-out {
+    display: none;
+}
