@@ -1,0 +1,15 @@
+<html>
+<head>
+	<title>Testing IFRAMEing a Maestro Web App</title>
+</head>
+<body>
+	<iframe frameborder=0 id='frame' src='about:blank'></iframe>
+  <script>
+  document.getElementById('frame').src='https://script.google.com/a/google.com/macros/s/AKfycbx51sHF0xWv6oHfb_orcXptReS9M96BhYmgZjowQhA/exec' + window.location.search;
+  function receiveMessage(event) {
+  		history.replaceState(null, '', '?' + event.data);
+  }
+  window.addEventListener("message", receiveMessage, false);
+  </script>
+</body>
+</html>
