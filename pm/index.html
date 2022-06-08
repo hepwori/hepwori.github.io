@@ -1,16 +1,80 @@
+<!DOCTYPE html>
 <html>
-  <head>
-    <meta charset="utf-8">
-    <link rel="stylesheet"
-          href="https://fonts.googleapis.com/css?family=Montserrat">
-    <style>
-      body {
-        font-family: 'Montserrat', serif;
-        font-size: 48px;
-      }
-    </style>
-  </head>
-  <body>
-    <div>Making the Web Beautiful!</div>
-  </body>
+	<head>
+		<meta charset="utf-8">
+		<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Montserrat">
+		<style>
+		body {
+			font-family: 'Montserrat', serif;
+			color: white;
+			background-color: black;
+			text-align: center;
+		}
+
+		#question {
+			font-size: 48px;
+			margin: 50vh auto 0;
+			transform: translateY(-50%);
+		}
+		
+		#again {
+			font-size: smaller;
+			color: gray;
+		}
+		</style>
+		<script>
+
+		function randomOf(items) {
+			return items[Math.floor(Math.random()*items.length)];
+		}
+
+		function articalize(item) {
+			if ('aeiou'.indexOf(item[0]) > -1)
+				return 'an ' + item;
+			else
+				return 'a ' + item;
+		}
+
+		function createQuestion() {
+			var q = document.getElementById('question');
+			var task = ['Design', 'Bring to market', 'Estimate the TAM of', 'Identify product metrics for'];
+			var product = ['refrigerator',
+							'car',
+							'vending machine',
+							'thermostat',
+							'teleportation device',
+							'microwave',
+							'camera',
+							'mobile phone',
+							'streaming service',
+							'smart home',
+							'laptop',
+							'alarm clock',
+							'in-car entertainment system',
+							'in-flight entertainment system',
+							'music streaming device',
+							'self-driving car',
+							'bike',
+							'roller skate',
+							'smoke detector'];
+			var audience = ['kids',
+							'old people',
+							'blind people',
+							'business people',
+							'knowledge workers',
+							'deaf people',
+							'the next generation of internet users',
+							'the visually impaired',
+							'parents'];
+			q.innerText = randomOf(task) + ' ' + articalize(randomOf(product)) + ' for ' + randomOf(audience);
+			}
+		</script>
+		<title></title>
+	</head>
+	<body onload='createQuestion()'>
+		<div id='question'>
+
+		</div>
+		<div id='again' onclick='createQuestion()'>Another</div>
+	</body>
 </html>
