@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Image Pasting</title>
+  <style>
+    #image-container {
+      border: 1px solid black;
+      max-width: 500px;
+      max-height: 500px;
+    }
+  </style>
+</head>
+<body>
+  <div id="image-container"></div>
+
+  <script>
+    const imageContainer = document.getElementById('image-container');
+
+    document.addEventListener('paste', function(event) {
+      const items = event.clipboardData.items;
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type.indexOf('image') !== -1) {
+          const file = items[i].getAsFile();
+          const reader = new FileReader();
+
+          reader.onload = function() {
+            const image = new Image();
+            image.src = reader.result;
+            imageContainer.appendChild(image);
+          };
+
+          reader.readAsDataURL(file);
+        }
+      }
+    });
+  </script>
+</body>
+</html>
