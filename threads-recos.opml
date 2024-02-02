@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<opml version="1.0">
+	<head>
+		<title>Threads Podcast Recommendations</title>
+	</head>
+	<body>
+		<outline type="rss" text="99% Invisible" title="99% Invisible" xmlUrl="https://feeds.simplecast.com/BqbsxVfO" htmlUrl="https://www.stitcher.com/"/>
+		<outline type="rss" text="Acquired" title="Acquired" xmlUrl="https://feeds.transistor.fm/acquired" htmlUrl="https://acquired.fm/"/>
+		<outline type="rss" text="Articles of Interest" title="Articles of Interest" xmlUrl="https://feed.articlesofinterest.club/" htmlUrl="https://play.prx.org/listen?uf=https%3A%2F%2Ffeed.articlesofinterest.club%2F"/>
+		<outline type="rss" text="Ask the A&amp;Ps" title="Ask the A&amp;Ps" xmlUrl="https://feeds.megaphone.fm/AOPA5756489272" htmlUrl="https://www.aopa.org/news-and-media/podcasts/podcasts"/>
+		<outline type="rss" text="The Ballad of Billy Balls" title="The Ballad of Billy Balls" xmlUrl="https://www.omnycontent.com/d/playlist/e73c998e-6e60-432f-8610-ae210140c5b1/212c8b72-55cc-485f-89f7-ae9300fdba4e/2849a65c-ff22-4040-b21c-ae9300fdba6f/pod c ast.rss" htmlUrl="https://www.iheart.com/podcast/1119-the-ballad-of-billy-balls-96938834/"/>
+		<outline type="rss" text="The Dream" title="The Dream" xmlUrl="https://www.omnycontent.com/d/playlist/e73c998e-6e60-432f-8610-ae210140c5b1/d1a662e7-59d9-45ef-b78f-af5d01370da4/545f16c0-b1a5-4522-8e5c-af5d01370dc0/pod c ast.rss" htmlUrl="https://www.pushkin.fm/"/>
+		<outline type="rss" text="Empire" title="Empire" xmlUrl="https://feeds.megaphone.fm/empire" htmlUrl="https://blockworks.co/podcasts/empire/"/>
+		<outline type="rss" text="Family Trips with the Meyers Brothers" title="Family Trips with the Meyers Brothers" xmlUrl="https://feeds.simplecast.com/mJyHMcz_" htmlUrl="https://family-trips-with-the-meyers-brothers.simplecast.com/"/>
+		<outline type="rss" text="Heavyweight" title="Heavyweight" xmlUrl="https://feeds.megaphone.fm/heavyweight-spot" htmlUrl="https://gimletmedia.com/show/heavyweight/"/>
+		<outline type="rss" text="Imaginary Worlds" title="Imaginary Worlds" xmlUrl="https://feeds.megaphone.fm/ADV7475920787" htmlUrl="https://www.imaginaryworldspodcast.org/"/>
+		<outline type="rss" text="The Important Thing" title="The Important Thing" xmlUrl="https://rands.libsyn.com/feed" htmlUrl="https://randsinrepose.com/archives/category/the-important-thing/"/>
+		<outline type="rss" text="Ologies with Alie Ward" title="Ologies with Alie Ward" xmlUrl="https://feeds.simplecast.com/FO6kxYGj" htmlUrl="https://www.stitcher.com/"/>
+		<outline type="rss" text="Scriptnotes Podcast" title="Scriptnotes Podcast" xmlUrl="https://scriptnotes.libsyn.com/rss" htmlUrl="http://johnaugust.com/scriptnotes"/>
+		<outline type="rss" text="Search Engine" title="Search Engine" xmlUrl="https://feeds.megaphone.fm/search-engine" htmlUrl="http://www.pjvogt.com/"/>
+		<outline type="rss" text="Secular Buddhism" title="Secular Buddhism" xmlUrl="https://feeds.acast.com/public/shows/6359a8448c5fe9001207c0ac" htmlUrl="http://secularbuddhism.com/"/>
+		<outline type="rss" text="Serious Trouble" title="Serious Trouble" xmlUrl="https://api.substack.com/feed/podcast/906465.rss" htmlUrl="https://www.serioustrouble.show/podcast"/>
+		<outline type="rss" text="Strong Songs" title="Strong Songs" xmlUrl="https://feeds.strongsongspodcast.com/main" htmlUrl="https://strongsongspodcast.com/"/>
+		<outline type="rss" text="Stuff You Should Know" title="Stuff You Should Know" xmlUrl="https://www.omnycontent.com/d/playlist/e73c998e-6e60-432f-8610-ae210140c5b1/a91018a4-ea4f-4130-bf55-ae270180c327/44710ecc-10bb-48d1-93c7-ae270180c33e/pod c ast.rss" htmlUrl="https://www.iheart.com/podcast/105-stuff-you-should-know-26940277/"/>
+		<outline type="rss" text="Switched on Pop" title="Switched on Pop" xmlUrl="https://feeds.megaphone.fm/switchedonpop" htmlUrl="http://www.switchedonpop.com/"/>
+		<outline type="rss" text="That's What They Say" title="That's What They Say" xmlUrl="https://www.michiganradio.org/podcast/thats-what-they-say/rss.xml" htmlUrl="https://www.michiganpublic.org/"/>
+		<outline type="rss" text="The Watch" title="The Watch" xmlUrl="https://feeds.megaphone.fm/the-watch" htmlUrl="https://www.theringer.com/"/>
+		<outline type="rss" text="Weird Studies" title="Weird Studies" xmlUrl="https://feeds.fireside.fm/weirdstudies/rss" htmlUrl="https://www.weirdstudies.com/"/>
+		<outline type="rss" text="Your Undivided Attention" title="Your Undivided Attention" xmlUrl="https://feeds.simplecast.com/rZ0cYk12" htmlUrl="https://your-undivided-attention.simplecast.com/"/>
+	</body>
+</opml>
