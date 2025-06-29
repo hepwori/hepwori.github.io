@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>PM Interview Question Generator</title>
+		<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Montserrat">
+		<style>
+		body {
+			font-family: 'Montserrat', serif;
+			color: white;
+			background-color: black;
+			text-align: center;
+		}
+
+		#question {
+			font-size: 48pt;
+			margin: 50vh 100pt 0;
+			transform: translateY(-50%);
+		}
+		
+		#again {
+			font-size: 14pt;
+			cursor: pointer;
+			color: gray;
+		}
+		</style>
+		<script>
+
+		function randomOf(items) {
+			return items[Math.floor(Math.random()*items.length)];
+		}
+
+		function articalize(item) {
+			if ('aeiou'.indexOf(item[0]) > -1)
+				return 'an ' + item;
+			else
+				return 'a ' + item;
+		}
+
+		function createQuestion() {
+			var q = document.getElementById('question');
+			var task = ['Design', 'Bring to market', 'Estimate the TAM of', 'Identify product metrics for', 'Suggest product priorities for'];
+			var product = ['refrigerator',
+							'car',
+							'vending machine',
+							'thermostat',
+							'teleportation device',
+							'microwave',
+							'camera',
+							'mobile phone',
+							'toothbrush',
+							'streaming service',
+							'smart home',
+							'eletric kettle',
+							'toaster',
+							'laptop',
+							'alarm clock',
+							'recipe application',
+							'video chat app',
+							'mood analyzer',
+							'in-car entertainment system',
+							'sandwich maker',
+							'in-flight entertainment system',
+							'music streaming device',
+							'self-driving car',
+							'bike',
+				       			'time machine',
+				       			'travel planner',
+							'roller skate',
+							'smoke detector'];
+			var audience = ['kids',
+							'the older generation',
+							'business people',
+							'knowledge workers',
+							'deaf people',
+							'late adopters of tech',
+							'rural dwellers',
+							'the next generation of internet users',
+							'the visually impaired',
+							'people who live alone',
+							'parents'];
+			q.innerText = randomOf(task) + ' ' + articalize(randomOf(product)) + ' for ' + randomOf(audience);
+			}
+		</script>
+		<title></title>
+	</head>
+	<body onload='createQuestion()'>
+		<div id='question'>
+
+		</div>
+		<div id='again' onclick='createQuestion()'>another</div>
+	</body>
+</html>

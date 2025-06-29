@@ -1,0 +1,46 @@
+
+<html>
+<head>
+	<meta name='viewport' content='width=device-width,initial-scale=1.0,maximum-scale=1.0' />
+	<meta name="apple-mobile-web-app-capable" content="yes" />  
+	<script src='https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js'></script>
+	<style>
+		body {
+			background: black;
+			color: white;
+			font-family: Georgia;
+		}
+		div {
+			padding-top: 1em;
+		}
+		#age1, #age2, #age3 {
+			font-weight: bold;
+			color: white;
+			font-size: 60px;
+			line-height: 1.0;
+			width: 100%;
+			text-align: center;
+		}
+		
+	</style>
+</head>
+
+<body>
+
+	<div id='age1'></div>
+	<div id='age2'></div>
+	<div id='age3'></div>
+
+<script>
+
+
+$(document).ready(function() {
+	$('#age1').text(Math.floor(((new Date()).getTime() - new Date("2010/07/31").getTime())/1000/60/60/24) );
+	$('#age2').text(Math.floor(((new Date()).getTime() - new Date("2012/06/12").getTime())/1000/60/60/24) );
+	$('#age3').text(Math.floor(((new Date()).getTime() - new Date("2021/08/29").getTime())/1000/60/60/24) );
+});
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,117 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+	<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0">
+	<meta name="apple-mobile-web-app-capable" content="yes">  
+	<script type='text/javascript'>
+		if (location.protocol != 'https:')
+		{
+		 location.href = 'https:' + window.location.href.substring(window.location.protocol.length);
+		}
+	</script>
+	<script src="geometry.js"></script>
+	<script src="nbh.js"></script><style>@media print {#ghostery-purple-box {display:none !important}}</style>
+	<script src="sfnbh.js"></script>
+	<script src="jquery.min.js"></script>
+	<style>
+		body {
+			background: black;
+			color: white;
+			font-family: Georgia;
+		}
+		div {
+			padding-top: 1em;
+		}
+		#nbh {
+			font-weight: bold;
+			color: white;
+			font-size: 60px;
+			line-height: 1.0;
+		}
+		
+		#result, #noresult, #intro, #trying, #escape, #debug {
+			color: #888;
+		}
+		
+		#intro {
+			cursor: hand;
+		}
+		
+		#neighbor, #distance, #accuracy {
+			color: white;
+		}
+		
+		#noresult, #result, #trying, #escape, #debug {
+			display: none;
+		}
+	</style>
+</head>
+
+<body>
+
+<div id="intro">Where are you?</div>
+
+<div id="trying">Let's find out.</div>
+
+<div id="result">It looks like you're in<br><span id="nbh"></span></div>
+<div id="noresult">It looks like you're outside San Francisco.</div>
+
+<div id="escape">Want to change that? <span id="neighbor"></span> is only <span id="distance"></span> miles away.</div>
+
+<div id="debug">Accuracy: <span id="accuracy"></span> meters.</div>
+
+<script>
+
+var firstTry = true;
+
+function locationError(error) {
+	// TODO: something better than...
+	console.log(error);
+}
+
+function locationSuccess(position) {
+	console.log(position.coords.latitude);
+	console.log(position.coords.longitude);
+	var nbh = findNeighborhood(neighborhoods, {"y": position.coords.latitude, "x": position.coords.longitude });
+	if (!!nbh) {
+		$('#nbh').text(nbh);
+		$('#accuracy').text(Math.round(position.coords.accuracy));
+		$('#trying').hide();
+		$('#noresult').hide();
+		$('#result').show();
+		$('#debug').show();
+	} else {
+		$('#trying').hide();
+		$('#result').hide();
+		$('#noresult').show();
+	}
+	
+	var neighbor = closestNeighborhood(neighborhoods, {"y": position.coords.latitude, "x": position.coords.longitude });
+	if (neighbor.name) {
+		$('#neighbor').text(neighbor.name);
+		$('#distance').text(Math.round(neighbor.distance*10)/10);
+		$('#escape').show();
+	}
+	
+	window.setInterval(findLocation, 30000);
+}
+
+function findLocation() {
+	if (firstTry) {
+		$('#trying').show();
+		firstTry = false;
+	}
+	if (navigator.geolocation) {
+		navigator.geolocation.getCurrentPosition(locationSuccess, locationError);
+	} else {
+		// TODO: what now
+	}
+}
+
+$(document).ready(function() {
+	$('#intro').click(findLocation)
+});
+
+</script>
+
+
+
+</body></html>
