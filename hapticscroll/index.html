@@ -35,19 +35,44 @@
       margin-bottom: 1.4em;
     }
 
-    /* The haptic checkbox: real in the DOM, off-screen */
-    #haptic {
+    /* The haptic switch: real in the DOM, off-screen.
+       Must NOT be display:none — it needs to be rendered for iOS haptics.
+       pointer-events:none is fine since we click() it programmatically. */
+    #haptic-label {
       position: fixed;
       left: -9999px;
       top: -9999px;
       opacity: 0;
       pointer-events: none;
     }
+
+    /* Debug overlay */
+    #haptic-debug {
+      position: fixed;
+      bottom: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.75);
+      color: #fff;
+      font-family: monospace;
+      font-size: 13px;
+      padding: 8px 14px;
+      border-radius: 8px;
+      z-index: 9999;
+      pointer-events: none;
+      white-space: pre;
+      line-height: 1.6;
+    }
   </style>
 </head>
 <body>
 
-  <input type="checkbox" id="haptic" aria-hidden="true" tabindex="-1">
+  <!-- The `switch` attribute makes this a toggle switch on iOS Safari 17.4+,
+       which produces a clean haptic click on every toggle.
+       Without `switch` it's a plain checkbox with weaker/no haptic. -->
+  <label id="haptic-label" for="haptic" aria-hidden="true">
+    <input type="checkbox" switch id="haptic" tabindex="-1">
+  </label>
 
   <h1>Haptic Scroll</h1>
   <p class="subtitle">Scroll slowly on an iPhone for best results.</p>
@@ -102,16 +127,50 @@
 
   <p>You have reached the bottom. The vibrations stop. The text ends. Your thumb rests. Somewhere in the glass, a tiny motor has done its tiny work — and your nervous system was grateful for it, even if you didn't notice, even if the whole thing seemed like nothing at all.</p>
 
+  <div id="haptic-debug"></div>
+
   <script>
-    const checkbox = document.getElementById('haptic');
+    const hapticLabel = document.getElementById('haptic-label');
+    const debugEl = document.getElementById('haptic-debug');
     const STEP = 30; // pixels between haptic pulses
     let lastStep = 0;
+    let hapticCount = 0;
+    let lastEventType = '—';
+    let debugTimeout = null;
 
+    function fireHaptic(eventType) {
+      hapticLabel.click();
+      hapticCount++;
+      lastEventType = eventType;
+      showDebug();
+      console.log(`[haptic] #${hapticCount} via ${eventType} @ scrollY=${Math.round(window.scrollY)}`);
+    }
+
+    function showDebug() {
+      debugEl.textContent =
+        `haptics fired: ${hapticCount}\n` +
+        `last event:    ${lastEventType}\n` +
+        `scrollY:       ${Math.round(window.scrollY)}px`;
+      debugEl.style.display = 'block';
+      clearTimeout(debugTimeout);
+      debugTimeout = setTimeout(() => { debugEl.style.display = 'none'; }, 2000);
+    }
+
+    // touchmove: fires only while finger is on screen — required for iOS haptics
+    document.addEventListener('touchmove', () => {
+      const currentStep = Math.floor(window.scrollY / STEP);
+      if (currentStep !== lastStep) {
+        lastStep = currentStep;
+        fireHaptic('touchmove');
+      }
+    }, { passive: true });
+
+    // scroll fallback: for desktop browsers and slow-inertia cases
     window.addEventListener('scroll', () => {
       const currentStep = Math.floor(window.scrollY / STEP);
       if (currentStep !== lastStep) {
         lastStep = currentStep;
-        checkbox.click();
+        fireHaptic('scroll');
       }
     }, { passive: true });
   </script>
