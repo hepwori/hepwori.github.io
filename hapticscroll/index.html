@@ -35,17 +35,6 @@
       margin-bottom: 1.4em;
     }
 
-    /* The haptic switch: real in the DOM, off-screen.
-       Must NOT be display:none — it needs to be rendered for iOS haptics.
-       pointer-events:none is fine since we click() it programmatically. */
-    #haptic-label {
-      position: fixed;
-      left: -9999px;
-      top: -9999px;
-      opacity: 0;
-      pointer-events: none;
-    }
-
     /* Debug overlay */
     #haptic-debug {
       position: fixed;
@@ -66,13 +55,6 @@
   </style>
 </head>
 <body>
-
-  <!-- The `switch` attribute makes this a toggle switch on iOS Safari 17.4+,
-       which produces a clean haptic click on every toggle.
-       Without `switch` it's a plain checkbox with weaker/no haptic. -->
-  <label id="haptic-label" for="haptic" aria-hidden="true">
-    <input type="checkbox" switch id="haptic" tabindex="-1">
-  </label>
 
   <h1>Haptic Scroll</h1>
   <p class="subtitle">Scroll slowly on an iPhone for best results.</p>
@@ -129,8 +111,10 @@
 
   <div id="haptic-debug"></div>
 
-  <script>
-    const hapticLabel = document.getElementById('haptic-label');
+  <script type="module">
+    import { WebHaptics } from 'https://cdn.jsdelivr.net/npm/web-haptics/+esm';
+
+    const haptics = new WebHaptics();
     const debugEl = document.getElementById('haptic-debug');
     const STEP = 30; // pixels of finger movement between haptic pulses
     let hapticCount = 0;
@@ -138,7 +122,9 @@
     let debugTimeout = null;
 
     function fireHaptic() {
-      hapticLabel.click();
+      // Single short pulse — first click fires synchronously inside touchmove
+      // (the user gesture iOS requires), library handles the checkbox trick.
+      haptics.trigger([{ duration: 20, intensity: 0.8 }]);
       hapticCount++;
       debugEl.textContent =
         `haptics fired: ${hapticCount}\n` +
@@ -150,15 +136,10 @@
       console.log(`[haptic] #${hapticCount} @ scrollY=${Math.round(window.scrollY)}`);
     }
 
-    // Record finger position at start of each touch
     document.addEventListener('touchstart', (e) => {
       lastHapticY = e.touches[0].clientY;
     }, { passive: true });
 
-    // Track finger movement directly — scrollY hasn't updated yet during
-    // touchmove, so we measure touch position delta instead of scrollY.
-    // iOS only fires haptics for checkbox toggles inside an active touch
-    // context (touchmove), not from scroll events.
     document.addEventListener('touchmove', (e) => {
       const y = e.touches[0].clientY;
       if (Math.abs(y - lastHapticY) >= STEP) {
