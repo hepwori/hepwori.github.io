@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Haptic Scroll</title>
+  <style>
+    body {
+      font-family: Georgia, serif;
+      font-size: 18px;
+      line-height: 1.8;
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 40px 24px 120px;
+      color: #222;
+      background: #faf9f7;
+    }
+
+    h1 {
+      font-size: 2em;
+      font-weight: normal;
+      border-bottom: 1px solid #ccc;
+      padding-bottom: 0.4em;
+      margin-bottom: 0.2em;
+    }
+
+    .subtitle {
+      color: #888;
+      font-size: 0.85em;
+      margin-bottom: 2.5em;
+      font-style: italic;
+    }
+
+    p {
+      margin-bottom: 1.4em;
+    }
+
+    /* The haptic checkbox: real in the DOM, off-screen */
+    #haptic {
+      position: fixed;
+      left: -9999px;
+      top: -9999px;
+      opacity: 0;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+
+  <input type="checkbox" id="haptic" aria-hidden="true" tabindex="-1">
+
+  <h1>Haptic Scroll</h1>
+  <p class="subtitle">Scroll slowly on an iPhone for best results.</p>
+
+  <p>Lorem tactum dolor sit amet, consectetur palpitandi elit. Sed do eiusmod vibro ut labore et dolore magna aliqua. Ut enim ad minim tactum, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+
+  <p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum haptico nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit pressio id est laborum.</p>
+
+  <p>Fingertips know what eyes cannot. The skin remembers. Texture, weight, resistance — these are the languages of the body, spoken fluently before language was ever invented. When you drag your thumb across glass, the glass speaks back.</p>
+
+  <p>Phasellus tactus accumsan ipsum hendrerit. In congue risus tortor, vitae vibrandum felis posuere vel. Mauris a massa porta, cursus nisl quis, ultricies arcu. Nullam dignissim pulvinus eros at imperdiet. Quisque condimentum congue feugiat. Nam justo sem, aliquam ut tincidunt non, elementum et lectus.</p>
+
+  <p>The invention of touchscreens changed something fundamental about computing. We had been pointing at things for decades with mice, cursors, arrows — all proxies for the hand. The touchscreen eliminated the proxy. The finger became the cursor. The skin became the interface.</p>
+
+  <p>Vibro adipiscing lectus. Curabitur vitae nunc sed velit dignissim sodales ut eu sem. Ornare quam viverra orci sagittis eu volutpat. Amet massa vitae tortor condimentum lacinia quis vel eros. Malesuada fames ac turpis egestas maecenas pharetra.</p>
+
+  <p>There is a word in Japanese, "te no hira," meaning the palm of the hand, but its literal sense is "the garden of the hand." The hand is a garden. Fingertips are seeds. Everything we have ever made began in someone's palm.</p>
+
+  <p>Pulvinar sapien et ligula ullamcorper malesuada proin. Ullamcorper a lacus vestibulum sed arcu non odio euismod. Eget nunc lobortis mattis aliquam faucibus purus in massa. Quam lacus suspendisse faucibus interdum posuere lorem ipsum dolor.</p>
+
+  <p>Haptics is the science of touch. Derived from the Greek "haptesthai" — to fasten, to touch. Aristotle considered touch the most fundamental of senses, the one sense you cannot lose and still be called alive. He was onto something. We can survive without sight, without hearing, without smell. Touch is not optional.</p>
+
+  <p>Sem nulla pharetra diam sit amet. Convallis a cras semper auctor neque vitae. In ornare quam viverra orci sagittis eu volutpat odio. Amet aliquam id diam maecenas ultricies mi eget mauris. Pellentesque adipiscing commodo elit at imperdiet dui.</p>
+
+  <p>When a craftsman runs her finger along a join in the wood, she is reading. When a surgeon presses gently and the patient flinches, he is reading. When a parent traces the outline of a sleeping child's face in the dark, she is reading. Touch is the oldest literacy.</p>
+
+  <p>Feugiat sed lectus vestibulum mattis ullamcorper velit. Sit amet cursus sit amet dictum. Pharetra diam sit amet nisl suscipit adipiscing. Consequat semper viverra nam libero justo laoreet sit amet cursus. Faucibus vitae aliquet nec ullamcorper sit amet risus nullam.</p>
+
+  <p>Consider the Braille alphabet, invented by a blind fifteen-year-old in 1824. Louis Braille took a military code designed for reading in the dark without a candle and made it universal. He gave language back to fingertips. Six dots. A garden in miniature.</p>
+
+  <p>Vitae ultricies leo integer malesuada nunc vel risus commodo. Tincidunt arcu non sodales neque sodales ut etiam. In eu mi bibendum neque egestas congue. Morbi non arcu risus quis varius quam quisque id. Tortor posuere ac ut consequat semper viverra nam libero.</p>
+
+  <p>The phone in your hand weighs less than an egg. It contains, by some estimates, the sum total of recorded human knowledge, or at least a search engine pointing toward it. And yet the primary way we interact with this object is with our thumbs. Our big, clumsy, magnificent thumbs.</p>
+
+  <p>Nisl pretium fusce id velit ut tortor pretium viverra. Sit amet massa vitae tortor condimentum lacinia quis vel. Non sodales neque sodales ut etiam sit amet nisl purus. Diam vel quam elementum pulvinar etiam non quam lacus.</p>
+
+  <p>The word "tact" comes from "tactus" — touch. To have tact is to touch the world gently, to feel the pressure of a situation and adjust accordingly. Language remembers that the social and the sensory were once the same word.</p>
+
+  <p>Bibendum arcu vitae elementum curabitur vitae nunc. Tortor aliquam nulla facilisi cras fermentum odio eu. Arcu odio ut sem nulla pharetra. Vestibulum morbi blandit cursus risus at ultrices mi tempus imperdiet.</p>
+
+  <p>Imagine a blind person using a phone. The screen reads itself aloud. Every element speaks its name when touched. The phone vibrates its confirmations, its alerts, its gentle acknowledgments. The device becomes tactile again, something closer to what Aristotle imagined — a tool that speaks to skin.</p>
+
+  <p>Fringilla phasellus faucibus scelerisque eleifend donec pretium vulputate sapien. Praesent tristique magna sit amet purus gravida quis blandit. Magna fermentum iaculis eu non diam phasellus. Tristique senectus et netus et malesuada fames ac turpis.</p>
+
+  <p>Engineers who design haptic engines speak of "click" and "thud" and "buzz" as if they are percussionists tuning an instrument. They argue about milliseconds. They obsess over frequency and amplitude. They are trying to lie to your hand — to make something weightless feel like it has mass, to make a button that isn't there feel like it is.</p>
+
+  <p>Morbi quis commodo odio aenean sed. Id volutpat lacus laoreet non curabitur gravida arcu. Faucibus nisl tincidunt eget nullam non nisi est sit. Magna sit amet purus gravida quis blandit turpis cursus in.</p>
+
+  <p>The lie works. You push a button that doesn't exist and feel it push back. Your brain, that insatiable pattern-finder, accepts the fiction without complaint. It wants to believe. The best interfaces exploit this credulity completely.</p>
+
+  <p>Proin libero nunc consequat interdum varius. Arcu cursus euismod quis viverra nibh. Est placerat in egestas erat imperdiet sed euismod nisi. Volutpat odio facilisis mauris sit amet massa vitae tortor.</p>
+
+  <p>You have reached the bottom. The vibrations stop. The text ends. Your thumb rests. Somewhere in the glass, a tiny motor has done its tiny work — and your nervous system was grateful for it, even if you didn't notice, even if the whole thing seemed like nothing at all.</p>
+
+  <script>
+    const checkbox = document.getElementById('haptic');
+    const STEP = 30; // pixels between haptic pulses
+    let lastStep = 0;
+
+    window.addEventListener('scroll', () => {
+      const currentStep = Math.floor(window.scrollY / STEP);
+      if (currentStep !== lastStep) {
+        lastStep = currentStep;
+        checkbox.click();
+      }
+    }, { passive: true });
+  </script>
+
+</body>
+</html>
