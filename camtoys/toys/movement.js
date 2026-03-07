@@ -4,68 +4,84 @@ class MovementToy extends Toy {
 
         this.MOTION_THRESHOLD = 40;
         this.FADE_ALPHA_STEP = 0.01;
-        this.TRAIL_COLOR = [255, 255, 255];
-        this.DOWNSCALE = 0.25;
 
-        this.lowResCanvas = document.createElement('canvas');
-        this.lowResCtx = this.lowResCanvas.getContext('2d');
+        this.captureCanvas = document.createElement('canvas');
+        this.captureCtx = this.captureCanvas.getContext('2d');
 
         this.trailCanvas = document.createElement('canvas');
         this.trailCtx = this.trailCanvas.getContext('2d');
 
-        this.lastLowRes = null;
+        this.maskCanvas = document.createElement('canvas');
+        this.maskCtx = this.maskCanvas.getContext('2d');
+
+        this.workerBusy = false;
+        this.worker = this._createWorker();
+        this.worker.onmessage = (e) => this._onWorkerResult(e);
+    }
+
+    _createWorker() {
+        const code = `
+            var prev = null;
+            var THRESHOLD = 40;
+            self.onmessage = function(e) {
+                var curr = new Uint8ClampedArray(e.data.buffer);
+                var w = e.data.width, h = e.data.height;
+                var mask = new Uint8ClampedArray(w * h * 4);
+                if (prev) {
+                    for (var i = 0; i < curr.length; i += 4) {
+                        var delta = Math.abs(curr[i]   - prev[i])   +
+                                    Math.abs(curr[i+1] - prev[i+1]) +
+                                    Math.abs(curr[i+2] - prev[i+2]);
+                        if (delta > THRESHOLD) {
+                            mask[i] = mask[i+1] = mask[i+2] = mask[i+3] = 255;
+                        }
+                    }
+                }
+                prev = curr;
+                self.postMessage({ buffer: mask.buffer, width: w, height: h }, [mask.buffer]);
+            };
+        `;
+        const blob = new Blob([code], { type: 'application/javascript' });
+        return new Worker(URL.createObjectURL(blob));
     }
 
     onResize(w, h) {
+        this.captureCanvas.width = w;
+        this.captureCanvas.height = h;
         this.trailCanvas.width = w;
         this.trailCanvas.height = h;
+        this.maskCanvas.width = w;
+        this.maskCanvas.height = h;
     }
 
     draw() {
         const w = this.canvas.width;
         const h = this.canvas.height;
 
-        const lw = Math.floor(w * this.DOWNSCALE);
-        const lh = Math.floor(h * this.DOWNSCALE);
-        this.lowResCanvas.width = lw;
-        this.lowResCanvas.height = lh;
-
-        this.lowResCtx.drawImage(this.video, 0, 0, lw, lh);
-        const currImageData = this.lowResCtx.getImageData(0, 0, lw, lh);
-        const curr = currImageData.data;
-
-        if (this.lastLowRes) {
-            for (let y = 0; y < lh; y++) {
-                for (let x = 0; x < lw; x++) {
-                    const i = (y * lw + x) * 4;
-                    const delta = Math.abs(curr[i] - this.lastLowRes[i]) +
-                                  Math.abs(curr[i + 1] - this.lastLowRes[i + 1]) +
-                                  Math.abs(curr[i + 2] - this.lastLowRes[i + 2]);
-
-                    if (delta > this.MOTION_THRESHOLD) {
-                        const dx = Math.floor(x / this.DOWNSCALE);
-                        const dy = Math.floor(y / this.DOWNSCALE);
-                        this.drawMotionSpot(dx, dy);
-                    }
-                }
-            }
+        if (!this.workerBusy) {
+            this.captureCtx.drawImage(this.video, 0, 0, w, h);
+            const imageData = this.captureCtx.getImageData(0, 0, w, h);
+            this.workerBusy = true;
+            this.worker.postMessage(
+                { buffer: imageData.data.buffer, width: w, height: h },
+                [imageData.data.buffer]
+            );
         }
 
         this.fadeTrail();
-        this.lastLowRes = new Uint8ClampedArray(curr);
 
         this.ctx.clearRect(0, 0, w, h);
-        this.ctx.filter = 'blur(2px)';
+        this.ctx.filter = 'blur(3px)';
         this.ctx.drawImage(this.trailCanvas, 0, 0);
         this.ctx.filter = 'none';
     }
 
-    drawMotionSpot(x, y) {
-        const radius = 6;
-        this.trailCtx.beginPath();
-        this.trailCtx.fillStyle = `rgb(${this.TRAIL_COLOR[0]}, ${this.TRAIL_COLOR[1]}, ${this.TRAIL_COLOR[2]})`;
-        this.trailCtx.arc(x, y, radius, 0, 2 * Math.PI);
-        this.trailCtx.fill();
+    _onWorkerResult(e) {
+        this.workerBusy = false;
+        const { buffer, width, height } = e.data;
+        const imageData = new ImageData(new Uint8ClampedArray(buffer), width, height);
+        this.maskCtx.putImageData(imageData, 0, 0);
+        this.trailCtx.drawImage(this.maskCanvas, 0, 0);
     }
 
     fadeTrail() {
