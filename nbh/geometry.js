@@ -50,6 +50,21 @@ function linePointDistance(pointA, pointB, pointC, isSegment) {
 	return Math.abs(dist);
 }
 
+// Closest point on segment AB to point C, in {x: lon, y: lat} space.
+// Longitude is scaled by cos(lat) before projecting so the result is
+// geometrically correct at city scale.
+function closestPointOnSegment(A, B, C) {
+	var cosLat = Math.cos((A.y + B.y + C.y) / 3 * Math.PI / 180);
+	var ax = A.x * cosLat, ay = A.y;
+	var bx = B.x * cosLat, by = B.y;
+	var cx = C.x * cosLat, cy = C.y;
+	var dx = bx - ax, dy = by - ay;
+	var lenSq = dx*dx + dy*dy;
+	if (lenSq === 0) return A;
+	var t = Math.max(0, Math.min(1, ((cx-ax)*dx + (cy-ay)*dy) / lenSq));
+	return { x: A.x + t*(B.x - A.x), y: A.y + t*(B.y - A.y) };
+}
+
 // Compass bearing from pt1 to pt2, as a cardinal/intercardinal string
 function bearingTo(pt1, pt2) {
 	var lat1 = pt1.y * Math.PI / 180, lat2 = pt2.y * Math.PI / 180;
