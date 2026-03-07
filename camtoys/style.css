@@ -1,93 +1,94 @@
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap');
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background: #0e0e0e;
+    color: #999;
+    font-family: Georgia, serif;
+}
 
 body {
-    font-family: 'Montserrat', sans-serif;
-    margin: 0;
-    background: linear-gradient(to bottom, #f4f4f4, #e4e4e4);
-    color: #2c3e50;
-    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
 }
 
 header {
-    background-color: transparent;
-    padding: 1.5rem 2rem;
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+    align-items: baseline;
+    gap: 2rem;
+    padding: 1.25rem 1.75rem;
+    border-bottom: 1px solid #1f1f1f;
+    flex-shrink: 0;
 }
 
 h1 {
     margin: 0;
-    font-size: 1.8rem;
-    color: #34495e;
+    font-size: 1.05rem;
+    font-weight: normal;
+    color: #555;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+}
+
+nav {
+    display: flex;
+    gap: 1.5rem;
+    flex: 1;
 }
 
 nav a {
     text-decoration: none;
-    color: #3498db;
-    margin: 0 1rem;
-    font-weight: bold;
-    transition: color 0.3s ease;
+    color: #555;
+    font-size: 0.9rem;
+    letter-spacing: 0.05em;
+    transition: color 0.2s;
 }
 
-nav a:hover, nav a.active {
-    color: #2980b9;
+nav a:hover {
+    color: #ccc;
+}
+
+nav a.active {
+    color: #eee;
+}
+
+#fullscreen-btn {
+    background: none;
+    border: none;
+    color: #444;
+    font-size: 1.1rem;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+    transition: color 0.2s;
+    flex-shrink: 0;
+}
+
+#fullscreen-btn:hover {
+    color: #aaa;
 }
 
 main {
-    padding: 0 2rem 2rem;
+    flex: 1;
+    padding: 1.5rem 1.75rem;
+    min-height: 0;
 }
 
 iframe {
     width: 100%;
-    height: 60vh;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    box-shadow: 0 5px 20px rgba(0,0,0,0.1);
-}
-
-#about {
-    padding: 2rem;
-    background-color: transparent;
-    text-align: center;
-    max-width: 800px;
-    margin: 2rem auto;
-}
-
-#about h2 {
-    color: #34495e;
-    margin-bottom: 1rem;
-}
-
-#fullscreen-btn {
-    background-color: #3498db;
-    color: white;
+    height: 100%;
     border: none;
-    padding: 0.7rem 1.5rem;
-    border-radius: 5px;
-    cursor: pointer;
-    font-weight: bold;
-    transition: background-color 0.3s ease;
-}
-
-#fullscreen-btn:hover {
-    background-color: #2980b9;
+    display: block;
 }
 
 main.fullscreen {
     padding: 0;
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+    inset: 0;
     z-index: 1000;
     background: #000;
-}
-
-main.fullscreen iframe {
-    height: 100%;
-    border: none;
-    border-radius: 0;
-    box-shadow: none;
 }
