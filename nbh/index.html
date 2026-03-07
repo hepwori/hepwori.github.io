@@ -8,8 +8,6 @@
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+PHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iNyIgZmlsbD0iIzAwMCIvPjxwYXRoIGQ9Ik0xNiA0QzExLjYgNCA4IDcuNiA4IDEyYzAgNi42IDggMTYgOCAxNnM4LTkuNCA4LTE2YzAtNC40LTMuNi04LTgtOHoiIGZpbGw9IiNmZmYiLz48Y2lyY2xlIGN4PSIxNiIgY3k9IjEyIiByPSIzLjUiIGZpbGw9IiMwMDAiLz48L3N2Zz4=">
   <script src="geometry.js"></script>
   <script src="nbh.js"></script>
-  <script src="sf.js"></script>
-  <script src="boulder.js"></script>
   <style>
     body {
       background: black;
@@ -120,12 +118,23 @@
 </div>
 
 <script>
-var cities = [
-  { name: 'San Francisco', neighborhoods: sfNeighborhoods },
-  { name: 'Boulder',       neighborhoods: boulderNeighborhoods },
-];
-
+var cities = null;
 var watchId = null;
+
+Promise.all([fetch('sf.geojson'), fetch('boulder.geojson')])
+  .then(function(rs) { return Promise.all(rs.map(function(r) { return r.json(); })); })
+  .then(function(data) {
+    cities = [
+      { name: 'San Francisco', neighborhoods: data[0].features },
+      { name: 'Boulder',       neighborhoods: data[1].features },
+    ];
+    if (new URLSearchParams(window.location.search).has('dev')) {
+      document.getElementById('dev-panel').style.display = 'block';
+      hide('trying');
+    } else {
+      start();
+    }
+  });
 
 function show(id) { document.getElementById(id).style.display = 'block'; }
 function hide(id) { document.getElementById(id).style.display = 'none'; }
@@ -133,7 +142,7 @@ function setText(id, t) { document.getElementById(id).textContent = t; }
 
 function onPosition(pos) {
   hide('trying');
-  var pt = { x: pos.coords.longitude, y: pos.coords.latitude };
+  var pt = [pos.coords.longitude, pos.coords.latitude];
 
   var found = findLocation(cities, pt);
   if (found) {
@@ -158,7 +167,7 @@ function onPosition(pos) {
     show('escape');
     var dbg = document.getElementById('dev-debug');
     if (dbg) dbg.innerHTML =
-      'closest pt: ' + closest.debugPt.y.toFixed(5) + ', ' + closest.debugPt.x.toFixed(5) + '<br>' +
+      'closest pt: ' + closest.debugPt[1].toFixed(5) + ', ' + closest.debugPt[0].toFixed(5) + '<br>' +
       'bearing: ' + closest.debugDeg.toFixed(1) + '&deg; (' + closest.direction + ')';
   } else {
     hide('escape');
@@ -218,12 +227,7 @@ function preset(lat, lon) {
   onPosition({ coords: { latitude: lat, longitude: lon, accuracy: 1 } });
 }
 
-if (new URLSearchParams(window.location.search).has('dev')) {
-  document.getElementById('dev-panel').style.display = 'block';
-  hide('trying');
-} else {
-  start();
-}
+// Startup is deferred until GeoJSON data is loaded (see Promise.all above).
 </script>
 
 </body>

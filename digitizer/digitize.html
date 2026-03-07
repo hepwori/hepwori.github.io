@@ -750,14 +750,20 @@ function updateOutput() {
     document.getElementById('output').value = '';
     return;
   }
-  const parts = neighborhoods.map(n => {
-    const pts = n.points.map(p => {
+  const features = neighborhoods.map(n => {
+    const coords = n.points.map(p => {
       const ll = imgToLL(p.x, p.y);
-      return `    { x: ${ll.lon.toFixed(6)}, y: ${ll.lat.toFixed(6)} }`;
-    }).join(',\n');
-    return `  {\n    name: "${n.name}",\n    boundary_points: [\n${pts}\n    ]\n  }`;
+      return [parseFloat(ll.lon.toFixed(6)), parseFloat(ll.lat.toFixed(6))];
+    });
+    if (coords.length > 0) coords.push(coords[0]); // close the ring
+    return {
+      type: 'Feature',
+      properties: { name: n.name },
+      geometry: { type: 'Polygon', coordinates: [coords] }
+    };
   });
-  document.getElementById('output').value = `var neighborhoods = [\n${parts.join(',\n')}\n];\n`;
+  const fc = { type: 'FeatureCollection', features };
+  document.getElementById('output').value = JSON.stringify(fc, null, 2);
 }
 
 function copyOutput() {
