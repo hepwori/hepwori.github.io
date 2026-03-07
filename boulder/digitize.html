@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Neighborhood Digitizer</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { display: flex; height: 100vh; overflow: hidden; font-family: sans-serif; font-size: 13px; background: #111; }
+
+    #sidebar {
+      width: 270px;
+      min-width: 270px;
+      background: #1a1a2e;
+      color: #eee;
+      padding: 14px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    #map-area {
+      flex: 1;
+      overflow: auto;
+      background: #222;
+    }
+
+    #map-wrapper {
+      position: relative;
+      display: inline-block;
+    }
+
+    #map-img {
+      display: block;
+      height: 850px;
+      width: auto;
+      max-width: none;
+    }
+
+    #overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      cursor: crosshair;
+    }
+
+    h2 { font-size: 15px; color: #fff; font-weight: bold; }
+    h3 { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: #666; margin-bottom: 6px; }
+
+    .section {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 6px;
+      padding: 10px;
+    }
+
+    .mode-btns { display: flex; gap: 6px; }
+    .mode-btn {
+      flex: 1; padding: 6px; border: 1px solid #444;
+      background: transparent; color: #888; cursor: pointer;
+      border-radius: 4px; font-size: 12px;
+    }
+    .mode-btn.active { background: #4a9eff; border-color: #4a9eff; color: #fff; }
+
+    button {
+      padding: 5px 10px; background: #4a9eff; border: none;
+      color: #fff; cursor: pointer; border-radius: 4px; font-size: 12px;
+    }
+    button:disabled { background: #333; color: #666; cursor: default; }
+    button.danger { background: #c0392b; }
+    button.success { background: #27ae60; }
+    button.sm { padding: 2px 6px; font-size: 10px; }
+
+    input[type=text] {
+      width: 100%; padding: 6px; background: rgba(255,255,255,0.08);
+      border: 1px solid #444; color: #fff; border-radius: 4px; font-size: 12px;
+    }
+    input[type=text]::placeholder { color: #555; }
+
+    ul { list-style: none; }
+    li {
+      padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,0.05);
+      font-size: 11px; color: #aaa; display: flex; justify-content: space-between; align-items: center;
+    }
+
+    .status { font-size: 11px; color: #666; font-style: italic; margin-top: 6px; }
+    .hint { font-size: 11px; color: #f0a500; line-height: 1.5; }
+
+    #output {
+      width: 100%; height: 110px; background: #0d1117; color: #7ec8e3;
+      border: 1px solid #333; font-family: monospace; font-size: 10px;
+      padding: 6px; resize: vertical; border-radius: 4px;
+    }
+
+    .row { display: flex; gap: 6px; margin-top: 6px; }
+  </style>
+</head>
+<body>
+
+<div id="sidebar">
+  <h2>Neighborhood Digitizer</h2>
+
+  <div class="section">
+    <h3>Mode</h3>
+    <div class="mode-btns">
+      <button class="mode-btn active" id="btn-mode-cal" onclick="setMode('calibrate')">1. Calibrate</button>
+      <button class="mode-btn" id="btn-mode-dig" onclick="setMode('digitize')">2. Digitize</button>
+    </div>
+  </div>
+
+  <!-- CALIBRATE PANEL -->
+  <div class="section" id="panel-calibrate">
+    <h3>Reference Points (<span id="ref-count">0</span>)</h3>
+    <p class="hint">Click the map, then enter the real-world lat,lon. Use Google Maps to look up coordinates for visible landmarks (road intersections work well).</p>
+    <ul id="ref-list" style="margin-top:8px"></ul>
+    <div class="row">
+      <button id="btn-compute" onclick="computeTransform()" disabled>Compute transform</button>
+      <button class="danger" onclick="clearRefs()">Clear</button>
+    </div>
+    <p class="status" id="transform-status"></p>
+  </div>
+
+  <!-- DIGITIZE PANEL -->
+  <div class="section" id="panel-digitize" style="display:none">
+    <h3>Current Neighborhood</h3>
+    <input type="text" id="nbh-name" placeholder="Name (e.g. North Boulder)">
+    <div class="row">
+      <button onclick="startPolygon()">Start</button>
+      <button class="success" id="btn-close" onclick="closePolygon()" disabled>Close</button>
+      <button id="btn-undo" onclick="undoVertex()" disabled>Undo</button>
+    </div>
+    <p class="status" id="vertex-status">No active polygon.</p>
+    <br>
+    <h3>Completed (<span id="nbh-count">0</span>)</h3>
+    <ul id="nbh-list"></ul>
+  </div>
+
+  <!-- OUTPUT -->
+  <div class="section">
+    <h3>Output JS</h3>
+    <textarea id="output" readonly placeholder="// neighborhoods data will appear here"></textarea>
+    <div class="row">
+      <button onclick="copyOutput()">Copy</button>
+      <button onclick="updateOutput()">Refresh</button>
+    </div>
+  </div>
+</div>
+
+<div id="map-area">
+  <div id="map-wrapper">
+    <img id="map-img"
+      src="https://assets.simpleviewinc.com/simpleview/image/upload/v1/clients/boulder/Visit_Boulder_Neighborhood_Map_ea61ecb2-6179-4d45-ac05-26f3a54b7471.jpg"
+      onload="initCanvas()"
+      alt="Boulder neighborhood map"
+    >
+    <canvas id="overlay"></canvas>
+  </div>
+</div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────────
+let mode = 'calibrate';
+let refs = [];          // [{px, py, lat, lon}]
+let transform = null;   // {latCoeffs:[a,b,c], lonCoeffs:[d,e,f]}
+let neighborhoods = []; // [{name, points:[{px,py}]}]
+let currentPoly = null; // {name, points:[{px,py}]}
+
+const COLORS = ['#4a9eff','#2ecc71','#e74c3c','#f39c12','#9b59b6','#1abc9c','#e67e22','#e91e63','#00bcd4','#ff5722'];
+
+// ── Canvas init ────────────────────────────────────────────────────────────
+const img    = document.getElementById('map-img');
+const canvas = document.getElementById('overlay');
+const ctx    = canvas.getContext('2d');
+
+function initCanvas() {
+  canvas.width  = img.offsetWidth;
+  canvas.height = img.offsetHeight;
+  redraw();
+}
+window.addEventListener('resize', () => { if (img.complete) initCanvas(); });
+
+// ── Input ──────────────────────────────────────────────────────────────────
+canvas.addEventListener('click', e => {
+  const r  = canvas.getBoundingClientRect();
+  const px = e.clientX - r.left;
+  const py = e.clientY - r.top;
+  if (mode === 'calibrate') handleCalClick(px, py);
+  else if (mode === 'digitize' && currentPoly) handleDigClick(px, py);
+});
+
+canvas.addEventListener('dblclick', e => {
+  if (mode === 'digitize' && currentPoly) { e.preventDefault(); closePolygon(); }
+});
+
+// ── Calibration ────────────────────────────────────────────────────────────
+function handleCalClick(px, py) {
+  const raw = prompt('Coordinates for this point:\nLat, Lon  (e.g.  40.0150, -105.2705)\n\nTip: right-click any spot in Google Maps to copy coordinates.');
+  if (!raw) return;
+  const parts = raw.split(',').map(s => parseFloat(s.trim()));
+  if (parts.length !== 2 || parts.some(isNaN)) { alert('Bad format — use: lat, lon'); return; }
+  refs.push({ px, py, lat: parts[0], lon: parts[1] });
+  updateRefList();
+  redraw();
+}
+
+function updateRefList() {
+  document.getElementById('ref-count').textContent = refs.length;
+  document.getElementById('btn-compute').disabled = refs.length < 3;
+  document.getElementById('ref-list').innerHTML =
+    refs.map((r, i) => `<li><span>#${i+1}: ${r.lat.toFixed(4)}, ${r.lon.toFixed(4)}</span>
+      <button class="sm danger" onclick="deleteRef(${i})">×</button></li>`).join('');
+}
+
+function deleteRef(i) { refs.splice(i, 1); updateRefList(); redraw(); }
+function clearRefs()  { refs = []; transform = null; updateRefList(); document.getElementById('transform-status').textContent = ''; redraw(); }
+
+// ── Affine transform ───────────────────────────────────────────────────────
+function det3(m) {
+  return m[0][0]*(m[1][1]*m[2][2] - m[1][2]*m[2][1])
+       - m[0][1]*(m[1][0]*m[2][2] - m[1][2]*m[2][0])
+       + m[0][2]*(m[1][0]*m[2][1] - m[1][1]*m[2][0]);
+}
+
+function solve3x3(A, b) {
+  const D = det3(A);
+  if (Math.abs(D) < 1e-12) return null;
+  return [
+    det3([[b[0],A[0][1],A[0][2]],[b[1],A[1][1],A[1][2]],[b[2],A[2][1],A[2][2]]]) / D,
+    det3([[A[0][0],b[0],A[0][2]],[A[1][0],b[1],A[1][2]],[A[2][0],b[2],A[2][2]]]) / D,
+    det3([[A[0][0],A[0][1],b[0]],[A[1][0],A[1][1],b[1]],[A[2][0],A[2][1],b[2]]]) / D,
+  ];
+}
+
+function computeTransform() {
+  const r = refs.slice(0, 3);
+  const M = r.map(p => [p.px, p.py, 1]);
+  const latC = solve3x3(M, r.map(p => p.lat));
+  const lonC = solve3x3(M, r.map(p => p.lon));
+  if (!latC || !lonC) { alert('Cannot compute — reference points may be collinear. Try different ones.'); return; }
+  transform = { latCoeffs: latC, lonCoeffs: lonC };
+
+  let statusMsg = 'Transform computed.';
+  if (refs.length > 3) {
+    const errs = refs.map(r => {
+      const ll = pxToLL(r.px, r.py);
+      return Math.sqrt((ll.lat - r.lat)**2 + (ll.lon - r.lon)**2);
+    });
+    statusMsg += ` Residual: ${(Math.max(...errs) * 111000).toFixed(0)} m`;
+  }
+  document.getElementById('transform-status').textContent = statusMsg;
+}
+
+function pxToLL(px, py) {
+  const [a,b,c] = transform.latCoeffs;
+  const [d,e,f] = transform.lonCoeffs;
+  return { lat: a*px + b*py + c, lon: d*px + e*py + f };
+}
+
+// ── Digitizing ─────────────────────────────────────────────────────────────
+function startPolygon() {
+  const name = document.getElementById('nbh-name').value.trim();
+  if (!name)      { alert('Enter a neighborhood name first.'); return; }
+  if (!transform) { alert('Compute the transform first (in Calibrate mode).'); return; }
+  currentPoly = { name, points: [] };
+  document.getElementById('btn-close').disabled = false;
+  document.getElementById('btn-undo').disabled  = false;
+  updateVertexStatus();
+  redraw();
+}
+
+function handleDigClick(px, py) {
+  currentPoly.points.push({ px, py });
+  updateVertexStatus();
+  redraw();
+}
+
+function closePolygon() {
+  if (!currentPoly || currentPoly.points.length < 3) { alert('Need at least 3 points.'); return; }
+  neighborhoods.push(currentPoly);
+  currentPoly = null;
+  document.getElementById('btn-close').disabled = true;
+  document.getElementById('btn-undo').disabled  = true;
+  document.getElementById('nbh-name').value = '';
+  updateVertexStatus();
+  updateNbhList();
+  updateOutput();
+  redraw();
+}
+
+function undoVertex() {
+  if (currentPoly && currentPoly.points.length > 0) {
+    currentPoly.points.pop();
+    updateVertexStatus();
+    redraw();
+  }
+}
+
+function updateVertexStatus() {
+  const n = currentPoly ? currentPoly.points.length : 0;
+  document.getElementById('vertex-status').textContent =
+    currentPoly ? `"${currentPoly.name}" — ${n} vertices` : 'No active polygon.';
+}
+
+function updateNbhList() {
+  document.getElementById('nbh-count').textContent = neighborhoods.length;
+  document.getElementById('nbh-list').innerHTML =
+    neighborhoods.map((n, i) => `<li>
+      <span style="color:${COLORS[i%COLORS.length]}">${n.name}</span>
+      <span style="color:#666">${n.points.length} pts</span>
+      <button class="sm danger" onclick="deleteNbh(${i})">×</button>
+    </li>`).join('');
+}
+
+function deleteNbh(i) { neighborhoods.splice(i, 1); updateNbhList(); updateOutput(); redraw(); }
+
+// ── Output ─────────────────────────────────────────────────────────────────
+function updateOutput() {
+  if (!transform || neighborhoods.length === 0) return;
+  const parts = neighborhoods.map(n => {
+    const pts = n.points.map(p => {
+      const ll = pxToLL(p.px, p.py);
+      return `    { x: ${ll.lon.toFixed(6)}, y: ${ll.lat.toFixed(6)} }`;
+    }).join(',\n');
+    return `  {\n    name: "${n.name}",\n    boundary_points: [\n${pts}\n    ]\n  }`;
+  });
+  document.getElementById('output').value = `var neighborhoods = [\n${parts.join(',\n')}\n];\n`;
+}
+
+function copyOutput() {
+  const ta = document.getElementById('output');
+  ta.select();
+  document.execCommand('copy');
+}
+
+// ── Mode switching ─────────────────────────────────────────────────────────
+function setMode(m) {
+  mode = m;
+  document.getElementById('btn-mode-cal').classList.toggle('active', m === 'calibrate');
+  document.getElementById('btn-mode-dig').classList.toggle('active', m === 'digitize');
+  document.getElementById('panel-calibrate').style.display = m === 'calibrate' ? '' : 'none';
+  document.getElementById('panel-digitize').style.display  = m === 'digitize'  ? '' : 'none';
+}
+
+// ── Drawing ────────────────────────────────────────────────────────────────
+function redraw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Completed neighborhoods
+  neighborhoods.forEach((n, i) => {
+    if (n.points.length < 2) return;
+    const color = COLORS[i % COLORS.length];
+    ctx.beginPath();
+    ctx.moveTo(n.points[0].px, n.points[0].py);
+    n.points.slice(1).forEach(p => ctx.lineTo(p.px, p.py));
+    ctx.closePath();
+    ctx.fillStyle   = color + '28';
+    ctx.strokeStyle = color;
+    ctx.lineWidth   = 2;
+    ctx.fill();
+    ctx.stroke();
+    // centroid label
+    const cx = n.points.reduce((s, p) => s + p.px, 0) / n.points.length;
+    const cy = n.points.reduce((s, p) => s + p.py, 0) / n.points.length;
+    ctx.font      = 'bold 11px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#000';
+    ctx.fillText(n.name, cx+1, cy+1);
+    ctx.fillStyle = '#fff';
+    ctx.fillText(n.name, cx, cy);
+  });
+
+  // Active polygon
+  if (currentPoly && currentPoly.points.length > 0) {
+    const pts = currentPoly.points;
+    ctx.beginPath();
+    ctx.moveTo(pts[0].px, pts[0].py);
+    pts.slice(1).forEach(p => ctx.lineTo(p.px, p.py));
+    ctx.setLineDash([5, 4]);
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth   = 1.5;
+    ctx.stroke();
+    ctx.setLineDash([]);
+    pts.forEach(p => {
+      ctx.beginPath();
+      ctx.arc(p.px, p.py, 3, 0, Math.PI * 2);
+      ctx.fillStyle = '#fff';
+      ctx.fill();
+    });
+  }
+
+  // Reference points
+  refs.forEach((r, i) => {
+    ctx.beginPath();
+    ctx.arc(r.px, r.py, 7, 0, Math.PI * 2);
+    ctx.fillStyle   = '#e74c3c';
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth   = 1.5;
+    ctx.fill();
+    ctx.stroke();
+    ctx.font      = 'bold 10px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#fff';
+    ctx.fillText(i + 1, r.px, r.py + 4);
+  });
+}
+</script>
+
+</body>
+</html>
