@@ -44,11 +44,11 @@ function closestLocation(cities, pt) {
 		}
 	}
 	if (!bestHood) return null;
-	// Compute display distance in miles: haversine to nearest boundary vertex
-	var miles = Infinity;
+	// Compute display distance and bearing: haversine to nearest boundary vertex
+	var miles = Infinity, closestVertex = null;
 	for (var k = 0; k < bestHood.boundary_points.length; k++) {
 		var m = haversineDistance(pt, bestHood.boundary_points[k]);
-		if (m < miles) miles = m;
+		if (m < miles) { miles = m; closestVertex = bestHood.boundary_points[k]; }
 	}
-	return { city: bestCity, name: bestName, miles: miles };
+	return { city: bestCity, name: bestName, miles: miles, direction: bearingTo(pt, closestVertex) };
 }

@@ -50,6 +50,17 @@ function linePointDistance(pointA, pointB, pointC, isSegment) {
 	return Math.abs(dist);
 }
 
+// Compass bearing from pt1 to pt2, as a cardinal/intercardinal string
+function bearingTo(pt1, pt2) {
+	var lat1 = pt1.y * Math.PI / 180, lat2 = pt2.y * Math.PI / 180;
+	var dlam = (pt2.x - pt1.x) * Math.PI / 180;
+	var y = Math.sin(dlam) * Math.cos(lat2);
+	var x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dlam);
+	var deg = (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+	var dirs = ['north', 'northeast', 'east', 'southeast', 'south', 'southwest', 'west', 'northwest'];
+	return dirs[Math.round(deg / 45) % 8];
+}
+
 // Haversine distance between two {x: lon, y: lat} points, returns miles
 function haversineDistance(pt1, pt2) {
 	var R = 3958.8;

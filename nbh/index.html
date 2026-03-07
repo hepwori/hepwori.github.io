@@ -40,7 +40,7 @@
     #intro:hover {
       color: white;
     }
-    #neighbor, #distance {
+    #neighbor, #distance, #direction {
       color: white;
     }
     #noresult, #result, #escape, #debug {
@@ -99,7 +99,7 @@
 <div id="noresult"></div>
 
 <div id="escape">
-  <span id="neighbor"></span> is only <span id="distance"></span> miles away.
+  <span id="neighbor"></span> is only <span id="distance"></span> miles to the <span id="direction"></span>.
 </div>
 
 <div id="debug">Accuracy: <span id="accuracy"></span> meters.</div>
@@ -152,6 +152,7 @@ function onPosition(pos) {
     var miles = Math.round(closest.miles * 10) / 10;
     setText('neighbor', closest.name + ' (' + closest.city + ')');
     setText('distance', miles);
+    setText('direction', closest.direction);
     show('escape');
   } else {
     hide('escape');
