@@ -43,14 +43,51 @@
     #neighbor, #distance {
       color: white;
     }
-    #noresult, #result, #trying, #escape, #debug {
+    #noresult, #result, #escape, #debug {
       display: none;
     }
+
+    /* dev harness */
+    #dev-panel {
+      position: fixed;
+      bottom: 16px;
+      right: 16px;
+      background: rgba(0,0,0,0.85);
+      border: 1px solid #444;
+      border-radius: 8px;
+      padding: 12px;
+      font-family: monospace;
+      font-size: 12px;
+      color: #aaa;
+      display: none;
+      z-index: 100;
+    }
+    #dev-panel input {
+      width: 120px;
+      background: #111;
+      border: 1px solid #444;
+      color: #fff;
+      padding: 3px 6px;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 12px;
+    }
+    #dev-panel button {
+      background: #333;
+      border: 1px solid #555;
+      color: #ccc;
+      padding: 3px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 11px;
+      margin: 2px 2px 0 0;
+    }
+    #dev-panel button:hover { background: #555; color: #fff; }
+    #dev-panel .presets { margin-top: 8px; }
   </style>
 </head>
 <body>
 
-<div id="intro">Where are you?</div>
 <div id="trying">Let's find out.</div>
 
 <div id="result">
@@ -66,6 +103,20 @@
 </div>
 
 <div id="debug">Accuracy: <span id="accuracy"></span> meters.</div>
+
+<div id="dev-panel">
+  <div style="color:#666;margin-bottom:6px">&#x1f9ea; dev: spoof location</div>
+  <input id="dev-lat" placeholder="lat" value="37.7749">
+  <input id="dev-lon" placeholder="lon" value="-122.4194">
+  <button onclick="spoofLocation()">Go</button>
+  <div class="presets">
+    <button onclick="preset(37.7599,-122.4148)">Mission</button>
+    <button onclick="preset(37.7956,-122.3933)">Financial District</button>
+    <button onclick="preset(37.8716,-122.2727)">Berkeley</button>
+    <button onclick="preset(40.0150,-105.2705)">Boulder downtown</button>
+    <button onclick="preset(40.0093,-105.2931)">Chautauqua</button>
+  </div>
+</div>
 
 <script>
 var cities = [
@@ -119,9 +170,6 @@ function onError(err) {
 }
 
 function start() {
-  hide('intro');
-  show('trying');
-
   if (!navigator.geolocation) {
     hide('trying');
     setText('noresult', 'Geolocation is not supported on this device.');
@@ -136,7 +184,26 @@ function start() {
   });
 }
 
-document.getElementById('intro').addEventListener('click', start);
+// Dev harness — activate with ?dev in the URL
+function spoofLocation() {
+  var lat = parseFloat(document.getElementById('dev-lat').value);
+  var lon = parseFloat(document.getElementById('dev-lon').value);
+  if (isNaN(lat) || isNaN(lon)) return;
+  onPosition({ coords: { latitude: lat, longitude: lon, accuracy: 1 } });
+}
+
+function preset(lat, lon) {
+  document.getElementById('dev-lat').value = lat;
+  document.getElementById('dev-lon').value = lon;
+  spoofLocation();
+}
+
+if (new URLSearchParams(window.location.search).has('dev')) {
+  document.getElementById('dev-panel').style.display = 'block';
+  hide('trying');
+} else {
+  start();
+}
 </script>
 
 </body>
