@@ -1,42 +1,54 @@
-
-function findNeighborhood(hoods, pt) {
-	for (var i=0; i<hoods.length; i++) {
-		console.log("checking for containment: " + hoods[i].name);
-		if (isPointInPoly(hoods[i].boundary_points, pt)) {
-			console.log("yay");
-			return hoods[i]["name"];
+// Find which neighborhood a point is in, across all cities.
+// cities: [{name, neighborhoods}]
+// pt: {x: lon, y: lat}
+// Returns {city, neighborhood} or null.
+function findLocation(cities, pt) {
+	for (var i = 0; i < cities.length; i++) {
+		var hoods = cities[i].neighborhoods;
+		for (var j = 0; j < hoods.length; j++) {
+			if (isPointInPoly(hoods[j].boundary_points, pt)) {
+				return { city: cities[i].name, neighborhood: hoods[j].name };
+			}
 		}
 	}
 	return null;
 }
 
-function distanceToNeighborhood(hood, pt) {
+// Distance from pt to the nearest boundary vertex of hood, in degree-space.
+// Used only for ranking; not displayed directly.
+function distanceToNeighborhoodDeg(hood, pt) {
 	if (isPointInPoly(hood.boundary_points, pt)) return 0;
-	var result = 1000000; // FIXME
-	var distance;
-	for (var i=0; i<hood.boundary_points.length-1; i++) {
-		distance = linePointDistance(hood.boundary_points[i], hood.boundary_points[i+1],pt,true);
-		if (distance < result) result = distance;
+	var best = Infinity;
+	for (var i = 0; i < hood.boundary_points.length - 1; i++) {
+		var d = linePointDistance(hood.boundary_points[i], hood.boundary_points[i + 1], pt, true);
+		if (d < best) best = d;
 	}
-	return result;
+	return best;
 }
 
-function closestNeighborhood(hoods, pt) {
-	var result = {};
-	var closest_distance = 1000000; // FIXME
-	var distance;
-	for (var i=0; i<hoods.length; i++) {
-		if (isPointInPoly(hoods[i].boundary_points, pt)) {
-			console.log("skipping containing neighborhood " + hoods[i]["name"]);
-			continue;		
-		}
-		distance = distanceToNeighborhood(hoods[i], pt);
-		console.log("distance to " + hoods[i]["name"] + " is " + Math.round(58.84 * distance * 100)/100 + " miles");
-		if (distance < closest_distance) {
-			closest_distance = distance;
-			result = { name: hoods[i]["name"], distance: 58.84 * distance };
-			console.log("currently closest: " + result + " is " + distance);
+// Find the closest neighborhood not containing pt, across all cities.
+// Returns {city, name, miles} or null.
+function closestLocation(cities, pt) {
+	var bestCity = null, bestName = null, bestHood = null, bestDeg = Infinity;
+	for (var i = 0; i < cities.length; i++) {
+		var hoods = cities[i].neighborhoods;
+		for (var j = 0; j < hoods.length; j++) {
+			if (isPointInPoly(hoods[j].boundary_points, pt)) continue;
+			var d = distanceToNeighborhoodDeg(hoods[j], pt);
+			if (d < bestDeg) {
+				bestDeg = d;
+				bestCity = cities[i].name;
+				bestName = hoods[j].name;
+				bestHood = hoods[j];
+			}
 		}
 	}
-	return result;
+	if (!bestHood) return null;
+	// Compute display distance in miles: haversine to nearest boundary vertex
+	var miles = Infinity;
+	for (var k = 0; k < bestHood.boundary_points.length; k++) {
+		var m = haversineDistance(pt, bestHood.boundary_points[k]);
+		if (m < miles) miles = m;
+	}
+	return { city: bestCity, name: bestName, miles: miles };
 }

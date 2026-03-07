@@ -1,117 +1,144 @@
-<html><head><meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
-	<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0">
-	<meta name="apple-mobile-web-app-capable" content="yes">  
-	<script type='text/javascript'>
-		if (location.protocol != 'https:')
-		{
-		 location.href = 'https:' + window.location.href.substring(window.location.protocol.length);
-		}
-	</script>
-	<script src="geometry.js"></script>
-	<script src="nbh.js"></script><style>@media print {#ghostery-purple-box {display:none !important}}</style>
-	<script src="sfnbh.js"></script>
-	<script src="jquery.min.js"></script>
-	<style>
-		body {
-			background: black;
-			color: white;
-			font-family: Georgia;
-		}
-		div {
-			padding-top: 1em;
-		}
-		#nbh {
-			font-weight: bold;
-			color: white;
-			font-size: 60px;
-			line-height: 1.0;
-		}
-		
-		#result, #noresult, #intro, #trying, #escape, #debug {
-			color: #888;
-		}
-		
-		#intro {
-			cursor: hand;
-		}
-		
-		#neighbor, #distance, #accuracy {
-			color: white;
-		}
-		
-		#noresult, #result, #trying, #escape, #debug {
-			display: none;
-		}
-	</style>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>What neighborhood am I in?</title>
+  <script src="geometry.js"></script>
+  <script src="nbh.js"></script>
+  <script src="sfnbh.js"></script>
+  <script>var sfNeighborhoods = neighborhoods;</script>
+  <script src="boulder.js"></script>
+  <style>
+    body {
+      background: black;
+      color: white;
+      font-family: Georgia, serif;
+      margin: 0;
+      padding: 40px 24px;
+    }
+    div {
+      padding-top: 1em;
+    }
+    #nbh {
+      font-weight: bold;
+      color: white;
+      font-size: 60px;
+      line-height: 1.0;
+    }
+    #city-name {
+      font-size: 22px;
+      color: #888;
+      font-weight: normal;
+    }
+    #result, #noresult, #trying, #escape, #debug {
+      color: #888;
+    }
+    #intro {
+      cursor: pointer;
+    }
+    #intro:hover {
+      color: white;
+    }
+    #neighbor, #distance {
+      color: white;
+    }
+    #noresult, #result, #trying, #escape, #debug {
+      display: none;
+    }
+  </style>
 </head>
-
 <body>
 
 <div id="intro">Where are you?</div>
-
 <div id="trying">Let's find out.</div>
 
-<div id="result">It looks like you're in<br><span id="nbh"></span></div>
-<div id="noresult">It looks like you're outside San Francisco.</div>
+<div id="result">
+  It looks like you're in<br>
+  <span id="nbh"></span>
+  <br><span id="city-name"></span>
+</div>
 
-<div id="escape">Want to change that? <span id="neighbor"></span> is only <span id="distance"></span> miles away.</div>
+<div id="noresult"></div>
+
+<div id="escape">
+  <span id="neighbor"></span> is only <span id="distance"></span> miles away.
+</div>
 
 <div id="debug">Accuracy: <span id="accuracy"></span> meters.</div>
 
 <script>
+var cities = [
+  { name: 'San Francisco', neighborhoods: sfNeighborhoods },
+  { name: 'Boulder',       neighborhoods: boulderNeighborhoods },
+];
 
-var firstTry = true;
+var watchId = null;
 
-function locationError(error) {
-	// TODO: something better than...
-	console.log(error);
+function show(id) { document.getElementById(id).style.display = ''; }
+function hide(id) { document.getElementById(id).style.display = 'none'; }
+function setText(id, t) { document.getElementById(id).textContent = t; }
+
+function onPosition(pos) {
+  hide('trying');
+  var pt = { x: pos.coords.longitude, y: pos.coords.latitude };
+
+  var found = findLocation(cities, pt);
+  if (found) {
+    setText('nbh', found.neighborhood);
+    setText('city-name', found.city);
+    setText('accuracy', Math.round(pos.coords.accuracy));
+    hide('noresult');
+    show('result');
+    show('debug');
+  } else {
+    hide('result');
+    setText('noresult', "It looks like you're not in any recognized neighborhood.");
+    show('noresult');
+  }
+
+  var closest = closestLocation(cities, pt);
+  if (closest) {
+    var miles = Math.round(closest.miles * 10) / 10;
+    setText('neighbor', closest.name + ' (' + closest.city + ')');
+    setText('distance', miles);
+    show('escape');
+  } else {
+    hide('escape');
+  }
 }
 
-function locationSuccess(position) {
-	console.log(position.coords.latitude);
-	console.log(position.coords.longitude);
-	var nbh = findNeighborhood(neighborhoods, {"y": position.coords.latitude, "x": position.coords.longitude });
-	if (!!nbh) {
-		$('#nbh').text(nbh);
-		$('#accuracy').text(Math.round(position.coords.accuracy));
-		$('#trying').hide();
-		$('#noresult').hide();
-		$('#result').show();
-		$('#debug').show();
-	} else {
-		$('#trying').hide();
-		$('#result').hide();
-		$('#noresult').show();
-	}
-	
-	var neighbor = closestNeighborhood(neighborhoods, {"y": position.coords.latitude, "x": position.coords.longitude });
-	if (neighbor.name) {
-		$('#neighbor').text(neighbor.name);
-		$('#distance').text(Math.round(neighbor.distance*10)/10);
-		$('#escape').show();
-	}
-	
-	window.setInterval(findLocation, 30000);
+function onError(err) {
+  hide('trying');
+  var msg = 'Could not determine your location.';
+  if (err.code === 1) msg = 'Location access was denied.';
+  else if (err.code === 2) msg = 'Your location is currently unavailable.';
+  else if (err.code === 3) msg = 'Location request timed out.';
+  setText('noresult', msg);
+  show('noresult');
 }
 
-function findLocation() {
-	if (firstTry) {
-		$('#trying').show();
-		firstTry = false;
-	}
-	if (navigator.geolocation) {
-		navigator.geolocation.getCurrentPosition(locationSuccess, locationError);
-	} else {
-		// TODO: what now
-	}
+function start() {
+  hide('intro');
+  show('trying');
+
+  if (!navigator.geolocation) {
+    hide('trying');
+    setText('noresult', 'Geolocation is not supported on this device.');
+    show('noresult');
+    return;
+  }
+
+  watchId = navigator.geolocation.watchPosition(onPosition, onError, {
+    enableHighAccuracy: true,
+    maximumAge: 30000,
+    timeout: 15000,
+  });
 }
 
-$(document).ready(function() {
-	$('#intro').click(findLocation)
-});
-
+document.getElementById('intro').addEventListener('click', start);
 </script>
 
-
-
-</body></html>
+</body>
+</html>

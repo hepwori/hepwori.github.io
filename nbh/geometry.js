@@ -49,3 +49,14 @@ function linePointDistance(pointA, pointB, pointC, isSegment) {
 	}
 	return Math.abs(dist);
 }
+
+// Haversine distance between two {x: lon, y: lat} points, returns miles
+function haversineDistance(pt1, pt2) {
+	var R = 3958.8;
+	var phi1 = pt1.y * Math.PI / 180, phi2 = pt2.y * Math.PI / 180;
+	var dphi = (pt2.y - pt1.y) * Math.PI / 180;
+	var dlam = (pt2.x - pt1.x) * Math.PI / 180;
+	var a = Math.sin(dphi/2) * Math.sin(dphi/2) +
+	        Math.cos(phi1) * Math.cos(phi2) * Math.sin(dlam/2) * Math.sin(dlam/2);
+	return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
