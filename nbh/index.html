@@ -108,6 +108,7 @@
   <div style="color:#666;margin-bottom:6px">&#x1f9ea; dev: spoof location</div>
   <input id="dev-coords" placeholder="lat, lon" style="width:210px" onpaste="handleDevPaste(event)">
   <button onclick="spoofLocation()">Go</button>
+  <div id="dev-debug" style="margin-top:8px; color:#666; line-height:1.6"></div>
   <div class="presets">
     <button onclick="preset(37.7599,-122.4148)">Mission</button>
     <button onclick="preset(37.7930,-122.3990)">Financial District</button>
@@ -154,6 +155,10 @@ function onPosition(pos) {
     setText('distance', miles);
     setText('direction', closest.direction);
     show('escape');
+    var dbg = document.getElementById('dev-debug');
+    if (dbg) dbg.innerHTML =
+      'closest pt: ' + closest.debugPt.y.toFixed(5) + ', ' + closest.debugPt.x.toFixed(5) + '<br>' +
+      'bearing: ' + closest.debugDeg.toFixed(1) + '&deg; (' + closest.direction + ')';
   } else {
     hide('escape');
   }

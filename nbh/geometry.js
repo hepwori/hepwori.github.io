@@ -65,15 +65,18 @@ function closestPointOnSegment(A, B, C) {
 	return { x: A.x + t*(B.x - A.x), y: A.y + t*(B.y - A.y) };
 }
 
-// Compass bearing from pt1 to pt2, as a cardinal/intercardinal string
-function bearingTo(pt1, pt2) {
+// Compass bearing from pt1 to pt2, in degrees clockwise from north
+function bearingDeg(pt1, pt2) {
 	var lat1 = pt1.y * Math.PI / 180, lat2 = pt2.y * Math.PI / 180;
 	var dlam = (pt2.x - pt1.x) * Math.PI / 180;
 	var y = Math.sin(dlam) * Math.cos(lat2);
 	var x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dlam);
-	var deg = (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+	return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+}
+
+function bearingTo(pt1, pt2) {
 	var dirs = ['north', 'northeast', 'east', 'southeast', 'south', 'southwest', 'west', 'northwest'];
-	return dirs[Math.round(deg / 45) % 8];
+	return dirs[Math.round(bearingDeg(pt1, pt2) / 45) % 8];
 }
 
 // Haversine distance between two {x: lon, y: lat} points, returns miles

@@ -52,5 +52,11 @@ function closestLocation(cities, pt) {
 		var m = haversineDistance(pt, p);
 		if (m < miles) { miles = m; closestPt = p; }
 	}
-	return { city: bestCity, name: bestName, miles: miles, direction: bearingTo(pt, closestPt) };
+	var deg = bearingDeg(pt, closestPt);
+	var dirs = ['north', 'northeast', 'east', 'southeast', 'south', 'southwest', 'west', 'northwest'];
+	return {
+		city: bestCity, name: bestName, miles: miles,
+		direction: dirs[Math.round(deg / 45) % 8],
+		debugDeg: deg, debugPt: closestPt
+	};
 }
