@@ -106,8 +106,7 @@
 
 <div id="dev-panel">
   <div style="color:#666;margin-bottom:6px">&#x1f9ea; dev: spoof location</div>
-  <input id="dev-lat" placeholder="lat" value="37.7749">
-  <input id="dev-lon" placeholder="lon" value="-122.4194">
+  <input id="dev-coords" placeholder="lat, lon" style="width:210px" onpaste="handleDevPaste(event)">
   <button onclick="spoofLocation()">Go</button>
   <div class="presets">
     <button onclick="preset(37.7599,-122.4148)">Mission</button>
@@ -185,17 +184,31 @@ function start() {
 }
 
 // Dev harness — activate with ?dev in the URL
+function parseCoords(str) {
+  var parts = str.split(',').map(function(s) { return parseFloat(s.trim()); });
+  if (parts.length === 2 && !parts.some(isNaN)) return { lat: parts[0], lon: parts[1] };
+  return null;
+}
+
+function handleDevPaste(e) {
+  var text = (e.clipboardData || window.clipboardData).getData('text');
+  var coords = parseCoords(text);
+  if (coords) {
+    e.preventDefault();
+    document.getElementById('dev-coords').value = text.trim();
+    onPosition({ coords: { latitude: coords.lat, longitude: coords.lon, accuracy: 1 } });
+  }
+}
+
 function spoofLocation() {
-  var lat = parseFloat(document.getElementById('dev-lat').value);
-  var lon = parseFloat(document.getElementById('dev-lon').value);
-  if (isNaN(lat) || isNaN(lon)) return;
-  onPosition({ coords: { latitude: lat, longitude: lon, accuracy: 1 } });
+  var coords = parseCoords(document.getElementById('dev-coords').value);
+  if (!coords) return;
+  onPosition({ coords: { latitude: coords.lat, longitude: coords.lon, accuracy: 1 } });
 }
 
 function preset(lat, lon) {
-  document.getElementById('dev-lat').value = lat;
-  document.getElementById('dev-lon').value = lon;
-  spoofLocation();
+  document.getElementById('dev-coords').value = lat + ', ' + lon;
+  onPosition({ coords: { latitude: lat, longitude: lon, accuracy: 1 } });
 }
 
 if (new URLSearchParams(window.location.search).has('dev')) {
