@@ -5,216 +5,634 @@
   <title>Neighborhood Digitizer</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { display: flex; height: 100vh; overflow: hidden; font-family: sans-serif; font-size: 13px; background: #111; }
 
+    body {
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 13px;
+      background: #0f0f14;
+      color: #ddd;
+    }
+
+    /* ── Sidebar ── */
     #sidebar {
-      width: 270px;
-      min-width: 270px;
-      background: #1a1a2e;
-      color: #eee;
-      padding: 14px;
-      overflow-y: auto;
+      width: 260px;
+      min-width: 260px;
+      background: #16161f;
+      border-right: 1px solid rgba(255,255,255,0.07);
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      overflow: hidden;
     }
 
+    #sidebar-title {
+      padding: 13px 14px 10px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #fff;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      flex-shrink: 0;
+    }
+
+    #sidebar-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+    }
+
+    /* ── Map area ── */
     #map-area {
       flex: 1;
-      overflow: auto;
-      background: #222;
-    }
-
-    #map-wrapper {
       position: relative;
-      display: inline-block;
+      overflow: hidden;
+      background: #111;
     }
 
-    #map-img {
+    #canvas {
       display: block;
-      height: 850px;
-      width: auto;
-      max-width: none;
-    }
-
-    #overlay {
-      position: absolute;
-      top: 0;
-      left: 0;
+      width: 100%;
+      height: 100%;
       cursor: crosshair;
     }
 
-    h2 { font-size: 15px; color: #fff; font-weight: bold; }
-    h3 { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: #666; margin-bottom: 6px; }
+    #canvas.panning { cursor: grabbing; }
+    #canvas.pan-ready { cursor: grab; }
+
+    /* ── Empty state ── */
+    #empty-state {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      color: #333;
+      pointer-events: none;
+      transition: background 0.15s;
+    }
+    #empty-state.dragover { background: rgba(74,158,255,0.06); color: #4a9eff; }
+    #empty-state svg { opacity: 0.4; }
+    #empty-state p { font-size: 15px; }
+    #empty-state small { font-size: 12px; color: #2a2a38; }
+
+    /* ── Zoom controls ── */
+    #zoom-controls {
+      position: absolute;
+      bottom: 30px;
+      right: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .zoom-btn {
+      width: 28px;
+      height: 28px;
+      background: rgba(22,22,31,0.92);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: #bbb;
+      cursor: pointer;
+      border-radius: 5px;
+      font-size: 15px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+      transition: background 0.1s;
+    }
+    .zoom-btn:hover { background: rgba(74,158,255,0.25); color: #fff; }
+
+    /* ── Status bar ── */
+    #statusbar {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 22px;
+      background: rgba(16,16,22,0.92);
+      border-top: 1px solid rgba(255,255,255,0.06);
+      display: flex;
+      align-items: center;
+      padding: 0 10px;
+      gap: 14px;
+      font-size: 11px;
+      color: #555;
+      font-family: monospace;
+    }
+    #statusbar .val { color: #888; }
+    #statusbar .hint { margin-left: auto; color: #3a4a5a; }
+
+    /* ── Sidebar components ── */
+    h3 {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: #555;
+      margin-bottom: 7px;
+    }
 
     .section {
-      background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.025);
+      border: 1px solid rgba(255,255,255,0.06);
       border-radius: 6px;
       padding: 10px;
     }
 
-    .mode-btns { display: flex; gap: 6px; }
+    .mode-btns { display: flex; gap: 5px; }
     .mode-btn {
-      flex: 1; padding: 6px; border: 1px solid #444;
-      background: transparent; color: #888; cursor: pointer;
-      border-radius: 4px; font-size: 12px;
+      flex: 1;
+      padding: 6px;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: transparent;
+      color: #777;
+      cursor: pointer;
+      border-radius: 4px;
+      font-size: 12px;
+      transition: all 0.1s;
     }
+    .mode-btn:hover:not(.active) { color: #ccc; border-color: rgba(255,255,255,0.2); }
     .mode-btn.active { background: #4a9eff; border-color: #4a9eff; color: #fff; }
 
     button {
-      padding: 5px 10px; background: #4a9eff; border: none;
-      color: #fff; cursor: pointer; border-radius: 4px; font-size: 12px;
+      padding: 5px 10px;
+      background: #4a9eff;
+      border: none;
+      color: #fff;
+      cursor: pointer;
+      border-radius: 4px;
+      font-size: 12px;
+      transition: opacity 0.1s;
+      white-space: nowrap;
     }
-    button:disabled { background: #333; color: #666; cursor: default; }
-    button.danger { background: #c0392b; }
+    button:hover { opacity: 0.85; }
+    button:disabled { background: #222; color: #444; cursor: default; opacity: 1; }
+    button.danger  { background: #c0392b; }
     button.success { background: #27ae60; }
-    button.sm { padding: 2px 6px; font-size: 10px; }
-
-    input[type=text] {
-      width: 100%; padding: 6px; background: rgba(255,255,255,0.08);
-      border: 1px solid #444; color: #fff; border-radius: 4px; font-size: 12px;
+    button.ghost {
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.13);
+      color: #999;
     }
-    input[type=text]::placeholder { color: #555; }
+    button.ghost:hover { background: rgba(255,255,255,0.05); color: #fff; }
+    button.sm { padding: 2px 7px; font-size: 10px; }
+
+    input[type=text], input[type=url] {
+      width: 100%;
+      padding: 6px 8px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: #eee;
+      border-radius: 4px;
+      font-size: 12px;
+      outline: none;
+    }
+    input:focus { border-color: rgba(74,158,255,0.6); }
+    input::placeholder { color: #3a3a4a; }
 
     ul { list-style: none; }
     li {
-      padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,0.05);
-      font-size: 11px; color: #aaa; display: flex; justify-content: space-between; align-items: center;
+      padding: 4px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      font-size: 11px;
+      color: #888;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 5px;
     }
+    li:last-child { border-bottom: none; }
+    li span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-    .status { font-size: 11px; color: #666; font-style: italic; margin-top: 6px; }
-    .hint { font-size: 11px; color: #f0a500; line-height: 1.5; }
+    .scrolllist { max-height: 130px; overflow-y: auto; margin-top: 7px; }
+
+    .row { display: flex; gap: 6px; margin-top: 7px; align-items: center; flex-wrap: wrap; }
+
+    .status { font-size: 11px; color: #555; font-style: italic; margin-top: 6px; }
+    .hint-text { font-size: 11px; color: #b07d20; line-height: 1.55; }
 
     #output {
-      width: 100%; height: 110px; background: #0d1117; color: #7ec8e3;
-      border: 1px solid #333; font-family: monospace; font-size: 10px;
-      padding: 6px; resize: vertical; border-radius: 4px;
+      width: 100%;
+      height: 95px;
+      background: #0a0a12;
+      color: #6ab4d0;
+      border: 1px solid rgba(255,255,255,0.07);
+      font-family: monospace;
+      font-size: 10px;
+      padding: 6px;
+      resize: vertical;
+      border-radius: 4px;
+      outline: none;
     }
 
-    .row { display: flex; gap: 6px; margin-top: 6px; }
+    .kbd {
+      display: inline-block;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 3px;
+      padding: 1px 5px;
+      font-size: 10px;
+      font-family: monospace;
+      color: #666;
+    }
+
+    #shortcuts {
+      font-size: 10px;
+      color: #333;
+      line-height: 2;
+      padding: 2px;
+    }
+    #shortcuts strong { color: #444; display: block; margin-bottom: 2px; }
   </style>
 </head>
 <body>
 
 <div id="sidebar">
-  <h2>Neighborhood Digitizer</h2>
+  <div id="sidebar-title">Neighborhood Digitizer</div>
+  <div id="sidebar-scroll">
 
-  <div class="section">
-    <h3>Mode</h3>
-    <div class="mode-btns">
-      <button class="mode-btn active" id="btn-mode-cal" onclick="setMode('calibrate')">1. Calibrate</button>
-      <button class="mode-btn" id="btn-mode-dig" onclick="setMode('digitize')">2. Digitize</button>
+    <!-- IMAGE -->
+    <div class="section">
+      <h3>Image</h3>
+      <div class="row" style="margin-top:0">
+        <button class="ghost" onclick="document.getElementById('file-input').click()">Open file&hellip;</button>
+        <button class="ghost" onclick="pasteImage()">Paste</button>
+      </div>
+      <input type="file" id="file-input" accept="image/*" style="display:none" onchange="loadFromFileInput(this)">
+      <div class="row">
+        <input type="url" id="url-input" placeholder="&hellip;or paste an image URL">
+        <button class="ghost" onclick="loadFromUrl()">Load</button>
+      </div>
+      <p class="status" id="image-status">No image. Drag &amp; drop also works.</p>
     </div>
-  </div>
 
-  <!-- CALIBRATE PANEL -->
-  <div class="section" id="panel-calibrate">
-    <h3>Reference Points (<span id="ref-count">0</span>)</h3>
-    <p class="hint">Click the map, then enter the real-world lat,lon. Use Google Maps to look up coordinates for visible landmarks (road intersections work well).</p>
-    <ul id="ref-list" style="margin-top:8px"></ul>
-    <div class="row">
-      <button id="btn-compute" onclick="computeTransform()" disabled>Compute transform</button>
-      <button class="danger" onclick="clearRefs()">Clear</button>
+    <!-- MODE -->
+    <div class="section">
+      <h3>Mode</h3>
+      <div class="mode-btns">
+        <button class="mode-btn active" id="btn-cal" onclick="setMode('calibrate')">1. Calibrate</button>
+        <button class="mode-btn"        id="btn-dig" onclick="setMode('digitize')">2. Digitize</button>
+      </div>
     </div>
-    <p class="status" id="transform-status"></p>
-  </div>
 
-  <!-- DIGITIZE PANEL -->
-  <div class="section" id="panel-digitize" style="display:none">
-    <h3>Current Neighborhood</h3>
-    <input type="text" id="nbh-name" placeholder="Name (e.g. North Boulder)">
-    <div class="row">
-      <button onclick="startPolygon()">Start</button>
-      <button class="success" id="btn-close" onclick="closePolygon()" disabled>Close</button>
-      <button id="btn-undo" onclick="undoVertex()" disabled>Undo</button>
+    <!-- CALIBRATE -->
+    <div class="section" id="panel-calibrate">
+      <h3>Reference Points <span id="ref-count" style="color:#444">(0 / 3+)</span></h3>
+      <p class="hint-text">Click the map to pin a point, then enter its real-world lat,lon. Use Google Maps (right-click &rarr; copy coordinates) for easy lookup.</p>
+      <ul id="ref-list" class="scrolllist"></ul>
+      <div class="row">
+        <button id="btn-compute" onclick="computeTransform()" disabled>Compute transform</button>
+        <button class="ghost sm" onclick="clearRefs()">Clear all</button>
+      </div>
+      <p class="status" id="transform-status"></p>
     </div>
-    <p class="status" id="vertex-status">No active polygon.</p>
-    <br>
-    <h3>Completed (<span id="nbh-count">0</span>)</h3>
-    <ul id="nbh-list"></ul>
-  </div>
 
-  <!-- OUTPUT -->
-  <div class="section">
-    <h3>Output JS</h3>
-    <textarea id="output" readonly placeholder="// neighborhoods data will appear here"></textarea>
-    <div class="row">
-      <button onclick="copyOutput()">Copy</button>
-      <button onclick="updateOutput()">Refresh</button>
+    <!-- DIGITIZE -->
+    <div class="section" id="panel-digitize" style="display:none">
+      <h3>Current Polygon</h3>
+      <input type="text" id="nbh-name" placeholder="Neighborhood name&hellip;">
+      <div class="row">
+        <button onclick="startPolygon()">Start</button>
+        <button class="success" id="btn-close" onclick="closePolygon()" disabled>Close</button>
+        <button id="btn-undo" onclick="undoVertex()" disabled>Undo</button>
+      </div>
+      <p class="status" id="vertex-status">No active polygon.</p>
+      <br>
+      <h3>Completed <span id="nbh-count" style="color:#444">(0)</span></h3>
+      <ul id="nbh-list" class="scrolllist"></ul>
     </div>
+
+    <!-- OUTPUT -->
+    <div class="section">
+      <h3>Output JS</h3>
+      <textarea id="output" readonly placeholder="// neighborhoods data will appear here&hellip;"></textarea>
+      <div class="row">
+        <button onclick="copyOutput()">Copy JS</button>
+        <button class="ghost" onclick="exportSession()">Export&hellip;</button>
+        <button class="ghost" onclick="document.getElementById('import-input').click()">Import&hellip;</button>
+        <input type="file" id="import-input" accept=".json" style="display:none" onchange="importSession(this)">
+      </div>
+    </div>
+
+    <!-- SHORTCUTS -->
+    <div id="shortcuts">
+      <strong>Shortcuts</strong>
+      <span class="kbd">scroll</span> zoom &nbsp;
+      <span class="kbd">space</span>+drag pan<br>
+      <span class="kbd">Enter</span> close polygon &nbsp;
+      <span class="kbd">&#9003;</span> undo vertex<br>
+      <span class="kbd">Esc</span> cancel &nbsp;
+      <span class="kbd">F</span> fit to window
+    </div>
+
   </div>
 </div>
 
 <div id="map-area">
-  <div id="map-wrapper">
-    <img id="map-img"
-      src="https://assets.simpleviewinc.com/simpleview/image/upload/v1/clients/boulder/Visit_Boulder_Neighborhood_Map_ea61ecb2-6179-4d45-ac05-26f3a54b7471.jpg"
-      onload="initCanvas()"
-      alt="Boulder neighborhood map"
-    >
-    <canvas id="overlay"></canvas>
+  <canvas id="canvas"></canvas>
+
+  <div id="empty-state">
+    <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+      <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/>
+      <line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/>
+    </svg>
+    <p>Drop a map image here</p>
+    <small>or use Open / Paste / URL in the sidebar</small>
+  </div>
+
+  <div id="zoom-controls">
+    <div class="zoom-btn" onclick="stepZoom(1.25)" title="Zoom in">+</div>
+    <div class="zoom-btn" onclick="stepZoom(0.8)"  title="Zoom out">&minus;</div>
+    <div class="zoom-btn" onclick="fitView()"       title="Fit to window (F)" style="font-size:10px;font-family:sans-serif">fit</div>
+  </div>
+
+  <div id="statusbar">
+    <span>zoom <span class="val" id="sb-zoom">—</span></span>
+    <span id="sb-coords"></span>
+    <span class="hint" id="sb-hint"></span>
   </div>
 </div>
 
 <script>
-// ── State ──────────────────────────────────────────────────────────────────
+// ── State ─────────────────────────────────────────────────────────────────────
+let sourceImage = null;
+let imgW = 0, imgH = 0;
+
+// View: image coords → display coords: dx = ix*zoom + panX
+let view = { zoom: 1, panX: 0, panY: 0 };
+
+// Interaction
+let isPanning  = false;
+let panStart   = { mx: 0, my: 0, px: 0, py: 0 };
+let spaceDown  = false;
+let dragMoved  = false;
+let mouseImg   = null; // current mouse pos in image coords
+
 let mode = 'calibrate';
-let refs = [];          // [{px, py, lat, lon}]
+let refs = [];          // [{x, y, lat, lon}]  — image coords
 let transform = null;   // {latCoeffs:[a,b,c], lonCoeffs:[d,e,f]}
-let neighborhoods = []; // [{name, points:[{px,py}]}]
-let currentPoly = null; // {name, points:[{px,py}]}
+let neighborhoods = []; // [{name, points:[{x,y}]}]
+let currentPoly = null; // {name, points:[{x,y}]}
 
-const COLORS = ['#4a9eff','#2ecc71','#e74c3c','#f39c12','#9b59b6','#1abc9c','#e67e22','#e91e63','#00bcd4','#ff5722'];
+const COLORS = ['#4a9eff','#2ecc71','#e74c3c','#f39c12','#9b59b6','#1abc9c','#e67e22','#e91e63','#00bcd4','#ff5722','#cddc39','#ff80ab'];
+const SNAP_PX = 12; // display pixels for close-polygon snap
 
-// ── Canvas init ────────────────────────────────────────────────────────────
-const img    = document.getElementById('map-img');
-const canvas = document.getElementById('overlay');
-const ctx    = canvas.getContext('2d');
+// ── Canvas & resize ───────────────────────────────────────────────────────────
+const mapArea = document.getElementById('map-area');
+const canvas  = document.getElementById('canvas');
+const ctx     = canvas.getContext('2d');
 
-function initCanvas() {
-  canvas.width  = img.offsetWidth;
-  canvas.height = img.offsetHeight;
+new ResizeObserver(() => {
+  canvas.width  = mapArea.clientWidth;
+  canvas.height = mapArea.clientHeight;
+  redraw();
+}).observe(mapArea);
+
+// ── Coordinate transforms ─────────────────────────────────────────────────────
+function dispToImg(dx, dy) {
+  return { x: (dx - view.panX) / view.zoom, y: (dy - view.panY) / view.zoom };
+}
+function imgToDisp(ix, iy) {
+  return { x: ix * view.zoom + view.panX, y: iy * view.zoom + view.panY };
+}
+function imgToLL(ix, iy) {
+  if (!transform) return null;
+  const [a,b,c] = transform.latCoeffs;
+  const [d,e,f] = transform.lonCoeffs;
+  return { lat: a*ix + b*iy + c, lon: d*ix + e*iy + f };
+}
+
+// ── View ──────────────────────────────────────────────────────────────────────
+function fitView() {
+  if (!sourceImage) return;
+  const scale = Math.min(canvas.width / imgW, canvas.height / imgH) * 0.96;
+  view.zoom = scale;
+  view.panX = (canvas.width  - imgW * scale) / 2;
+  view.panY = (canvas.height - imgH * scale) / 2;
   redraw();
 }
-window.addEventListener('resize', () => { if (img.complete) initCanvas(); });
 
-// ── Input ──────────────────────────────────────────────────────────────────
-canvas.addEventListener('click', e => {
+function zoomAt(cx, cy, factor) {
+  const ix = (cx - view.panX) / view.zoom;
+  const iy = (cy - view.panY) / view.zoom;
+  view.zoom = Math.max(0.04, Math.min(50, view.zoom * factor));
+  view.panX = cx - ix * view.zoom;
+  view.panY = cy - iy * view.zoom;
+  redraw();
+}
+
+function stepZoom(f) { zoomAt(canvas.width / 2, canvas.height / 2, f); }
+
+// ── Image loading ─────────────────────────────────────────────────────────────
+function loadImageObj(el) {
+  sourceImage = el;
+  imgW = el.naturalWidth;
+  imgH = el.naturalHeight;
+  document.getElementById('empty-state').style.display = 'none';
+  document.getElementById('image-status').textContent = `${imgW} × ${imgH} px`;
+  fitView();
+}
+
+function loadFromUrl() {
+  const url = document.getElementById('url-input').value.trim();
+  if (!url) return;
+  const el = new Image();
+  el.crossOrigin = 'anonymous';
+  el.onload = () => { if (confirmNewImage()) loadImageObj(el); };
+  el.onerror = () => {
+    const el2 = new Image();
+    el2.onload  = () => { if (confirmNewImage()) loadImageObj(el2); };
+    el2.onerror = () => alert('Could not load image. Check the URL.');
+    el2.src = url;
+  };
+  el.src = url;
+}
+
+function loadFromFileInput(input) {
+  const file = input.files[0];
+  if (file) loadBlob(file);
+  input.value = '';
+}
+
+function loadBlob(blob) {
+  if (!blob.type.startsWith('image/')) { alert('Not an image file.'); return; }
+  const url = URL.createObjectURL(blob);
+  const el = new Image();
+  el.onload = () => { if (confirmNewImage()) loadImageObj(el); URL.revokeObjectURL(url); };
+  el.onerror = () => { alert('Could not load image.'); URL.revokeObjectURL(url); };
+  el.src = url;
+}
+
+async function pasteImage() {
+  try {
+    const items = await navigator.clipboard.read();
+    for (const item of items) {
+      const imgType = item.types.find(t => t.startsWith('image/'));
+      if (imgType) { loadBlob(await item.getType(imgType)); return; }
+    }
+    alert('No image found in clipboard.');
+  } catch {
+    alert('Clipboard access denied — try Ctrl+V with the page focused instead.');
+  }
+}
+
+// Ctrl+V anywhere on the page
+document.addEventListener('paste', e => {
+  for (const item of e.clipboardData.items) {
+    if (item.type.startsWith('image/')) { loadBlob(item.getAsFile()); return; }
+  }
+});
+
+// Drag and drop
+mapArea.addEventListener('dragover', e => {
+  e.preventDefault();
+  document.getElementById('empty-state').classList.add('dragover');
+});
+mapArea.addEventListener('dragleave', () => {
+  document.getElementById('empty-state').classList.remove('dragover');
+});
+mapArea.addEventListener('drop', e => {
+  e.preventDefault();
+  document.getElementById('empty-state').classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file) loadBlob(file);
+});
+
+function confirmNewImage() {
+  if (refs.length === 0 && neighborhoods.length === 0) return true;
+  if (!confirm('Load new image? This will clear existing calibration and polygons.')) return false;
+  refs = []; transform = null; neighborhoods = []; currentPoly = null;
+  updateRefList(); updateNbhList(); updateOutput();
+  document.getElementById('transform-status').textContent = '';
+  return true;
+}
+
+// ── Events ────────────────────────────────────────────────────────────────────
+canvas.addEventListener('wheel', e => {
+  e.preventDefault();
+  const r = canvas.getBoundingClientRect();
+  zoomAt(e.clientX - r.left, e.clientY - r.top, e.deltaY < 0 ? 1.12 : 1/1.12);
+}, { passive: false });
+
+canvas.addEventListener('mousedown', e => {
+  dragMoved = false;
   const r  = canvas.getBoundingClientRect();
-  const px = e.clientX - r.left;
-  const py = e.clientY - r.top;
-  if (mode === 'calibrate') handleCalClick(px, py);
-  else if (mode === 'digitize' && currentPoly) handleDigClick(px, py);
+  const dx = e.clientX - r.left, dy = e.clientY - r.top;
+  if (e.button === 1 || (e.button === 0 && spaceDown)) {
+    isPanning = true;
+    panStart = { mx: dx, my: dy, px: view.panX, py: view.panY };
+    canvas.classList.add('panning');
+    e.preventDefault();
+  }
+});
+
+canvas.addEventListener('mousemove', e => {
+  const r  = canvas.getBoundingClientRect();
+  const dx = e.clientX - r.left, dy = e.clientY - r.top;
+  mouseImg = dispToImg(dx, dy);
+  if (isPanning) {
+    view.panX = panStart.px + (dx - panStart.mx);
+    view.panY = panStart.py + (dy - panStart.my);
+    dragMoved = true;
+  }
+  redraw();
+  updateStatusBar();
+});
+
+canvas.addEventListener('mouseup', e => {
+  if (isPanning || e.button === 1) {
+    isPanning = false;
+    canvas.classList.remove('panning');
+    return;
+  }
+  if (dragMoved) return;
+
+  if (!sourceImage) return;
+  const r  = canvas.getBoundingClientRect();
+  const dx = e.clientX - r.left, dy = e.clientY - r.top;
+  const ip = dispToImg(dx, dy);
+
+  if (mode === 'calibrate') {
+    handleCalClick(ip.x, ip.y);
+  } else if (mode === 'digitize' && currentPoly) {
+    // snap to first vertex?
+    if (currentPoly.points.length >= 3) {
+      const first = imgToDisp(currentPoly.points[0].x, currentPoly.points[0].y);
+      if (Math.hypot(dx - first.x, dy - first.y) <= SNAP_PX) { closePolygon(); return; }
+    }
+    handleDigClick(ip.x, ip.y);
+  }
 });
 
 canvas.addEventListener('dblclick', e => {
   if (mode === 'digitize' && currentPoly) { e.preventDefault(); closePolygon(); }
 });
 
-// ── Calibration ────────────────────────────────────────────────────────────
-function handleCalClick(px, py) {
-  const raw = prompt('Coordinates for this point:\nLat, Lon  (e.g.  40.0150, -105.2705)\n\nTip: right-click any spot in Google Maps to copy coordinates.');
+canvas.addEventListener('mouseleave', () => { mouseImg = null; updateStatusBar(); redraw(); });
+
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+  if (e.code === 'Space') {
+    if (!spaceDown) { spaceDown = true; canvas.classList.add('pan-ready'); }
+    e.preventDefault();
+  }
+  if (e.key === 'Enter'     && currentPoly) closePolygon();
+  if (e.key === 'Backspace' && currentPoly) undoVertex();
+  if (e.key === 'Escape'    && currentPoly) cancelPolygon();
+  if (e.key.toLowerCase() === 'f') fitView();
+  if (e.key === '+' || e.key === '=') stepZoom(1.25);
+  if (e.key === '-') stepZoom(0.8);
+});
+
+document.addEventListener('keyup', e => {
+  if (e.code === 'Space') {
+    spaceDown = false;
+    canvas.classList.remove('pan-ready');
+    if (!isPanning) canvas.classList.remove('panning');
+  }
+});
+
+// ── Calibration ───────────────────────────────────────────────────────────────
+function handleCalClick(ix, iy) {
+  const raw = prompt(
+    'Coordinates for this point:\nLat, Lon  (e.g.  40.0150, -105.2705)\n\n' +
+    'Tip: right-click any spot in Google Maps → "Copy coordinates"'
+  );
   if (!raw) return;
   const parts = raw.split(',').map(s => parseFloat(s.trim()));
   if (parts.length !== 2 || parts.some(isNaN)) { alert('Bad format — use: lat, lon'); return; }
-  refs.push({ px, py, lat: parts[0], lon: parts[1] });
+  refs.push({ x: ix, y: iy, lat: parts[0], lon: parts[1] });
   updateRefList();
   redraw();
 }
 
 function updateRefList() {
-  document.getElementById('ref-count').textContent = refs.length;
-  document.getElementById('btn-compute').disabled = refs.length < 3;
-  document.getElementById('ref-list').innerHTML =
-    refs.map((r, i) => `<li><span>#${i+1}: ${r.lat.toFixed(4)}, ${r.lon.toFixed(4)}</span>
-      <button class="sm danger" onclick="deleteRef(${i})">×</button></li>`).join('');
+  const n = refs.length;
+  document.getElementById('ref-count').textContent = `(${n} / 3+)`;
+  document.getElementById('btn-compute').disabled = n < 3;
+  document.getElementById('ref-list').innerHTML = refs.map((r, i) =>
+    `<li>
+      <span>#${i+1}: ${r.lat.toFixed(5)}, ${r.lon.toFixed(5)}</span>
+      <button class="sm danger" onclick="deleteRef(${i})">×</button>
+    </li>`
+  ).join('');
 }
 
 function deleteRef(i) { refs.splice(i, 1); updateRefList(); redraw(); }
-function clearRefs()  { refs = []; transform = null; updateRefList(); document.getElementById('transform-status').textContent = ''; redraw(); }
 
-// ── Affine transform ───────────────────────────────────────────────────────
+function clearRefs() {
+  if (!confirm('Clear all reference points and reset the transform?')) return;
+  refs = []; transform = null;
+  document.getElementById('transform-status').textContent = '';
+  updateRefList(); redraw();
+}
+
+// ── Affine transform ──────────────────────────────────────────────────────────
 function det3(m) {
   return m[0][0]*(m[1][1]*m[2][2] - m[1][2]*m[2][1])
        - m[0][1]*(m[1][0]*m[2][2] - m[1][2]*m[2][0])
@@ -233,43 +651,41 @@ function solve3x3(A, b) {
 
 function computeTransform() {
   const r = refs.slice(0, 3);
-  const M = r.map(p => [p.px, p.py, 1]);
+  const M = r.map(p => [p.x, p.y, 1]);
   const latC = solve3x3(M, r.map(p => p.lat));
   const lonC = solve3x3(M, r.map(p => p.lon));
-  if (!latC || !lonC) { alert('Cannot compute — reference points may be collinear. Try different ones.'); return; }
+  if (!latC || !lonC) {
+    alert('Cannot compute — reference points may be collinear. Try different locations.');
+    return;
+  }
   transform = { latCoeffs: latC, lonCoeffs: lonC };
-
-  let statusMsg = 'Transform computed.';
+  let msg = 'Transform ready.';
   if (refs.length > 3) {
     const errs = refs.map(r => {
-      const ll = pxToLL(r.px, r.py);
-      return Math.sqrt((ll.lat - r.lat)**2 + (ll.lon - r.lon)**2);
+      const ll = imgToLL(r.x, r.y);
+      return Math.hypot(ll.lat - r.lat, ll.lon - r.lon) * 111000;
     });
-    statusMsg += ` Residual: ${(Math.max(...errs) * 111000).toFixed(0)} m`;
+    msg += ` Max residual: ${Math.max(...errs).toFixed(0)} m`;
   }
-  document.getElementById('transform-status').textContent = statusMsg;
+  document.getElementById('transform-status').textContent = msg;
+  redraw();
 }
 
-function pxToLL(px, py) {
-  const [a,b,c] = transform.latCoeffs;
-  const [d,e,f] = transform.lonCoeffs;
-  return { lat: a*px + b*py + c, lon: d*px + e*py + f };
-}
-
-// ── Digitizing ─────────────────────────────────────────────────────────────
+// ── Digitizing ────────────────────────────────────────────────────────────────
 function startPolygon() {
   const name = document.getElementById('nbh-name').value.trim();
   if (!name)      { alert('Enter a neighborhood name first.'); return; }
-  if (!transform) { alert('Compute the transform first (in Calibrate mode).'); return; }
+  if (!transform) { alert('Compute the calibration transform first.'); return; }
   currentPoly = { name, points: [] };
   document.getElementById('btn-close').disabled = false;
   document.getElementById('btn-undo').disabled  = false;
   updateVertexStatus();
+  document.getElementById('sb-hint').textContent = 'Click vertices — double-click or Enter to close, Esc to cancel';
   redraw();
 }
 
-function handleDigClick(px, py) {
-  currentPoly.points.push({ px, py });
+function handleDigClick(ix, iy) {
+  currentPoly.points.push({ x: ix, y: iy });
   updateVertexStatus();
   redraw();
 }
@@ -281,9 +697,19 @@ function closePolygon() {
   document.getElementById('btn-close').disabled = true;
   document.getElementById('btn-undo').disabled  = true;
   document.getElementById('nbh-name').value = '';
+  document.getElementById('sb-hint').textContent = '';
   updateVertexStatus();
   updateNbhList();
   updateOutput();
+  redraw();
+}
+
+function cancelPolygon() {
+  currentPoly = null;
+  document.getElementById('btn-close').disabled = true;
+  document.getElementById('btn-undo').disabled  = true;
+  document.getElementById('sb-hint').textContent = '';
+  updateVertexStatus();
   redraw();
 }
 
@@ -298,27 +724,35 @@ function undoVertex() {
 function updateVertexStatus() {
   const n = currentPoly ? currentPoly.points.length : 0;
   document.getElementById('vertex-status').textContent =
-    currentPoly ? `"${currentPoly.name}" — ${n} vertices` : 'No active polygon.';
+    currentPoly ? `"${currentPoly.name}" — ${n} ${n === 1 ? 'vertex' : 'vertices'}` : 'No active polygon.';
 }
 
 function updateNbhList() {
-  document.getElementById('nbh-count').textContent = neighborhoods.length;
-  document.getElementById('nbh-list').innerHTML =
-    neighborhoods.map((n, i) => `<li>
+  document.getElementById('nbh-count').textContent = `(${neighborhoods.length})`;
+  document.getElementById('nbh-list').innerHTML = neighborhoods.map((n, i) =>
+    `<li>
       <span style="color:${COLORS[i%COLORS.length]}">${n.name}</span>
-      <span style="color:#666">${n.points.length} pts</span>
+      <span style="color:#444;flex-shrink:0">${n.points.length} pts</span>
       <button class="sm danger" onclick="deleteNbh(${i})">×</button>
-    </li>`).join('');
+    </li>`
+  ).join('');
 }
 
-function deleteNbh(i) { neighborhoods.splice(i, 1); updateNbhList(); updateOutput(); redraw(); }
+function deleteNbh(i) {
+  if (!confirm(`Delete "${neighborhoods[i].name}"?`)) return;
+  neighborhoods.splice(i, 1);
+  updateNbhList(); updateOutput(); redraw();
+}
 
-// ── Output ─────────────────────────────────────────────────────────────────
+// ── Output / session ──────────────────────────────────────────────────────────
 function updateOutput() {
-  if (!transform || neighborhoods.length === 0) return;
+  if (!transform || neighborhoods.length === 0) {
+    document.getElementById('output').value = '';
+    return;
+  }
   const parts = neighborhoods.map(n => {
     const pts = n.points.map(p => {
-      const ll = pxToLL(p.px, p.py);
+      const ll = imgToLL(p.x, p.y);
       return `    { x: ${ll.lon.toFixed(6)}, y: ${ll.lat.toFixed(6)} }`;
     }).join(',\n');
     return `  {\n    name: "${n.name}",\n    boundary_points: [\n${pts}\n    ]\n  }`;
@@ -332,66 +766,137 @@ function copyOutput() {
   document.execCommand('copy');
 }
 
-// ── Mode switching ─────────────────────────────────────────────────────────
+function exportSession() {
+  const blob = new Blob([JSON.stringify({ refs, neighborhoods }, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'digitizer-session.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function importSession(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (data.refs)          { refs          = data.refs;          updateRefList(); }
+      if (data.neighborhoods) { neighborhoods = data.neighborhoods; updateNbhList(); updateOutput(); }
+      if (refs.length >= 3) computeTransform();
+      redraw();
+    } catch { alert('Could not parse session file.'); }
+  };
+  reader.readAsText(file);
+  input.value = '';
+}
+
+// ── Mode ──────────────────────────────────────────────────────────────────────
 function setMode(m) {
   mode = m;
-  document.getElementById('btn-mode-cal').classList.toggle('active', m === 'calibrate');
-  document.getElementById('btn-mode-dig').classList.toggle('active', m === 'digitize');
+  document.getElementById('btn-cal').classList.toggle('active', m === 'calibrate');
+  document.getElementById('btn-dig').classList.toggle('active', m === 'digitize');
   document.getElementById('panel-calibrate').style.display = m === 'calibrate' ? '' : 'none';
   document.getElementById('panel-digitize').style.display  = m === 'digitize'  ? '' : 'none';
 }
 
-// ── Drawing ────────────────────────────────────────────────────────────────
+// ── Status bar ────────────────────────────────────────────────────────────────
+function updateStatusBar() {
+  document.getElementById('sb-zoom').textContent = `${Math.round(view.zoom * 100)}%`;
+  const coordEl = document.getElementById('sb-coords');
+  if (mouseImg && transform) {
+    const ll = imgToLL(mouseImg.x, mouseImg.y);
+    coordEl.textContent = `${ll.lat.toFixed(5)}, ${ll.lon.toFixed(5)}`;
+  } else if (mouseImg) {
+    coordEl.textContent = `img (${Math.round(mouseImg.x)}, ${Math.round(mouseImg.y)})`;
+  } else {
+    coordEl.textContent = '';
+  }
+}
+
+// ── Drawing ───────────────────────────────────────────────────────────────────
 function redraw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+  if (!sourceImage) return;
+
+  // Map image
+  ctx.drawImage(sourceImage, view.panX, view.panY, imgW * view.zoom, imgH * view.zoom);
 
   // Completed neighborhoods
   neighborhoods.forEach((n, i) => {
     if (n.points.length < 2) return;
     const color = COLORS[i % COLORS.length];
+    const disp  = n.points.map(p => imgToDisp(p.x, p.y));
+
     ctx.beginPath();
-    ctx.moveTo(n.points[0].px, n.points[0].py);
-    n.points.slice(1).forEach(p => ctx.lineTo(p.px, p.py));
+    ctx.moveTo(disp[0].x, disp[0].y);
+    disp.slice(1).forEach(p => ctx.lineTo(p.x, p.y));
     ctx.closePath();
     ctx.fillStyle   = color + '28';
     ctx.strokeStyle = color;
     ctx.lineWidth   = 2;
     ctx.fill();
     ctx.stroke();
-    // centroid label
-    const cx = n.points.reduce((s, p) => s + p.px, 0) / n.points.length;
-    const cy = n.points.reduce((s, p) => s + p.py, 0) / n.points.length;
-    ctx.font      = 'bold 11px sans-serif';
+
+    // Centroid label, scale with zoom
+    const cx = disp.reduce((s,p) => s+p.x, 0) / disp.length;
+    const cy = disp.reduce((s,p) => s+p.y, 0) / disp.length;
+    const fs = Math.max(9, Math.min(13, view.zoom * 18));
+    ctx.font      = `bold ${fs}px sans-serif`;
     ctx.textAlign = 'center';
-    ctx.fillStyle = '#000';
+    ctx.fillStyle = 'rgba(0,0,0,0.55)';
     ctx.fillText(n.name, cx+1, cy+1);
     ctx.fillStyle = '#fff';
     ctx.fillText(n.name, cx, cy);
   });
 
   // Active polygon
-  if (currentPoly && currentPoly.points.length > 0) {
-    const pts = currentPoly.points;
-    ctx.beginPath();
-    ctx.moveTo(pts[0].px, pts[0].py);
-    pts.slice(1).forEach(p => ctx.lineTo(p.px, p.py));
-    ctx.setLineDash([5, 4]);
-    ctx.strokeStyle = '#fff';
-    ctx.lineWidth   = 1.5;
-    ctx.stroke();
-    ctx.setLineDash([]);
-    pts.forEach(p => {
+  if (currentPoly) {
+    const pts = currentPoly.points.map(p => imgToDisp(p.x, p.y));
+
+    if (pts.length >= 1) {
+      // Path so far + live line to cursor
       ctx.beginPath();
-      ctx.arc(p.px, p.py, 3, 0, Math.PI * 2);
-      ctx.fillStyle = '#fff';
-      ctx.fill();
-    });
+      ctx.moveTo(pts[0].x, pts[0].y);
+      pts.slice(1).forEach(p => ctx.lineTo(p.x, p.y));
+      if (mouseImg) {
+        const m = imgToDisp(mouseImg.x, mouseImg.y);
+        ctx.lineTo(m.x, m.y);
+      }
+      ctx.setLineDash([5, 4]);
+      ctx.strokeStyle = 'rgba(255,255,255,0.8)';
+      ctx.lineWidth   = 1.5;
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Vertex dots
+      pts.forEach((p, i) => {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, i === 0 ? 5 : 3, 0, Math.PI * 2);
+        ctx.fillStyle = i === 0 ? '#4a9eff' : 'rgba(255,255,255,0.9)';
+        ctx.fill();
+      });
+
+      // Snap ring when hovering near first vertex
+      if (pts.length >= 3 && mouseImg) {
+        const m = imgToDisp(mouseImg.x, mouseImg.y);
+        if (Math.hypot(m.x - pts[0].x, m.y - pts[0].y) <= SNAP_PX) {
+          ctx.beginPath();
+          ctx.arc(pts[0].x, pts[0].y, 10, 0, Math.PI * 2);
+          ctx.strokeStyle = 'rgba(74,158,255,0.8)';
+          ctx.lineWidth   = 2;
+          ctx.stroke();
+        }
+      }
+    }
   }
 
   // Reference points
   refs.forEach((r, i) => {
+    const d = imgToDisp(r.x, r.y);
     ctx.beginPath();
-    ctx.arc(r.px, r.py, 7, 0, Math.PI * 2);
+    ctx.arc(d.x, d.y, 7, 0, Math.PI * 2);
     ctx.fillStyle   = '#e74c3c';
     ctx.strokeStyle = '#fff';
     ctx.lineWidth   = 1.5;
@@ -400,8 +905,10 @@ function redraw() {
     ctx.font      = 'bold 10px sans-serif';
     ctx.textAlign = 'center';
     ctx.fillStyle = '#fff';
-    ctx.fillText(i + 1, r.px, r.py + 4);
+    ctx.fillText(i + 1, d.x, d.y + 4);
   });
+
+  updateStatusBar();
 }
 </script>
 
