@@ -39,7 +39,7 @@
     #intro:hover {
       color: white;
     }
-    #neighbor, #distance, #direction {
+    #neighbor, #distance-phrase, #direction {
       color: white;
     }
     #noresult, #result, #escape, #debug {
@@ -98,7 +98,7 @@
 <div id="noresult"></div>
 
 <div id="escape">
-  <span id="neighbor"></span> is only <span id="distance"></span> miles to the <span id="direction"></span>.
+  <span id="neighbor"></span> is <span id="distance-phrase"></span> to the <span id="direction"></span>.
 </div>
 
 <div id="debug">Accuracy: <span id="accuracy"></span> meters.</div>
@@ -161,9 +161,11 @@ function onPosition(pos) {
   var closest = closestLocation(cities, pt);
   if (closest) {
     var miles = Math.round(closest.miles * 10) / 10;
+    var arrows = { north: '↑', northeast: '↗', east: '→', southeast: '↘',
+                   south: '↓', southwest: '↙', west: '←', northwest: '↖' };
     setText('neighbor', closest.name + ' (' + closest.city + ')');
-    setText('distance', miles);
-    setText('direction', closest.direction);
+    setText('distance-phrase', miles === 0 ? 'just' : 'only ' + miles + ' miles');
+    setText('direction', (arrows[closest.direction] || '') + ' ' + closest.direction);
     show('escape');
     var dbg = document.getElementById('dev-debug');
     if (dbg) dbg.innerHTML =
