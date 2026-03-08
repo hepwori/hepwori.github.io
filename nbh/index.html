@@ -163,7 +163,7 @@ function onPosition(pos) {
     var miles = Math.round(closest.miles * 10) / 10;
     var arrows = { north: '↑', northeast: '↗', east: '→', southeast: '↘',
                    south: '↓', southwest: '↙', west: '←', northwest: '↖' };
-    setText('neighbor', closest.name + ' (' + closest.city + ')');
+    setText('neighbor', closest.name);
     setText('distance-phrase', miles === 0 ? 'just' : 'only ' + miles + ' miles');
     setText('direction', (arrows[closest.direction] || '') + ' ' + closest.direction);
     show('escape');
