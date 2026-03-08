@@ -190,7 +190,12 @@ var wakeLock = null;
 
 async function requestWakeLock() {
   if (!navigator.wakeLock) return;
-  try { wakeLock = await navigator.wakeLock.request('screen'); } catch (e) {}
+  try {
+    wakeLock = await navigator.wakeLock.request('screen');
+    wakeLock.addEventListener('release', function() {
+      if (document.visibilityState === 'visible') requestWakeLock();
+    });
+  } catch (e) {}
 }
 
 document.addEventListener('visibilitychange', function() {
