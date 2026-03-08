@@ -83,6 +83,7 @@ iframe {
     height: 100%;
     border: none;
     display: block;
+    background: #000;
 }
 
 main.fullscreen {

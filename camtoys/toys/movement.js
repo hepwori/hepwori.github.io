@@ -2,8 +2,7 @@ class MovementToy extends Toy {
     constructor() {
         super();
 
-        this.MOTION_THRESHOLD = 40;
-        this.FADE_ALPHA_STEP = 0.01;
+        this.FADE_ALPHA_STEP = 0.015;
 
         this.captureCanvas = document.createElement('canvas');
         this.captureCtx = this.captureCanvas.getContext('2d');
@@ -17,16 +16,18 @@ class MovementToy extends Toy {
         this.workerBusy = false;
         this.worker = this._createWorker();
         this.worker.onmessage = (e) => this._onWorkerResult(e);
+
     }
 
     _createWorker() {
         const code = `
             var prev = null;
-            var THRESHOLD = 40;
+            var THRESHOLD = 80;
             self.onmessage = function(e) {
                 var curr = new Uint8ClampedArray(e.data.buffer);
                 var w = e.data.width, h = e.data.height;
                 var mask = new Uint8ClampedArray(w * h * 4);
+                var hasMotion = false;
                 if (prev) {
                     for (var i = 0; i < curr.length; i += 4) {
                         var delta = Math.abs(curr[i]   - prev[i])   +
@@ -34,11 +35,12 @@ class MovementToy extends Toy {
                                     Math.abs(curr[i+2] - prev[i+2]);
                         if (delta > THRESHOLD) {
                             mask[i] = mask[i+1] = mask[i+2] = mask[i+3] = 255;
+                            hasMotion = true;
                         }
                     }
                 }
                 prev = curr;
-                self.postMessage({ buffer: mask.buffer, width: w, height: h }, [mask.buffer]);
+                self.postMessage({ buffer: mask.buffer, width: w, height: h, hasMotion: hasMotion }, [mask.buffer]);
             };
         `;
         const blob = new Blob([code], { type: 'application/javascript' });
@@ -78,17 +80,27 @@ class MovementToy extends Toy {
 
     _onWorkerResult(e) {
         this.workerBusy = false;
-        const { buffer, width, height } = e.data;
+        const { buffer, width, height, hasMotion } = e.data;
         const imageData = new ImageData(new Uint8ClampedArray(buffer), width, height);
         this.maskCtx.putImageData(imageData, 0, 0);
-        this.trailCtx.drawImage(this.maskCanvas, 0, 0);
+        if (hasMotion) {
+            this.trailCtx.drawImage(this.maskCanvas, 0, 0);
+        }
     }
 
     fadeTrail() {
-        this.trailCtx.globalCompositeOperation = 'destination-out';
-        this.trailCtx.fillStyle = `rgba(0, 0, 0, ${this.FADE_ALPHA_STEP})`;
-        this.trailCtx.fillRect(0, 0, this.trailCanvas.width, this.trailCanvas.height);
-        this.trailCtx.globalCompositeOperation = 'source-over';
+        const w = this.trailCanvas.width, h = this.trailCanvas.height;
+        if (!w || !h) return;
+        // Linear subtraction ensures alpha actually reaches 0.
+        // destination-out uses exponential decay (alpha *= 1-step) which in 8-bit
+        // integer math rounds and gets permanently stuck at ~16% gray.
+        const imageData = this.trailCtx.getImageData(0, 0, w, h);
+        const data = imageData.data;
+        const step = Math.round(this.FADE_ALPHA_STEP * 255);
+        for (let i = 3; i < data.length; i += 4) {
+            if (data[i] > 0) data[i] = Math.max(0, data[i] - step);
+        }
+        this.trailCtx.putImageData(imageData, 0, 0);
     }
 }
 

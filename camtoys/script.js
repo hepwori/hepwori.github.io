@@ -8,23 +8,31 @@ document.addEventListener('DOMContentLoaded', () => {
         iframe.src = `toys/toy.html?toy=${toyName}`;
     }
 
+    function activateToy(toyName) {
+        loadToy(toyName);
+        navLinks.forEach(l => l.classList.toggle('active', l.dataset.toy === toyName));
+    }
+
+    function toyFromHash() {
+        const hash = location.hash.slice(1);
+        return [...navLinks].find(l => l.dataset.toy === hash)?.dataset.toy;
+    }
+
     navLinks.forEach(link => {
         link.addEventListener('click', (e) => {
             e.preventDefault();
-            const toyName = link.dataset.toy;
-            loadToy(toyName);
-
-            navLinks.forEach(l => l.classList.remove('active'));
-            link.classList.add('active');
+            location.hash = link.dataset.toy;
         });
     });
 
-    // Load the first toy by default
-    if (navLinks.length > 0) {
-        const firstToy = navLinks[0].dataset.toy;
-        loadToy(firstToy);
-        navLinks[0].classList.add('active');
-    }
+    window.addEventListener('hashchange', () => {
+        const toy = toyFromHash() || navLinks[0]?.dataset.toy;
+        if (toy) activateToy(toy);
+    });
+
+    // Load from hash on arrival, fall back to first toy
+    const initial = toyFromHash() || navLinks[0]?.dataset.toy;
+    if (initial) activateToy(initial);
 
     fullscreenBtn.addEventListener('click', () => {
         if (!document.fullscreenElement) {
