@@ -184,6 +184,17 @@ function onError(err) {
   show('noresult');
 }
 
+var wakeLock = null;
+
+async function requestWakeLock() {
+  if (!navigator.wakeLock) return;
+  try { wakeLock = await navigator.wakeLock.request('screen'); } catch (e) {}
+}
+
+document.addEventListener('visibilitychange', function() {
+  if (document.visibilityState === 'visible') requestWakeLock();
+});
+
 function start() {
   if (!navigator.geolocation) {
     hide('trying');
@@ -192,6 +203,7 @@ function start() {
     return;
   }
 
+  requestWakeLock();
   watchId = navigator.geolocation.watchPosition(onPosition, onError, {
     enableHighAccuracy: true,
     maximumAge: 30000,
