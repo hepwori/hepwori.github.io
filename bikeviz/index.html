@@ -6,6 +6,8 @@
 <title>cycling dashboard</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
@@ -51,7 +53,7 @@
   .chart-title { font-size: 13px; font-weight: 500; color: var(--text2); margin-bottom: 14px; }
   canvas { display: block; width: 100% !important; }
   /* Route map */
-  #route-map-svg { width: 100%; height: auto; display: block; border-radius: 6px; }
+  #route-map-leaflet { width: 100%; height: 380px; border-radius: 6px; }
   /* Route controls */
   .cluster-row { display: flex; align-items: center; gap: 14px; padding: 10px 14px; background: var(--bg2); border-radius: var(--radius); margin-bottom: 6px; }
   .cluster-row label { font-size: 12px; color: var(--text2); white-space: nowrap; }
@@ -136,7 +138,7 @@
 
   <div class="chart-card" id="route-map-card" style="display:none">
     <div class="chart-title">route map — <span id="map-route-label">selected route</span></div>
-    <svg id="route-map-svg" viewBox="0 0 800 400"></svg>
+    <div id="route-map-leaflet"></div>
   </div>
 
   <div class="chart-card" id="traces-card" style="display:none">
@@ -434,69 +436,38 @@ function updateRouteLabels() {
 
 // ── Route map ──────────────────────────────────────────────────────────────
 
-function elevColor(t) {
-  const stops = [[52, 148, 186], [116, 196, 118], [215, 48, 39]];
-  t = Math.max(0, Math.min(1, t));
-  const s = t * (stops.length - 1);
-  const i = Math.min(Math.floor(s), stops.length - 2);
-  const f = s - i;
-  return `rgb(${stops[i].map((v, j) => Math.round(v + f * (stops[i+1][j] - v))).join(',')})`;
-}
+let leafletMap = null;
+let trackLayers = null;
 
 function renderRouteMap(key) {
   const rr = filteredRides().filter(r => r.route === key);
   const tracks = rr.map(r => trackData[r.dateStr]).filter(Boolean);
   if (!tracks.length) { g('route-map-card').style.display = 'none'; return; }
 
-  const allPts = tracks.flat();
-  const lats = allPts.map(p => p[0]), lons = allPts.map(p => p[1]);
-  const minLat = Math.min(...lats), maxLat = Math.max(...lats);
-  const minLon = Math.min(...lons), maxLon = Math.max(...lons);
-  const midLat = (minLat + maxLat) / 2;
-  const AR = Math.cos(midLat * Math.PI / 180);
-  const geoW = (maxLon - minLon) * AR || 0.001;
-  const geoH = (maxLat - minLat) || 0.001;
-  const VW = 800, VH = 400;
-  const scale = Math.min(VW / geoW, VH / geoH) * 0.92;
-  const offX = VW / 2 - (geoW * scale) / 2;
-  const offY = VH / 2 - (geoH * scale) / 2;
-  const toXY = (lat, lon) => [offX + (lon - minLon) * AR * scale, offY + (maxLat - lat) * scale];
+  g('route-map-card').style.display = 'block';
 
-  const dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-  const bg = dark ? '#2c2c2e' : '#f5f5f3';
-  const eles = allPts.map(p => p[2]).filter(e => e != null);
-  const hasEle = eles.length > 0;
+  requestAnimationFrame(() => {
+  if (leafletMap) leafletMap.invalidateSize();
+  });
 
-  let svgContent = `<rect width="${VW}" height="${VH}" fill="${bg}" rx="6"/>`;
-
-  if (hasEle) {
-    const minEle = Math.min(...eles), eleRange = Math.max(...eles) - minEle || 1;
-    const N = 32;
-    const buckets = Array.from({ length: N }, () => []);
-    for (const pts of tracks) {
-      for (let i = 0; i < pts.length - 1; i++) {
-        const [x1, y1] = toXY(pts[i][0], pts[i][1]);
-        const [x2, y2] = toXY(pts[i+1][0], pts[i+1][1]);
-        const ele = pts[i][2] != null ? pts[i][2] : pts[i+1][2];
-        const t = ele != null ? (ele - minEle) / eleRange : 0.5;
-        const b = Math.min(Math.floor(t * N), N - 1);
-        buckets[b].push(`M${x1.toFixed(1)} ${y1.toFixed(1)}L${x2.toFixed(1)} ${y2.toFixed(1)}`);
-      }
-    }
-    svgContent += buckets.map((segs, i) => segs.length
-      ? `<path d="${segs.join('')}" stroke="${elevColor((i+0.5)/N)}" stroke-width="1.5" fill="none" stroke-opacity="0.5" stroke-linecap="round"/>`
-      : '').join('');
-  } else {
-    const stroke = dark ? '#5DCAA5' : '#1D9E75';
-    for (const pts of tracks) {
-      const d = pts.map((p,i) => { const [x,y]=toXY(p[0],p[1]); return `${i===0?'M':'L'}${x.toFixed(1)} ${y.toFixed(1)}`; }).join('');
-      svgContent += `<path d="${d}" stroke="${stroke}" stroke-width="1.5" fill="none" stroke-opacity="0.25"/>`;
-    }
+  if (!leafletMap) {
+    leafletMap = L.map('route-map-leaflet', { zoomControl: true });
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> © <a href="https://carto.com/">CARTO</a>',
+      maxZoom: 19,
+    }).addTo(leafletMap);
   }
 
-  g('route-map-svg').setAttribute('viewBox', `0 0 ${VW} ${VH}`);
-  g('route-map-svg').innerHTML = svgContent;
-  g('route-map-card').style.display = 'block';
+  if (trackLayers) { trackLayers.clearLayers(); } else { trackLayers = L.layerGroup().addTo(leafletMap); }
+
+  const bounds = L.latLngBounds();
+  for (const pts of tracks) {
+    const latlngs = pts.map(p => [p[0], p[1]]);
+    L.polyline(latlngs, { color: '#1D9E75', weight: 2, opacity: 0.35 }).addTo(trackLayers);
+    latlngs.forEach(ll => bounds.extend(ll));
+  }
+
+  leafletMap.fitBounds(bounds, { padding: [24, 24] });
 }
 
 // ── Ride trace chart ───────────────────────────────────────────────────────
