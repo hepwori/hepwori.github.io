@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>cycling dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #ffffff; --bg2: #f5f5f3; --bg3: #eceae6;
+    --text: #1a1a1a; --text2: #777770;
+    --border: rgba(0,0,0,0.09); --border2: rgba(0,0,0,0.16);
+    --green: #1D9E75; --green-light: #5DCAA5;
+    --radius: 10px; --radius-lg: 14px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1c1c1e; --bg2: #2c2c2e; --bg3: #3a3a3c;
+      --text: #f2f2f0; --text2: #8e8e8a;
+      --border: rgba(255,255,255,0.09); --border2: rgba(255,255,255,0.18);
+    }
+  }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding: 2rem; max-width: 920px; margin: 0 auto; }
+  header { margin-bottom: 2rem; }
+  header h1 { font-size: 22px; font-weight: 500; margin-bottom: 4px; }
+  header p { font-size: 13px; color: var(--text2); }
+  #status { padding: 3rem 2rem; text-align: center; }
+  #status p { font-size: 14px; color: var(--text2); line-height: 1.8; }
+  #status code { font-size: 12px; background: var(--bg2); padding: 3px 8px; border-radius: 4px; display: inline-block; margin-top: 6px; }
+  #dashboard { display: none; }
+  .top-bar { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 8px; }
+  .top-bar h2 { font-size: 15px; font-weight: 500; }
+  .section-label { font-size: 11px; font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase; color: var(--text2); margin: 2rem 0 0.75rem; }
+  /* Filter bar */
+  .filter-bar { display: flex; flex-direction: column; gap: 8px; margin-bottom: 1.5rem; }
+  .filter-group { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+  .filter-group-label { font-size: 11px; color: var(--text2); white-space: nowrap; min-width: 64px; }
+  .filter-pill { padding: 4px 12px; border-radius: 999px; border: 1px solid var(--border2); font-size: 12px; cursor: pointer; background: var(--bg2); color: var(--text2); font-family: inherit; transition: all 0.15s; }
+  .filter-pill:hover { border-color: var(--green); color: var(--green); }
+  .filter-pill.active { background: var(--green); border-color: var(--green); color: white; }
+  /* Metrics */
+  .metric-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin-bottom: 1.5rem; }
+  .metric-card { background: var(--bg2); border-radius: var(--radius); padding: 14px 16px; }
+  .metric-label { font-size: 11px; color: var(--text2); margin-bottom: 5px; }
+  .metric-value { font-size: 24px; font-weight: 500; font-family: 'Menlo', 'Courier New', monospace; letter-spacing: -0.5px; }
+  .metric-sub { font-size: 11px; color: var(--text2); margin-top: 3px; }
+  /* Charts */
+  .chart-card { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1.1rem 1.25rem; margin-bottom: 12px; }
+  .chart-title { font-size: 13px; font-weight: 500; color: var(--text2); margin-bottom: 14px; }
+  canvas { display: block; width: 100% !important; }
+  /* Route map */
+  #route-map-svg { width: 100%; height: auto; display: block; border-radius: 6px; }
+  /* Route controls */
+  .cluster-row { display: flex; align-items: center; gap: 14px; padding: 10px 14px; background: var(--bg2); border-radius: var(--radius); margin-bottom: 6px; }
+  .cluster-row label { font-size: 12px; color: var(--text2); white-space: nowrap; }
+  .cluster-row input[type=range] { flex: 1; accent-color: var(--green); }
+  .cluster-val { font-size: 12px; font-family: 'Menlo', monospace; min-width: 54px; }
+  .cluster-hint { font-size: 11px; color: var(--text2); margin-bottom: 14px; line-height: 1.7; min-height: 16px; }
+  .route-pills { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 1rem; }
+  .route-pill { padding: 6px 14px; border-radius: 999px; border: 1px solid var(--border2); font-size: 12px; cursor: pointer; background: var(--bg2); color: var(--text2); font-family: inherit; transition: all 0.15s; }
+  .route-pill:hover { border-color: var(--green); color: var(--green); }
+  .route-pill.active { background: var(--green) !important; border-color: var(--green) !important; color: white !important; }
+  .route-name-row { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .route-name-row label { font-size: 12px; color: var(--text2); white-space: nowrap; }
+  .route-name-row input[type=text] { flex: 1; max-width: 260px; padding: 6px 10px; font-size: 13px; border: 1px solid var(--border2); border-radius: var(--radius); background: var(--bg); color: var(--text); font-family: inherit; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🚴 cycling dashboard</h1>
+  <p id="header-sub">loading...</p>
+</header>
+
+<div id="status">
+  <p id="status-msg">loading ride data...</p>
+</div>
+
+<div id="dashboard">
+  <div class="top-bar">
+    <h2 id="dash-title">cycling dashboard</h2>
+  </div>
+
+  <div class="section-label">filter</div>
+  <div class="filter-bar">
+    <div class="filter-group">
+      <span class="filter-group-label">years</span>
+      <div id="year-pills" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+    </div>
+    <div class="filter-group">
+      <span class="filter-group-label">last N rides</span>
+      <div id="lastn-pills" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+    </div>
+  </div>
+
+  <div class="section-label">overview</div>
+  <div class="metric-grid">
+    <div class="metric-card"><div class="metric-label">total rides</div><div class="metric-value" id="m-rides">—</div></div>
+    <div class="metric-card"><div class="metric-label">total distance</div><div class="metric-value" id="m-dist">—</div><div class="metric-sub">miles</div></div>
+    <div class="metric-card"><div class="metric-label">total time</div><div class="metric-value" id="m-time">—</div></div>
+    <div class="metric-card"><div class="metric-label">routes found</div><div class="metric-value" id="m-routes">—</div></div>
+    <div class="metric-card" id="m-elev-card" style="display:none"><div class="metric-label">total climbing</div><div class="metric-value" id="m-elev">—</div><div class="metric-sub">feet</div></div>
+  </div>
+
+  <div class="chart-card">
+    <div class="chart-title">rides per month</div>
+    <canvas id="chart-freq" height="100"></canvas>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">distance — all rides</div>
+    <canvas id="chart-dist" height="110"></canvas>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">cumulative distance</div>
+    <canvas id="chart-cumul" height="110"></canvas>
+  </div>
+  <div class="chart-card" id="cumul-elev-card" style="display:none">
+    <div class="chart-title">cumulative elevation gain</div>
+    <canvas id="chart-cumul-elev" height="110"></canvas>
+  </div>
+
+  <div class="section-label">per-route trends</div>
+  <div class="cluster-row">
+    <label>cluster epsilon</label>
+    <input type="range" id="eps-slider" min="0.05" max="2.0" step="0.05" value="0.1">
+    <span class="cluster-val" id="eps-val">±0.10 mi</span>
+  </div>
+  <div class="cluster-hint" id="cluster-hint"></div>
+  <div class="route-pills" id="route-pills"></div>
+  <div class="route-name-row">
+    <label>rename selected route</label>
+    <input type="text" id="route-name-input" placeholder="e.g. morning loop">
+  </div>
+
+  <div class="chart-card" id="route-map-card" style="display:none">
+    <div class="chart-title">route map — <span id="map-route-label">selected route</span></div>
+    <svg id="route-map-svg" viewBox="0 0 800 400"></svg>
+  </div>
+
+  <div class="chart-card" id="traces-card" style="display:none">
+    <div class="chart-title">ride traces — <span id="traces-route-label">selected route</span> <span id="traces-sub" style="font-weight:400;font-size:11px;"></span></div>
+    <canvas id="chart-traces" height="180"></canvas>
+  </div>
+
+  <div class="chart-card" id="hr-card" style="display:none">
+    <div class="chart-title">avg heart rate — <span id="hr-route-label">selected route</span></div>
+    <canvas id="chart-hr" height="130"></canvas>
+  </div>
+</div>
+
+<script>
+const g = id => document.getElementById(id);
+let charts = {}, allRides = [], activeRoute = null, epsilon = 0.1;
+const routeNames = {};
+let selectedYears = new Set();
+let lastN = 0;
+let trackData = {};
+
+// ── Boot ───────────────────────────────────────────────────────────────────
+
+async function init() {
+  try {
+    const [ridesRes, tracksRes] = await Promise.allSettled([
+      fetch('./rides.json'),
+      fetch('./tracks.json'),
+    ]);
+
+    if (ridesRes.status === 'rejected' || !ridesRes.value.ok) {
+      throw new Error('rides.json not found — run parse_health.py first, then serve this directory with: python3 -m http.server');
+    }
+
+    const ridesData = await ridesRes.value.json();
+    loadRides(ridesData);
+
+    if (tracksRes.status === 'fulfilled' && tracksRes.value.ok) {
+      const tracksData = await tracksRes.value.json();
+      loadTracks(tracksData);
+    }
+  } catch (err) {
+    g('status-msg').innerHTML = `⚠ ${err.message}<br><br><code>python3 parse_health.py /path/to/export.xml</code>`;
+    g('header-sub').textContent = 'not loaded';
+  }
+}
+
+document.addEventListener('DOMContentLoaded', init);
+
+// ── Data loading ───────────────────────────────────────────────────────────
+
+function loadRides(data) {
+  allRides = data.rides.map(r => ({ ...r, dateStr: r.date, date: new Date(r.date), route: null }));
+  g('status').style.display = 'none';
+  g('header-sub').textContent = `${allRides.length.toLocaleString()} rides loaded`;
+  assignRoutes();
+  renderDashboard(data);
+}
+
+function loadTracks(data) {
+  trackData = data.tracks || {};
+  if (activeRoute) {
+    renderRouteMap(activeRoute);
+    renderTraceChart(activeRoute);
+  }
+}
+
+// ── Route clustering ───────────────────────────────────────────────────────
+
+function assignRoutes() {
+  allRides.forEach(r => r.route = null);
+  const map = {};
+  allRides.forEach(r => {
+    const key = (Math.round(r.dist_mi / epsilon) * epsilon).toFixed(3);
+    if (!map[key]) map[key] = { key, rides: [] };
+    map[key].rides.push(r);
+  });
+  const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  Object.values(map).filter(b=>b.rides.length>=3).sort((a,b)=>b.rides.length-a.rides.length)
+    .forEach((b,i) => {
+      const key = `route_${i}`;
+      if (!routeNames[key]) routeNames[key] = `route ${letters[i]||i+1}`;
+      b.rides.forEach(r => r.route = key);
+    });
+}
+
+function getRoutes() {
+  const fr = filteredRides();
+  return [...new Set(fr.filter(r=>r.route).map(r=>r.route))];
+}
+
+function dn(key) { return routeNames[key] || key; }
+
+// ── Filter ─────────────────────────────────────────────────────────────────
+
+function filteredRides() {
+  let r = allRides;
+  if (selectedYears.size > 0) r = r.filter(x => selectedYears.has(x.date.getFullYear()));
+  if (lastN > 0 && lastN < r.length) r = r.slice(-lastN);
+  return r;
+}
+
+function makePill(text, active, onclick) {
+  const p = document.createElement('button');
+  p.className = 'filter-pill' + (active ? ' active' : '');
+  p.textContent = text; p.onclick = onclick; return p;
+}
+
+function buildYearFilter() {
+  const years = [...new Set(allRides.map(r => r.date.getFullYear()))].sort((a,b) => b-a);
+  const c = g('year-pills'); c.innerHTML = '';
+  c.appendChild(makePill('all time', selectedYears.size === 0, () => { selectedYears.clear(); refilter(); }));
+  years.forEach(y => c.appendChild(makePill(String(y), selectedYears.has(y), () => {
+    if (selectedYears.has(y)) selectedYears.delete(y); else selectedYears.add(y);
+    refilter();
+  })));
+}
+
+function buildLastNFilter() {
+  const opts = [[0,'all'], [5,'5'], [10,'10'], [20,'20'], [50,'50'], [100,'100'], [200,'200']];
+  const c = g('lastn-pills'); c.innerHTML = '';
+  opts.forEach(([n, label]) => c.appendChild(makePill(label, lastN === n, () => { lastN = n; refilter(); })));
+}
+
+function refilter() {
+  buildYearFilter();
+  buildLastNFilter();
+  const fr = filteredRides();
+  updateMetrics(fr);
+  renderFreqChart(fr);
+  renderDistChart(fr);
+  renderCumulChart(fr);
+  rerenderRoutes();
+}
+
+// ── Dashboard ──────────────────────────────────────────────────────────────
+
+function renderDashboard(meta) {
+  g('dashboard').style.display = 'block';
+  if (meta.source_file) g('dash-title').textContent = meta.source_file.replace('export.xml','apple health');
+  refilter();
+}
+
+function updateMetrics(fr) {
+  const totalDist = fr.reduce((s,r)=>s+r.dist_mi,0);
+  const totalMins = fr.reduce((s,r)=>s+r.dur_mins,0);
+  const routes = [...new Set(fr.filter(r=>r.route).map(r=>r.route))];
+  g('m-rides').textContent = fr.length;
+  g('m-dist').textContent = Math.round(totalDist).toLocaleString();
+  g('m-time').textContent = Math.floor(totalMins/60) + 'h';
+  g('m-routes').textContent = routes.length || '—';
+  const elevRides = fr.filter(r => r.elev_gain_ft != null);
+  if (elevRides.length > 0) {
+    g('m-elev').textContent = Math.round(elevRides.reduce((s,r)=>s+r.elev_gain_ft,0)).toLocaleString();
+    g('m-elev-card').style.display = 'block';
+  } else {
+    g('m-elev-card').style.display = 'none';
+  }
+}
+
+function buildHint(fr) {
+  const routes = [...new Set(fr.filter(r=>r.route).map(r=>r.route))];
+  const unc = fr.filter(r=>!r.route).length;
+  if (!routes.length) return 'no routes with 3+ rides — try increasing epsilon';
+  const parts = routes.map(key => { const rr = fr.filter(r=>r.route===key); return `${dn(key)}: ${(rr.reduce((s,r)=>s+r.dist_mi,0)/rr.length).toFixed(1)} mi · ${rr.length} rides`; });
+  if (unc) parts.push(`${unc} unclustered`);
+  return parts.join('  ·  ');
+}
+
+function rerenderRoutes() {
+  const fr = filteredRides();
+  const routes = [...new Set(fr.filter(r=>r.route).map(r=>r.route))].filter(key => fr.filter(r=>r.route===key).length >= 2);
+  g('cluster-hint').textContent = buildHint(fr);
+  renderRoutePills(routes);
+  const sel = routes.includes(activeRoute) ? activeRoute : (routes[0] || null);
+  activeRoute = sel;
+  if (sel) selectRoute(sel);
+  else {
+    dc('hr'); dc('traces');
+    g('hr-card').style.display = 'none';
+    g('traces-card').style.display = 'none';
+    g('route-map-card').style.display = 'none';
+  }
+}
+
+g('eps-slider').addEventListener('input', function() {
+  epsilon = parseFloat(this.value);
+  g('eps-val').textContent = `±${epsilon.toFixed(2)} mi`;
+  if (allRides.length) { assignRoutes(); rerenderRoutes(); }
+});
+
+g('route-name-input').addEventListener('input', function() {
+  if (!activeRoute) return;
+  routeNames[activeRoute] = this.value.trim() || activeRoute;
+  renderRoutePills(getRoutes()); updateRouteLabels();
+});
+
+// ── Chart helpers ──────────────────────────────────────────────────────────
+
+function mk(d) { return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; }
+function dc(k) { if (charts[k]) { charts[k].destroy(); delete charts[k]; } }
+
+function co({ xIsDate=false, xLinear=false, yLabel='' }={}) {
+  const dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const tc = dark ? '#8e8e8a' : '#777770';
+  const gc = dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
+  const xAxis = xIsDate
+    ? { type:'time', time:{unit:'month',displayFormats:{month:'MMM yy'}}, ticks:{color:tc,font:{size:11}}, grid:{color:gc} }
+    : xLinear
+    ? { type:'linear', ticks:{color:tc,font:{size:11}}, grid:{color:gc} }
+    : { ticks:{color:tc,font:{size:11},maxRotation:45}, grid:{color:gc} };
+  return {
+    responsive: true, maintainAspectRatio: true,
+    plugins: { legend:{display:false}, tooltip:{ callbacks:{ label:c=>`${yLabel}: ${c.parsed.y}` } } },
+    scales: { x: xAxis, y:{ ticks:{color:tc,font:{size:11}}, grid:{color:gc}, title:{display:!!yLabel,text:yLabel,color:tc,font:{size:11}} } }
+  };
+}
+
+// ── Global charts ──────────────────────────────────────────────────────────
+
+function renderFreqChart(fr) {
+  const counts = {};
+  fr.forEach(r => { const k=mk(r.date); counts[k]=(counts[k]||0)+1; });
+  const keys = Object.keys(counts).sort();
+  dc('freq');
+  charts.freq = new Chart(g('chart-freq'), {
+    type:'bar',
+    data:{ labels:keys.map(k=>{ const [y,m]=k.split('-'); return new Date(+y,+m-1).toLocaleDateString('en-US',{month:'short',year:'2-digit'}); }), datasets:[{ data:keys.map(k=>counts[k]), backgroundColor:'#5DCAA5', borderRadius:3, borderSkipped:false }] },
+    options: co({ yLabel:'rides' })
+  });
+}
+
+function renderDistChart(fr) {
+  dc('dist');
+  charts.dist = new Chart(g('chart-dist'), {
+    type:'scatter',
+    data:{ datasets:[{ data:fr.map(r=>({x:r.date,y:+r.dist_mi.toFixed(2)})), backgroundColor:'#1D9E7577', pointRadius:3 }] },
+    options: co({ xIsDate:true, yLabel:'miles' })
+  });
+}
+
+function renderCumulChart(fr) {
+  const sorted = [...fr].sort((a,b) => a.date - b.date);
+  let cum = 0;
+  const pts = sorted.map(r => ({ x: r.date, y: +(cum += r.dist_mi).toFixed(1) }));
+  dc('cumul');
+  charts.cumul = new Chart(g('chart-cumul'), {
+    type:'line',
+    data:{ datasets:[{ data:pts, borderColor:'#1D9E75', backgroundColor:'#1D9E7515', fill:true, tension:0.2, pointRadius:0 }] },
+    options: co({ xIsDate:true, yLabel:'miles' })
+  });
+  const elevSorted = sorted.filter(r => r.elev_gain_ft != null);
+  dc('cumul-elev');
+  if (elevSorted.length > 0) {
+    let cumElev = 0;
+    const epts = elevSorted.map(r => ({ x: r.date, y: Math.round(cumElev += r.elev_gain_ft) }));
+    g('cumul-elev-card').style.display = 'block';
+    charts['cumul-elev'] = new Chart(g('chart-cumul-elev'), {
+      type:'line',
+      data:{ datasets:[{ data:epts, borderColor:'#8B7355', backgroundColor:'#8B735515', fill:true, tension:0.2, pointRadius:0 }] },
+      options: co({ xIsDate:true, yLabel:'feet' })
+    });
+  } else {
+    g('cumul-elev-card').style.display = 'none';
+  }
+}
+
+// ── Route pills & labels ───────────────────────────────────────────────────
+
+function renderRoutePills(routes) {
+  const fr = filteredRides();
+  const c = g('route-pills'); c.innerHTML = '';
+  const counts = routes.map(key => fr.filter(r=>r.route===key).length);
+  const maxCount = Math.max(...counts, 1);
+  routes.forEach((key, i) => {
+    const rr = fr.filter(r=>r.route===key);
+    const avg = rr.length ? rr.reduce((s,r)=>s+r.dist_mi,0)/rr.length : 0;
+    const t = counts[i] / maxCount;
+    const p = document.createElement('button');
+    p.className = 'route-pill'+(key===activeRoute?' active':'');
+    p.style.background = `rgba(29,158,117,${(0.06 + t * 0.22).toFixed(2)})`;
+    p.style.borderColor = `rgba(29,158,117,${(0.15 + t * 0.35).toFixed(2)})`;
+    p.textContent = `${dn(key)} · ${avg.toFixed(1)} mi · ${rr.length}×`;
+    p.dataset.route = key; p.onclick = () => selectRoute(key);
+    c.appendChild(p);
+  });
+}
+
+function updateRouteLabels() {
+  const name = activeRoute ? dn(activeRoute) : 'selected route';
+  g('hr-route-label').textContent = name;
+  g('map-route-label').textContent = name;
+  g('traces-route-label').textContent = name;
+}
+
+// ── Route map ──────────────────────────────────────────────────────────────
+
+function elevColor(t) {
+  const stops = [[52, 148, 186], [116, 196, 118], [215, 48, 39]];
+  t = Math.max(0, Math.min(1, t));
+  const s = t * (stops.length - 1);
+  const i = Math.min(Math.floor(s), stops.length - 2);
+  const f = s - i;
+  return `rgb(${stops[i].map((v, j) => Math.round(v + f * (stops[i+1][j] - v))).join(',')})`;
+}
+
+function renderRouteMap(key) {
+  const rr = filteredRides().filter(r => r.route === key);
+  const tracks = rr.map(r => trackData[r.dateStr]).filter(Boolean);
+  if (!tracks.length) { g('route-map-card').style.display = 'none'; return; }
+
+  const allPts = tracks.flat();
+  const lats = allPts.map(p => p[0]), lons = allPts.map(p => p[1]);
+  const minLat = Math.min(...lats), maxLat = Math.max(...lats);
+  const minLon = Math.min(...lons), maxLon = Math.max(...lons);
+  const midLat = (minLat + maxLat) / 2;
+  const AR = Math.cos(midLat * Math.PI / 180);
+  const geoW = (maxLon - minLon) * AR || 0.001;
+  const geoH = (maxLat - minLat) || 0.001;
+  const VW = 800, VH = 400;
+  const scale = Math.min(VW / geoW, VH / geoH) * 0.92;
+  const offX = VW / 2 - (geoW * scale) / 2;
+  const offY = VH / 2 - (geoH * scale) / 2;
+  const toXY = (lat, lon) => [offX + (lon - minLon) * AR * scale, offY + (maxLat - lat) * scale];
+
+  const dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const bg = dark ? '#2c2c2e' : '#f5f5f3';
+  const eles = allPts.map(p => p[2]).filter(e => e != null);
+  const hasEle = eles.length > 0;
+
+  let svgContent = `<rect width="${VW}" height="${VH}" fill="${bg}" rx="6"/>`;
+
+  if (hasEle) {
+    const minEle = Math.min(...eles), eleRange = Math.max(...eles) - minEle || 1;
+    const N = 32;
+    const buckets = Array.from({ length: N }, () => []);
+    for (const pts of tracks) {
+      for (let i = 0; i < pts.length - 1; i++) {
+        const [x1, y1] = toXY(pts[i][0], pts[i][1]);
+        const [x2, y2] = toXY(pts[i+1][0], pts[i+1][1]);
+        const ele = pts[i][2] != null ? pts[i][2] : pts[i+1][2];
+        const t = ele != null ? (ele - minEle) / eleRange : 0.5;
+        const b = Math.min(Math.floor(t * N), N - 1);
+        buckets[b].push(`M${x1.toFixed(1)} ${y1.toFixed(1)}L${x2.toFixed(1)} ${y2.toFixed(1)}`);
+      }
+    }
+    svgContent += buckets.map((segs, i) => segs.length
+      ? `<path d="${segs.join('')}" stroke="${elevColor((i+0.5)/N)}" stroke-width="1.5" fill="none" stroke-opacity="0.5" stroke-linecap="round"/>`
+      : '').join('');
+  } else {
+    const stroke = dark ? '#5DCAA5' : '#1D9E75';
+    for (const pts of tracks) {
+      const d = pts.map((p,i) => { const [x,y]=toXY(p[0],p[1]); return `${i===0?'M':'L'}${x.toFixed(1)} ${y.toFixed(1)}`; }).join('');
+      svgContent += `<path d="${d}" stroke="${stroke}" stroke-width="1.5" fill="none" stroke-opacity="0.25"/>`;
+    }
+  }
+
+  g('route-map-svg').setAttribute('viewBox', `0 0 ${VW} ${VH}`);
+  g('route-map-svg').innerHTML = svgContent;
+  g('route-map-card').style.display = 'block';
+}
+
+// ── Ride trace chart ───────────────────────────────────────────────────────
+
+function haversine(lat1, lon1, lat2, lon2) {
+  const R = 3958.8;
+  const φ1 = lat1 * Math.PI / 180, φ2 = lat2 * Math.PI / 180;
+  const Δφ = (lat2 - lat1) * Math.PI / 180, Δλ = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(Δφ/2)**2 + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ/2)**2;
+  return R * 2 * Math.asin(Math.sqrt(a));
+}
+
+function computeTrace(track) {
+  if (!track || track.length < 2 || track[0][3] == null) return null;
+  let cumDist = 0;
+  return track.map((p, i) => {
+    if (i > 0) cumDist += haversine(track[i-1][0], track[i-1][1], p[0], p[1]);
+    return p[3] != null ? { x: +cumDist.toFixed(3), y: p[3] } : null;
+  }).filter(Boolean);
+}
+
+function renderTraceChart(key) {
+  dc('traces');
+  const rr = filteredRides().filter(r => r.route === key).sort((a,b) => a.date - b.date);
+
+  // build datasets, tracking which have GPS so we can identify the true last ride
+  const withGPS = [];
+  rr.forEach(r => {
+    const track = trackData[r.dateStr];
+    const pts = track ? computeTrace(track) : null;
+    if (pts && pts.length >= 2) withGPS.push({ r, pts });
+  });
+
+  const datasets = withGPS.map(({ r, pts }, i) => {
+    const isLast = i === withGPS.length - 1;
+    // older rides: light grey (#d0d0cb) → dark grey (#707070); newest ride: green
+    const t = withGPS.length > 1 ? i / (withGPS.length - 1) : 1;
+    const grey = Math.round(208 - t * 96); // 208 → 112
+    const color = isLast ? 'rgba(29,158,117,0.9)' : `rgba(${grey},${grey},${grey - 5},0.55)`;
+    return {
+      label: r.date.toLocaleDateString(),
+      data: pts,
+      borderColor: color,
+      borderWidth: isLast ? 2 : 1,
+      fill: false,
+      tension: 0.2,
+      pointRadius: 0,
+      order: isLast ? 0 : 1,  // draw most recent on top
+    };
+  });
+
+  if (!datasets.length) {
+    g('traces-card').style.display = 'none';
+    return;
+  }
+
+  g('traces-sub').textContent = withGPS.length < rr.length ? `(${withGPS.length} of ${rr.length} rides have GPS)` : '';
+  g('traces-card').style.display = 'block';
+
+  // allow the browser to reflow the newly-visible card before Chart.js measures canvas dimensions
+  requestAnimationFrame(() => {
+
+  const dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const tc = dark ? '#8e8e8a' : '#777770';
+  const gc = dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
+
+  charts.traces = new Chart(g('chart-traces'), {
+    type: 'line',
+    data: { datasets },
+    options: {
+      animation: false,
+      responsive: true, maintainAspectRatio: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          mode: 'nearest', intersect: false,
+          callbacks: {
+            title: items => items[0]?.dataset.label || '',
+            label: c => `${c.parsed.y.toFixed(1)} min at ${c.parsed.x.toFixed(2)} mi`,
+          }
+        }
+      },
+      scales: {
+        x: { type:'linear', title:{display:true,text:'miles',color:tc,font:{size:11}}, ticks:{color:tc,font:{size:11}}, grid:{color:gc} },
+        y: { title:{display:true,text:'min',color:tc,font:{size:11}}, ticks:{color:tc,font:{size:11}}, grid:{color:gc} },
+      }
+    }
+  });
+
+  }); // end requestAnimationFrame
+}
+
+// ── Route selection ────────────────────────────────────────────────────────
+
+function selectRoute(key) {
+  activeRoute = key;
+  document.querySelectorAll('.route-pill').forEach(p=>p.classList.toggle('active',p.dataset.route===key));
+  g('route-name-input').value = routeNames[key] === key ? '' : (routeNames[key] || '');
+  updateRouteLabels();
+  const rr = filteredRides().filter(r=>r.route===key).sort((a,b)=>a.date-b.date);
+  const hrRides = rr.filter(r=>r.hr_avg);
+  dc('hr');
+  if (hrRides.length > 2) {
+    g('hr-card').style.display = 'block';
+    charts.hr = new Chart(g('chart-hr'),{ type:'scatter', data:{ datasets:[{ data:hrRides.map(r=>({x:r.date,y:Math.round(r.hr_avg)})), backgroundColor:'#D85A3099', pointRadius:4 }] }, options:co({ xIsDate:true, yLabel:'bpm' }) });
+  } else { g('hr-card').style.display = 'none'; }
+  renderRouteMap(key);
+  renderTraceChart(key);
+}
+</script>
+</body>
+</html>
