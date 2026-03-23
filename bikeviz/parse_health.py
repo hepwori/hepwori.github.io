@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """
-parse_health.py — extract cycling workouts from apple health export.xml
-usage: python3 parse_health.py /path/to/export.xml [output.json]
+parse_health.py — extract cycling workouts from apple health export
+usage: python3 parse_health.py /path/to/export.zip
+       python3 parse_health.py /path/to/export.xml   (unpacked export also works)
 
+outputs rides.json and tracks.json in the current directory.
 streams the XML iteratively so 2.7GB+ files are no problem.
 """
 
@@ -184,22 +186,21 @@ def match_gpx_to_rides(rides, routes_dir):
 
 def main():
     if len(sys.argv) < 2:
-        print("usage: python3 parse_health.py export.xml [output.json]")
+        print("usage: python3 parse_health.py export.zip|export.xml")
         sys.exit(1)
 
     input_path = Path(sys.argv[1])
-    # Default output goes next to the script (i.e. the dashboard directory),
-    # so rides.json / tracks.json land alongside cycling-dashboard.html.
-    script_dir = Path(__file__).parent
-    output_path = Path(sys.argv[2]) if len(sys.argv) > 2 else script_dir / "rides.json"
+    output_path = Path.cwd() / "rides.json"
 
     if not input_path.exists():
         print(f"error: file not found: {input_path}")
         sys.exit(1)
 
-    import time
+    import time, zipfile, tempfile
+
+    is_zip = input_path.suffix.lower() == ".zip"
     file_gb = input_path.stat().st_size / 1024**3
-    print(f"streaming {input_path.name} ({file_gb:.2f} GB)...")
+    print(f"{'unzipping and ' if is_zip else ''}streaming {input_path.name} ({file_gb:.2f} GB)...")
 
     rides = []
     count = 0
@@ -207,7 +208,22 @@ def main():
     workouts_seen = 0
     records_seen = 0
 
-    context = ET.iterparse(str(input_path), events=("start", "end"))
+    # locate export.xml inside zip, or use the path directly
+    _zip = None
+    _tmpdir = None
+    if is_zip:
+        _zip = zipfile.ZipFile(input_path)
+        names = _zip.namelist()
+        xml_name = next((n for n in names if n.endswith("export.xml")), None)
+        if not xml_name:
+            print("error: export.xml not found inside zip")
+            sys.exit(1)
+        xml_file = _zip.open(xml_name)
+        # prefix for GPX files inside the zip (same directory as export.xml)
+        zip_gpx_prefix = xml_name.replace("export.xml", "workout-routes/")
+        context = ET.iterparse(xml_file, events=("start", "end"))
+    else:
+        context = ET.iterparse(str(input_path), events=("start", "end"))
 
     current_workout = None
     current_stats = {}
@@ -337,12 +353,25 @@ def main():
     rides.sort(key=lambda r: r["date"] or "")
 
     # GPX route files: elevation + GPS tracks
-    routes_dir = input_path.parent / "workout-routes"
     track_data = {}
-    if routes_dir.is_dir():
-        track_data = match_gpx_to_rides(rides, routes_dir)
+    if is_zip:
+        gpx_names = [n for n in _zip.namelist() if n.startswith(zip_gpx_prefix) and n.endswith(".gpx")]
+        if gpx_names:
+            _tmpdir = tempfile.mkdtemp()
+            print(f"  extracting {len(gpx_names)} GPX files from zip...")
+            for name in gpx_names:
+                _zip.extract(name, _tmpdir)
+            routes_dir = Path(_tmpdir) / zip_gpx_prefix
+            track_data = match_gpx_to_rides(rides, routes_dir)
+        else:
+            print("  (no workout-routes/ found in zip — skipping elevation + tracks)")
+        _zip.close()
     else:
-        print("  (no workout-routes/ directory found — skipping elevation + tracks)")
+        routes_dir = input_path.parent / "workout-routes"
+        if routes_dir.is_dir():
+            track_data = match_gpx_to_rides(rides, routes_dir)
+        else:
+            print("  (no workout-routes/ directory found — skipping elevation + tracks)")
 
     output = {
         "generated": datetime.now(timezone.utc).isoformat(),
@@ -354,12 +383,15 @@ def main():
     with open(output_path, "w") as f:
         json.dump(output, f, indent=2)
 
-    # Write tracks.json alongside rides.json
+    tracks_path = Path.cwd() / "tracks.json"
     if track_data:
-        tracks_path = output_path.parent / "tracks.json"
         with open(tracks_path, "w") as f:
             json.dump({"generated": output["generated"], "tracks": track_data}, f)
         tracks_kb = tracks_path.stat().st_size / 1024
+
+    if _tmpdir:
+        import shutil
+        shutil.rmtree(_tmpdir, ignore_errors=True)
 
     print(f"\ndone.")
     print(f"  {count} cycling rides extracted")
