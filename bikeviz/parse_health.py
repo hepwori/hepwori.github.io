@@ -196,11 +196,11 @@ def main():
         print(f"error: file not found: {input_path}")
         sys.exit(1)
 
-    import time, zipfile, tempfile
+    import time, zipfile, tempfile, shutil
 
     is_zip = input_path.suffix.lower() == ".zip"
     file_gb = input_path.stat().st_size / 1024**3
-    print(f"{'unzipping and ' if is_zip else ''}streaming {input_path.name} ({file_gb:.2f} GB)...")
+    print(f"{'unzipping' if is_zip else 'streaming'} {input_path.name} ({file_gb:.2f} GB)...")
 
     rides = []
     count = 0
@@ -208,9 +208,8 @@ def main():
     workouts_seen = 0
     records_seen = 0
 
-    # locate export.xml inside zip, or use the path directly
     _zip = None
-    _tmpdir = None
+    _tmpdir = tempfile.mkdtemp()
     if is_zip:
         _zip = zipfile.ZipFile(input_path)
         names = _zip.namelist()
@@ -218,10 +217,17 @@ def main():
         if not xml_name:
             print("error: export.xml not found inside zip")
             sys.exit(1)
-        xml_file = _zip.open(xml_name)
-        # prefix for GPX files inside the zip (same directory as export.xml)
+        # extract to temp file — iterparse on a ZipExtFile stream is very slow
+        # for large files; parsing a real file is orders of magnitude faster
+        xml_info = _zip.getinfo(xml_name)
+        xml_gb = xml_info.file_size / 1024**3
+        tmp_xml = Path(_tmpdir) / "export.xml"
+        print(f"  extracting export.xml ({xml_gb:.1f} GB uncompressed)...")
+        with _zip.open(xml_name) as src, open(tmp_xml, "wb") as dst:
+            shutil.copyfileobj(src, dst, length=4 * 1024 * 1024)
+        print(f"  streaming export.xml...")
         zip_gpx_prefix = xml_name.replace("export.xml", "workout-routes/")
-        context = ET.iterparse(xml_file, events=("start", "end"))
+        context = ET.iterparse(str(tmp_xml), events=("start", "end"))
     else:
         context = ET.iterparse(str(input_path), events=("start", "end"))
 
@@ -357,7 +363,6 @@ def main():
     if is_zip:
         gpx_names = [n for n in _zip.namelist() if n.startswith(zip_gpx_prefix) and n.endswith(".gpx")]
         if gpx_names:
-            _tmpdir = tempfile.mkdtemp()
             print(f"  extracting {len(gpx_names)} GPX files from zip...")
             for name in gpx_names:
                 _zip.extract(name, _tmpdir)
