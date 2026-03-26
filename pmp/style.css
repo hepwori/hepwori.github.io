@@ -1,8 +1,8 @@
 /* ── Variables ──────────────────────────────────────────────── */
 :root {
   --bg:            #f6f1e7;
-  --sidebar-bg:    #ece4ce;
-  --sidebar-border:#d8ccb0;
+  --sidebar-bg:    #1a0f06;
+  --sidebar-border:#3a2008;
   --text:          #2a1e0d;
   --text-muted:    #7a6548;
   --heading:       #3a2710;
@@ -12,8 +12,8 @@
   --link-hover:    #a06828;
   --border:        #d4c4a0;
   --category:      #4a5c35;
-  --active-bg:     #ddd0b0;
-  --active-bar:    #8b5e26;
+  --active-bg:     #2d1808;
+  --active-bar:    #c4922e;
   --quote-bg:      #ede5d0;
   --quote-bar:     #b89050;
   --sidebar-width: 260px;
@@ -80,9 +80,9 @@ a:hover {
   flex-direction: column;
   gap: 0.15rem;
   text-decoration: none;
-  color: var(--heading);
+  color: #ddc8a0;
 }
-#site-title:hover { color: var(--accent); }
+#site-title:hover { color: var(--accent-light); }
 
 .title-main {
   font-size: 0.95rem;
@@ -94,7 +94,7 @@ a:hover {
   font-size: 0.78rem;
   font-weight: 400;
   font-style: italic;
-  color: var(--text-muted);
+  color: #7a6040;
   line-height: 1.3;
 }
 
@@ -114,18 +114,18 @@ a:hover {
   display: block;
   padding: 0.35rem 1.25rem;
   font-size: 0.875rem;
-  color: var(--text-muted);
+  color: #9e8a6a;
   text-decoration: none;
   border-left: 2px solid transparent;
   transition: background 0.12s, color 0.12s, border-color 0.12s;
 }
 .nav-top li a:hover {
   background: var(--active-bg);
-  color: var(--heading);
+  color: #ddc8a0;
 }
 .nav-top li a.active {
   border-left-color: var(--active-bar);
-  color: var(--heading);
+  color: #ddc8a0;
   background: var(--active-bg);
   font-weight: 500;
 }
@@ -141,7 +141,7 @@ a:hover {
   font-weight: 600;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--category);
+  color: #6fa04a;
   text-decoration: none;
   cursor: default;
 }
@@ -154,7 +154,7 @@ a:hover {
   display: block;
   padding: 0.3rem 1.25rem 0.3rem 1.5rem;
   font-size: 0.825rem;
-  color: var(--text-muted);
+  color: #9e8a6a;
   text-decoration: none;
   border-left: 2px solid transparent;
   line-height: 1.4;
@@ -162,11 +162,11 @@ a:hover {
 }
 .nav-category ul li a:hover {
   background: var(--active-bg);
-  color: var(--heading);
+  color: #ddc8a0;
 }
 .nav-category ul li a.active {
   border-left-color: var(--active-bar);
-  color: var(--heading);
+  color: #ddc8a0;
   background: var(--active-bg);
   font-weight: 500;
 }
@@ -179,8 +179,8 @@ a:hover {
   left: 1rem;
   z-index: 200;
   background: var(--sidebar-bg);
-  border: 1px solid var(--border);
-  color: var(--text);
+  border: 1px solid var(--sidebar-border);
+  color: #9e8a6a;
   font-size: 1.2rem;
   width: 2.5rem;
   height: 2.5rem;
@@ -261,15 +261,18 @@ a:hover {
 
 /* ── Landing / Contents page ────────────────────────────────── */
 .landing-header {
-  margin-bottom: 1.5rem;
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 2px solid var(--accent);
 }
 
 .landing-title {
-  font-size: 1.75rem;
+  font-size: 2.4rem;
   font-weight: 600;
-  line-height: 1.25;
+  line-height: 1.2;
   color: var(--heading);
-  margin-bottom: 0.3rem;
+  letter-spacing: -0.01em;
+  margin-bottom: 0.5rem;
 }
 
 .landing-byline {
@@ -289,22 +292,31 @@ a:hover {
 
 .toc-frontmatter {
   display: flex;
-  gap: 2rem;
-  padding-bottom: 1.5rem;
+  gap: 0.75rem;
+  padding-bottom: 2rem;
   margin-bottom: 0.5rem;
   border-bottom: 1px solid var(--border);
 }
 
 .toc-frontmatter-link {
-  font-size: 1rem;
+  font-size: 0.875rem;
   font-weight: 500;
   text-decoration: none;
   color: var(--link);
+  padding: 0.4rem 0.85rem;
+  border: 1px solid var(--border);
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
 }
-.toc-frontmatter-link:hover { color: var(--link-hover); }
+.toc-frontmatter-link:hover {
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  border-color: var(--accent-light);
+  color: var(--heading);
+}
 
 .toc-section {
-  margin-top: 2rem;
+  margin-top: 2.25rem;
+  padding-left: 1.1rem;
+  border-left: 2px solid var(--border);
 }
 
 .toc-section-title {
@@ -312,7 +324,7 @@ a:hover {
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--category);
+  color: var(--accent);
   margin-bottom: 0.75rem;
 }
 
