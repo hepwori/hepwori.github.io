@@ -7,7 +7,7 @@ let slugToCategory = {};       // "alignment-mirage" → { id, title }
 /* ── Boot ──────────────────────────────────────────────────── */
 async function boot() {
   try {
-    const res = await fetch('content/_index.json');
+    const res = await fetch('content/index.json');
     siteIndex = await res.json();
   } catch (e) {
     document.getElementById('page').innerHTML =
