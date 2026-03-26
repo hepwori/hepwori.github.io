@@ -1,0 +1,101 @@
+{
+  "title": "A Pattern Language for Product Management",
+  "subtitle": "in Complex Organizations",
+  "author": "Isaac Hepworth",
+  "categories": [
+    {
+      "id": "meaning-and-communication",
+      "title": "Meaning & Communication",
+      "patterns": [
+        {
+          "slug": "alignment-mirage",
+          "title": "Alignment Mirage",
+          "summary": "The illusion of shared understanding when language scales faster than meaning."
+        },
+        {
+          "slug": "cultural-dialects",
+          "title": "Cultural Dialects",
+          "summary": "The emergence of different sub-languages within an organization."
+        },
+        {
+          "slug": "explanatory-power-vs-precision",
+          "title": "Explanatory Power vs Precision",
+          "summary": "The trade-off between clarity and detail in communication."
+        },
+        {
+          "slug": "surface-consensus",
+          "title": "Surface Consensus",
+          "summary": "The illusion of agreement in a group, masking underlying differences."
+        }
+      ]
+    },
+    {
+      "id": "systems-and-incentives",
+      "title": "Systems & Incentives",
+      "patterns": [
+        {
+          "slug": "conservation-of-organizational-cost",
+          "title": "Conservation of Organizational Cost",
+          "summary": "The idea that costs in an organization are not eliminated, but shifted."
+        },
+        {
+          "slug": "dual-competence",
+          "title": "Dual Competence",
+          "summary": "The need for both product craftsmanship and organizational navigation skills."
+        },
+        {
+          "slug": "perverse-correlation",
+          "title": "Perverse Correlation",
+          "summary": "When a metric becomes a target and its meaning inverts."
+        },
+        {
+          "slug": "reward-loop-asymmetry",
+          "title": "Reward Loop Asymmetry",
+          "summary": "The tendency for short-term, visible rewards to dominate behavior."
+        },
+        {
+          "slug": "symbolic-friction",
+          "title": "Symbolic Friction",
+          "summary": "Introducing a small, visible cost to correct a behavior."
+        }
+      ]
+    },
+    {
+      "id": "vision-and-strategy",
+      "title": "Vision & Strategy",
+      "patterns": [
+        {
+          "slug": "creating-gravity",
+          "title": "Creating Gravity",
+          "summary": "Using a strong vision to create alignment without direct control."
+        },
+        {
+          "slug": "elastic-leadership",
+          "title": "Elastic Leadership",
+          "summary": "The balance between a long-term vision and the team's current reality."
+        },
+        {
+          "slug": "vision-anchoring",
+          "title": "Vision Anchoring",
+          "summary": "Framing a product within a larger, aspirational narrative."
+        }
+      ]
+    },
+    {
+      "id": "product-and-user",
+      "title": "Product & User",
+      "patterns": [
+        {
+          "slug": "algorithm-product-gap",
+          "title": "Algorithm–Product Gap",
+          "summary": "The disconnect between a model's technical success and its value to users."
+        },
+        {
+          "slug": "ontology-leakage",
+          "title": "Ontology Leakage",
+          "summary": "When a company's internal model of the world is exposed to users."
+        }
+      ]
+    }
+  ]
+}

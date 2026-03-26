@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>A Pattern Language for Product Management</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <div id="layout">
+
+    <nav id="sidebar">
+      <div id="sidebar-header">
+        <a href="#" id="site-title">
+          <span class="title-main">A Pattern Language</span>
+          <span class="title-sub">for Product Management</span>
+        </a>
+      </div>
+
+      <div id="sidebar-nav">
+        <ul class="nav-top">
+          <li><a href="#introduction" class="nav-link">Introduction</a></li>
+          <li><a href="#" class="nav-link nav-contents">Contents</a></li>
+          <li><a href="#about" class="nav-link">About</a></li>
+        </ul>
+
+        <div id="nav-categories">
+          <!-- Built by JS from _index.json -->
+        </div>
+      </div>
+    </nav>
+
+    <button id="menu-toggle" aria-label="Toggle navigation">&#9776;</button>
+
+    <main id="content">
+      <article id="page">
+        <div class="loading">Loading…</div>
+      </article>
+    </main>
+
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
