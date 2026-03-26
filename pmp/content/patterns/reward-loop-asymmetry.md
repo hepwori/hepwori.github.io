@@ -63,3 +63,4 @@ Design reward systems that acknowledge the existence of multiple feedback horizo
 
 - [[Perverse Correlation]] — when metric meaning inverts as it becomes a target.
 - [[Dual Competence]] — navigating between craft quality and system fluency, including incentive literacy.
+- [[Fluency Capture]] — the organizational state produced when reward loop asymmetry persistently selects for fluency over craft.

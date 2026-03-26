@@ -47,7 +47,7 @@ In this view, system fluency is not inherently political; it is the translation 
 - Teams risk over-representation of fluent operators and under-representation of product craftspeople.
 - The organization may become efficient at perpetuating itself rather than improving its products.
 
-**Degeneration: Fluency Drift.** When system fluency is rewarded independently of intent, the same skills that enable coordination can incentivize manipulation. Over time, the organization's feedback loops reinforce performative alignment and narrative management over genuine impact. The result is an erosion of integrity norms and a shift from influence for progress to influence for optics.
+**Degeneration: Fluency Drift.** When system fluency is rewarded independently of craft, performative alignment can become a stable individual strategy. At organizational scale, this produces [[Fluency Capture]]—a distinct pattern where the feedback mechanisms meant to detect this drift are themselves captured.
 
 ## Known Uses
 
@@ -59,3 +59,4 @@ In this view, system fluency is not inherently political; it is the translation 
 
 - [[Reward Loop Asymmetry]] — how immediacy of feedback shapes skill acquisition.
 - [[Cultural Dialects]] — how each organization encodes its own "fluency language."
+- [[Fluency Capture]] — the organizational-scale consequence when individual fluency drift reaches critical mass.

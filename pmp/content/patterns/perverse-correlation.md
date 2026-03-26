@@ -60,3 +60,4 @@ Treat every metric as a hypothesis about value, not as a truth. Revisit its rela
 - [[Dual Competence]] — balancing craft skill and organizational fluency, including the politics of metric selection.
 - [[Reward Loop Asymmetry]] — short-term reward for measurable outcomes vs. long-term value creation.
 - [[Ontology Leakage]] — when internal abstractions, such as metrics, replace user-centered reality.
+- [[Fluency Capture]] — when metrics theater becomes a stable organizational strategy rather than an individual behavior.

@@ -182,26 +182,35 @@ function renderContents() {
   const page = document.getElementById('page');
 
   let html = `
-    <header class="page-header">
-      <h1>${siteIndex.title}</h1>
-    </header>
-    <p class="contents-intro">${siteIndex.subtitle} · ${siteIndex.author}</p>
+    <div class="landing-header">
+      <h1 class="landing-title">${siteIndex.title}</h1>
+      <p class="landing-byline">${siteIndex.author}</p>
+    </div>
+    <p class="landing-description">${siteIndex.description}</p>
+    <nav class="toc">
+      <div class="toc-frontmatter">
+        <a href="#introduction" class="toc-frontmatter-link">Introduction</a>
+        <a href="#about" class="toc-frontmatter-link">About</a>
+      </div>
   `;
 
   for (const cat of siteIndex.categories) {
-    html += `<section class="contents-category">
-      <h2 class="contents-category-title">${cat.title}</h2>`;
+    html += `<div class="toc-section">
+      <h2 class="toc-section-title">${cat.title}</h2>
+      <ul class="toc-patterns">`;
 
     for (const p of cat.patterns) {
       html += `
-        <div class="contents-pattern">
-          <a href="#patterns/${p.slug}" class="contents-pattern-title">${p.title}</a>
-          <span class="contents-pattern-summary">${p.summary}</span>
-        </div>`;
+        <li class="toc-pattern">
+          <a href="#patterns/${p.slug}" class="toc-pattern-title">${p.title}</a>
+          <span class="toc-pattern-summary">${p.summary}</span>
+        </li>`;
     }
 
-    html += `</section>`;
+    html += `</ul></div>`;
   }
+
+  html += `</nav>`;
 
   page.innerHTML = html;
   setActive('contents');

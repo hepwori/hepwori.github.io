@@ -33,7 +33,7 @@ The result is a product that forces users to navigate the company's internal com
 
 **Macro Example: Amazon Alexa.** Amazon's voice assistant embodied ontology leakage at organizational scale. The initiative began from internal strategic anxieties ("We need a presence in the home"; "Voice is an emerging interface we must own") rather than pressing user problems. Alexa's ontology mirrored Amazon's worldview—a retail catalog accessible by voice, a constant brand presence, a data-gathering channel.
 
-Users, meanwhile, never experienced an acute need for most of what Alexa solved. The result was a technically remarkable system that created vast internal value (strategic coverage, data, ecosystem lock-in) but little sustained user value. Ontology leakage scaled up.
+Users, meanwhile, never experienced an acute need for most of what Alexa solved. The result was a technically remarkable system that created vast internal value (strategic coverage, data, ecosystem lock-in) but little sustained user value. At root, Amazon failed to distinguish a business problem from a customer problem — and built accordingly.
 
 ## Navigation Strategies
 

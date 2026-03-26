@@ -1,7 +1,8 @@
 {
-  "title": "A Pattern Language for Product Management",
-  "subtitle": "in Complex Organizations",
+  "title": "A Pattern Language for Product Management in Complex Organizations",
+  "title_short": "A Pattern Language for Product Management",
   "author": "Isaac Hepworth",
+  "description": "A reference vocabulary for the dynamics that experienced PMs recognize but have never quite pulled into focus.",
   "categories": [
     {
       "id": "meaning-and-communication",
@@ -57,6 +58,11 @@
           "slug": "symbolic-friction",
           "title": "Symbolic Friction",
           "summary": "Introducing a small, visible cost to correct a behavior."
+        },
+        {
+          "slug": "fluency-capture",
+          "title": "Fluency Capture",
+          "summary": "When an organization's feedback mechanisms are captured by those whose incentive is to defeat them."
         }
       ]
     },

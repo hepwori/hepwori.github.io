@@ -67,3 +67,4 @@ Design communication and planning processes that explicitly test for semantic co
 - [[Cultural Dialects]] — how subcultural language divergence fuels strategic drift.
 - [[Explanatory Power vs Precision]] — the trade-off between clarity and accuracy as ideas scale.
 - [[Vision Anchoring]] — using coherent narrative to align internal understanding with external storytelling.
+- [[Fluency Capture]] — when performative alignment becomes institutionalized, Alignment Mirages become structurally generated rather than incidental.
