@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<!-- Design C: Masthead — dark header band on landing page, warm parchment body below -->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Preview C — Masthead</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap" rel="stylesheet" />
+  <style>
+/* ── Variables ───────────────────────────────────────────── */
+:root {
+  --bg:              #f6f1e7;
+  --sidebar-bg:      #ece4ce;
+  --sidebar-border:  #d8ccb0;
+  --text:            #2a1e0d;
+  --text-muted:      #7a6548;
+  --heading:         #3a2710;
+  --accent:          #8b5e26;
+  --accent-light:    #c4922e;
+  --link:            #6b4718;
+  --link-hover:      #a06828;
+  --border:          #d4c4a0;
+  --category:        #4a5c35;
+  --active-bg:       #ddd0b0;
+  --active-bar:      #8b5e26;
+  --masthead-bg:     #1a0f06;
+  --masthead-title:  #f0e2c8;
+  --masthead-desc:   #b8a07a;
+  --masthead-byline: #7a6040;
+  --sidebar-width:   260px;
+  --font-serif:      'Lora', Georgia, serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 17px; }
+body {
+  font-family: var(--font-serif);
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.75;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Layout ──────────────────────────────────────────────── */
+#layout { display: flex; min-height: 100vh; }
+
+/* ── Sidebar ─────────────────────────────────────────────── */
+#sidebar {
+  width: var(--sidebar-width);
+  flex-shrink: 0;
+  background: var(--sidebar-bg);
+  border-right: 1px solid var(--sidebar-border);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0; left: 0;
+  height: 100vh;
+  overflow-y: auto;
+  z-index: 100;
+}
+#sidebar-header {
+  padding: 1.75rem 1.25rem 1.25rem;
+  border-bottom: 1px solid var(--sidebar-border);
+}
+#site-title {
+  display: flex;
+  flex-direction: column;
+  text-decoration: none;
+  color: var(--heading);
+}
+#site-title:hover { color: var(--accent); }
+.title-main {
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: 0.01em;
+}
+#sidebar-nav { padding: 0.75rem 0 2rem; flex: 1; }
+.nav-top {
+  list-style: none;
+  padding: 0 0 0.5rem;
+  border-bottom: 1px solid var(--sidebar-border);
+  margin-bottom: 0.5rem;
+}
+.nav-top li a {
+  display: block;
+  padding: 0.35rem 1.25rem;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  text-decoration: none;
+  border-left: 2px solid transparent;
+  transition: background 0.12s, color 0.12s;
+}
+.nav-top li a:hover { background: var(--active-bg); color: var(--heading); }
+.nav-top li a.active {
+  border-left-color: var(--active-bar);
+  color: var(--heading);
+  background: var(--active-bg);
+  font-weight: 500;
+}
+.nav-category { margin-top: 0.25rem; }
+.nav-category-title {
+  display: block;
+  padding: 0.75rem 1.25rem 0.2rem;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--category);
+}
+.nav-category ul { list-style: none; }
+.nav-category ul li a {
+  display: block;
+  padding: 0.3rem 1.25rem 0.3rem 1.5rem;
+  font-size: 0.825rem;
+  color: var(--text-muted);
+  text-decoration: none;
+  border-left: 2px solid transparent;
+  line-height: 1.4;
+  transition: background 0.12s, color 0.12s;
+}
+.nav-category ul li a:hover { background: var(--active-bg); color: var(--heading); }
+
+/* ── Main content ────────────────────────────────────────── */
+#content {
+  margin-left: var(--sidebar-width);
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  padding: 0 0 6rem;        /* no top padding — masthead fills it */
+}
+#page { width: 100%; max-width: 680px; }
+
+/* ── Landing: MASTHEAD design ────────────────────────────── */
+
+/* Dark header band — extends full-width within content column */
+.landing-masthead {
+  background: var(--masthead-bg);
+  padding: 4rem 2.5rem 3rem;
+  margin-bottom: 0;
+}
+.landing-title {
+  font-size: 2.2rem;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--masthead-title);
+  margin-bottom: 0.5rem;
+  letter-spacing: -0.01em;
+}
+.landing-byline {
+  font-size: 0.875rem;
+  font-style: italic;
+  color: var(--masthead-byline);
+  margin-bottom: 1.25rem;
+}
+.landing-description {
+  font-size: 0.975rem;
+  color: var(--masthead-desc);
+  line-height: 1.75;
+}
+
+/* TOC — warm parchment background, padded to match */
+.toc {
+  padding: 2.5rem 2.5rem 0;
+}
+
+.toc-frontmatter {
+  display: flex;
+  gap: 2rem;
+  padding-bottom: 1.5rem;
+  margin-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border);
+}
+.toc-frontmatter-link {
+  font-size: 1rem;
+  font-weight: 500;
+  text-decoration: none;
+  color: var(--link);
+}
+.toc-frontmatter-link:hover { color: var(--link-hover); }
+
+.toc-section { margin-top: 2rem; }
+.toc-section-title {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--category);
+  margin-bottom: 0.75rem;
+}
+.toc-patterns { list-style: none; padding: 0; }
+.toc-pattern {
+  display: flex;
+  flex-direction: column;
+  padding: 0.65rem 0;
+  border-bottom: 1px solid var(--border);
+}
+.toc-pattern:last-child { border-bottom: none; }
+.toc-pattern-title {
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--link);
+  text-decoration: none;
+  line-height: 1.4;
+  margin-bottom: 0.15rem;
+}
+.toc-pattern-title:hover { color: var(--link-hover); }
+.toc-pattern-summary {
+  font-size: 0.85rem;
+  font-style: italic;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+  </style>
+</head>
+<body>
+<div id="layout">
+
+  <nav id="sidebar">
+    <div id="sidebar-header">
+      <a href="#" id="site-title">
+        <span class="title-main">A Pattern Language for Product Management</span>
+      </a>
+    </div>
+    <div id="sidebar-nav">
+      <ul class="nav-top">
+        <li><a href="#">Introduction</a></li>
+        <li><a href="#" class="active">Contents</a></li>
+        <li><a href="#">About</a></li>
+      </ul>
+      <div>
+        <div class="nav-category">
+          <span class="nav-category-title">Meaning &amp; Communication</span>
+          <ul>
+            <li><a href="#">Alignment Mirage</a></li>
+            <li><a href="#">Cultural Dialects</a></li>
+            <li><a href="#">Explanatory Power vs Precision</a></li>
+            <li><a href="#">Surface Consensus</a></li>
+          </ul>
+        </div>
+        <div class="nav-category">
+          <span class="nav-category-title">Systems &amp; Incentives</span>
+          <ul>
+            <li><a href="#">Conservation of Organizational Cost</a></li>
+            <li><a href="#">Dual Competence</a></li>
+            <li><a href="#">Perverse Correlation</a></li>
+            <li><a href="#">Reward Loop Asymmetry</a></li>
+            <li><a href="#">Symbolic Friction</a></li>
+            <li><a href="#">Fluency Capture</a></li>
+          </ul>
+        </div>
+        <div class="nav-category">
+          <span class="nav-category-title">Vision &amp; Strategy</span>
+          <ul>
+            <li><a href="#">Creating Gravity</a></li>
+            <li><a href="#">Elastic Leadership</a></li>
+            <li><a href="#">Vision Anchoring</a></li>
+          </ul>
+        </div>
+        <div class="nav-category">
+          <span class="nav-category-title">Product &amp; User</span>
+          <ul>
+            <li><a href="#">Algorithm–Product Gap</a></li>
+            <li><a href="#">Ontology Leakage</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <main id="content">
+    <article id="page">
+
+      <!-- Dark masthead band -->
+      <div class="landing-masthead">
+        <h1 class="landing-title">A Pattern Language for Product Management in Complex Organizations</h1>
+        <p class="landing-byline">Isaac Hepworth</p>
+        <p class="landing-description">A reference vocabulary for the dynamics that experienced PMs recognize but have never quite pulled into focus.</p>
+      </div>
+
+      <!-- Warm parchment TOC -->
+      <nav class="toc">
+        <div class="toc-frontmatter">
+          <a href="#" class="toc-frontmatter-link">Introduction</a>
+          <a href="#" class="toc-frontmatter-link">About</a>
+        </div>
+        <div class="toc-section">
+          <h2 class="toc-section-title">Meaning &amp; Communication</h2>
+          <ul class="toc-patterns">
+            <li class="toc-pattern">
+              <a href="#" class="toc-pattern-title">Alignment Mirage</a>
+              <span class="toc-pattern-summary">The illusion of shared understanding when language scales faster than meaning.</span>
+            </li>
+            <li class="toc-pattern">
+              <a href="#" class="toc-pattern-title">Cultural Dialects</a>
+              <span class="toc-pattern-summary">The emergence of different sub-languages within an organization.</span>
+            </li>
+            <li class="toc-pattern">
+              <a href="#" class="toc-pattern-title">Explanatory Power vs Precision</a>
+              <span class="toc-pattern-summary">The trade-off between clarity and detail in communication.</span>
+            </li>
+            <li class="toc-pattern">
+              <a href="#" class="toc-pattern-title">Surface Consensus</a>
+              <span class="toc-pattern-summary">The illusion of agreement in a group, masking underlying differences.</span>
+            </li>
+          </ul>
+        </div>
+        <div class="toc-section">
+          <h2 class="toc-section-title">Systems &amp; Incentives</h2>
+          <ul class="toc-patterns">
+            <li class="toc-pattern">
+              <a href="#" class="toc-pattern-title">Conservation of Organizational Cost</a>
+              <span class="toc-pattern-summary">The idea that costs in an organization are not eliminated, but shifted.</span>
+            </li>
+            <li class="toc-pattern">
+              <a href="#" class="toc-pattern-title">Dual Competence</a>
+              <span class="toc-pattern-summary">The need for both product craftsmanship and organizational navigation skills.</span>
+            </li>
+            <li class="toc-pattern">
+              <a href="#" class="toc-pattern-title">Perverse Correlation</a>
+              <span class="toc-pattern-summary">When a metric becomes a target and its meaning inverts.</span>
+            </li>
+            <li class="toc-pattern">
+              <a href="#" class="toc-pattern-title">Reward Loop Asymmetry</a>
+              <span class="toc-pattern-summary">The tendency for short-term, visible rewards to dominate behavior.</span>
+            </li>
+            <li class="toc-pattern">
+              <a href="#" class="toc-pattern-title">Symbolic Friction</a>
+              <span class="toc-pattern-summary">Introducing a small, visible cost to correct a behavior.</span>
+            </li>
+            <li class="toc-pattern">
+              <a href="#" class="toc-pattern-title">Fluency Capture</a>
+              <span class="toc-pattern-summary">When an organization's feedback mechanisms are captured by those whose incentive is to defeat them.</span>
+            </li>
+          </ul>
+        </div>
+        <div class="toc-section">
+          <h2 class="toc-section-title">Vision &amp; Strategy</h2>
+          <ul class="toc-patterns">
+            <li class="toc-pattern">
+              <a href="#" class="toc-pattern-title">Creating Gravity</a>
+              <span class="toc-pattern-summary">Using a strong vision to create alignment without direct control.</span>
+            </li>
+            <li class="toc-pattern">
+              <a href="#" class="toc-pattern-title">Elastic Leadership</a>
+              <span class="toc-pattern-summary">The balance between a long-term vision and the team's current reality.</span>
+            </li>
+            <li class="toc-pattern">
+              <a href="#" class="toc-pattern-title">Vision Anchoring</a>
+              <span class="toc-pattern-summary">Framing a product within a larger, aspirational narrative.</span>
+            </li>
+          </ul>
+        </div>
+        <div class="toc-section">
+          <h2 class="toc-section-title">Product &amp; User</h2>
+          <ul class="toc-patterns">
+            <li class="toc-pattern">
+              <a href="#" class="toc-pattern-title">Algorithm–Product Gap</a>
+              <span class="toc-pattern-summary">The disconnect between a model's technical success and its value to users.</span>
+            </li>
+            <li class="toc-pattern">
+              <a href="#" class="toc-pattern-title">Ontology Leakage</a>
+              <span class="toc-pattern-summary">When a company's internal model of the world is exposed to users.</span>
+            </li>
+          </ul>
+        </div>
+      </nav>
+    </article>
+  </main>
+
+</div>
+</body>
+</html>
