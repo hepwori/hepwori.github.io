@@ -35,3 +35,24 @@ Move to a dedicated draft file once a pattern has a name and rough section struc
 **Concern:** "Small teams decide faster" is well-trodden ground. The novel element may be the *recognition* of this quality as something precious and preservable — which folds back into the integration pattern above.
 
 **Open question:** Is there a standalone pattern here about how to *maintain* decision closure as an organization grows (before an acquisition is involved)? Or is it just a named observation that serves as context for other patterns?
+
+---
+
+## Candidate: Causal Flattening
+
+**Status:** Named, not yet drafted — needs examples
+
+**Core insight:** A whole class of organizational failures are condition-driven, not event-driven. Standard diagnostic tools — five whys, post-mortems, root cause analysis — are built for event-causal failure chains and systematically fail to diagnose condition-driven failures. When applied to a condition, they either terminate at the condition and mistake it for a root cause ("headcount grew," "culture changed," "technical debt accumulated," "we moved too fast") or try to go upstream of the condition and end up nowhere useful. Either way the corrective action is wrong: the organization defends against the trigger rather than addressing the underlying condition, and the same failure mode recurs.
+
+**Distinction:** Events are discrete things that happened and can be traced and fixed. Conditions are systemic states that persisted. Event-causal thinking is natural and cognitively easy; conditions feel like background, not cause.
+
+**Reach:** Very general — extends well beyond organizational PM into any domain where systemic conditions produce discontinuous failures (cf. Geoffrey Rose's epidemiological distinction between "causes of cases" and "causes of incidence rates").
+
+**Known Uses (so far):**
+- Five whys applied to phase transition debt → terminates at "headcount grew"
+- Post-mortems for cultural failures → "we moved too fast"
+- More examples needed — Isaac to supply
+
+**Name candidates:** Causal Flattening (preferred), Condition Blindness, Causal Mirage
+
+**Related patterns (likely):** Phase Transition Debt (Known Use anchor), Conservation of Organizational Cost, Alignment Mirage
