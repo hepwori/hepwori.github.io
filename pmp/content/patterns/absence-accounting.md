@@ -60,10 +60,6 @@ None of these fully solve the problem. They reduce the severity of the distortio
 - The organization develops a characteristic failure signature: a sudden increase in a category of problems that had previously seemed solved, with no obvious proximate cause.
 - Repeated cycles produce a stable institutional condition in which prevention is treated as overhead and the organization loses the habit of valuing it.
 
-## Degeneration
-
-When absence accounting becomes the stable institutional condition rather than an episodic failure, the organization loses not just individual preventive practitioners but the capacity to recognize what it has lost. The pattern becomes self-sealing: each removal looks rational in isolation; the cumulative effect is only visible from outside the evaluation framework that produced it.
-
 ## Related Patterns
 
 - [[Conservation of Organizational Cost]] — the deferred cost doesn't disappear; it accumulates and eventually crystallizes
