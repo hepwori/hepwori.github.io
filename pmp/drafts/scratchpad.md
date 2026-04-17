@@ -102,3 +102,83 @@ The gap between the two representations — representational parallax — widens
 **Open question:** Is this a standalone pattern or a named force within Phase Transition Debt? The distinction may be whether crystallization can occur *without* a phase transition (i.e., gradual irreversible accumulation rather than a snap). If yes, standalone. If it always co-occurs with a threshold event, it's a force.
 
 **Related patterns:** Conservation of Organizational Cost, Phase Transition Debt
+
+
+## Candidate cluster: Counterfactual Blindness
+
+**Status:** Active development — cluster structure settled, individual patterns at varying draft readiness
+
+**Origin:** Conversation exploring the "glue-person risk" framing from John Cutler (cutlefish.substack.com), specifically the observation that preventive work is invisible precisely because it succeeds, and that AI substitution creates false-positive signal that the gap has been filled.
+
+---
+
+### Counterfactual Blindness (epistemic condition)
+
+The org's ledger records events. It has no native mechanism for recording things that didn't happen — near-misses, avoided failures, suppressed bad ideas. Preventive work produces absences, and absences don't accumulate in org memory. This is the substrate condition from which the mechanisms below emerge.
+
+**Relationship to existing patterns:** conservation-of-organizational-cost is the thermodynamic substrate; counterfactual blindness is the epistemic substrate. They are companion conditions, not the same thing.
+
+---
+
+### Absence Accounting (org-level mechanism)
+
+**Status:** Ready to draft
+
+The org's measurement infrastructure systematically omits preventive work from its ledger. Visible costs dominate attention; invisible costs don't. The pattern is distinct from conservation-of-organizational-cost in that it describes an epistemic failure (can't see it) rather than a displacement phenomenon (cost moved elsewhere).
+
+**Key property:** not an antipattern — a condition. Under some circumstances orgs work *with* it deliberately; the positive form is explicit counterfactual instrumentation.
+
+**Known instances:**
+
+- *Security budget conversation.* Zero breaches this year is indistinguishable from overspend on an unnecessary function. The ledger has no entry for breaches that didn't happen. The org has no native mechanism to distinguish the hypotheses.
+
+- *Post-mortem "where we got lucky" section.* The only place in standard org process where counterfactual evidence is explicitly solicited — and it's typically three bullet points nobody reads after the action items are assigned. Action items from post-mortems almost always address the causal chain that DID happen; the lucky breaks rarely generate remediation, because there's no event to anchor it to. Near-miss as free lesson, routinely left on the table. **Positive form:** treat the "where we got lucky" section with the same rigor as action items. Near-miss reporting in aviation and nuclear exists precisely because those fields learned — at catastrophic cost — that counterfactuals require active instrumentation to be legible.
+
+**Related patterns (likely):** Conservation of Organizational Cost, Reward Loop Asymmetry, Competence Inversion
+
+---
+
+### Competence Inversion (role-level mechanism)
+
+**Status:** Named, needs development
+
+Signal inversion at the individual level: the better someone is at preventive work, the more redundant they appear. Success metric is nothing happening, which is indistinguishable from the contribution being unnecessary. Creates systematic selection pressure *against* the people doing preventive work — the org is structurally incentivized to remove its most effective preventive practitioners.
+
+The cruelest version: the removal looks like a correct efficiency decision, and remains indistinguishable from one until the deferred collapse materializes — by which point causal attribution is essentially impossible.
+
+**Archetypes:**
+- *Load-bearing pessimist* — the person quietly killing bad ideas before they get traction. Absence shows up as a sudden increase in expensive failed initiatives. Surviving narrative is often "we finally have momentum."
+- *Glue-person collapse* — see below.
+
+**Related patterns (likely):** Absence Accounting, Dual Competence, Fluency Capture
+
+---
+
+### Glue-Person Collapse (failure mode / instance of Competence Inversion)
+
+**Status:** Named, instance of Competence Inversion; AI substitution variant is the novel contribution
+
+The glue person's work — reading weak signals, navigating legitimacy, building shared language, absorbing role ambiguity — is invisible because it succeeds. Removing the person and substituting AI-produced artifacts creates the appearance of continuity: the visible outputs persist. The judgment, social infrastructure, and adaptive capacity do not.
+
+**Novel contribution over general competence inversion:** the substitution creates false-positive signal that the gap has been filled. Problems surface months later, disconnected from cause, after the attribution window has closed.
+
+**Relationship to phase transition debt:** glue-person collapse is a phase transition debt event — the org was accumulating invisible coordination debt continuously, serviced by the glue person; removal triggers the unwind as a threshold event rather than a gradual degradation.
+
+---
+
+### Cluster hierarchy (current)
+
+```
+counterfactual blindness (epistemic condition)
+├── absence accounting (org-level mechanism)
+│   ├── security budget conversation (instance)
+│   └── post-mortem "where we got lucky" (instance — positive form: treat as rigorously as action items)
+└── competence inversion (role-level mechanism)
+    ├── load-bearing pessimist (archetype)
+    └── glue-person collapse (failure mode)
+        └── AI substitution variant (false-confidence wrinkle)
+```
+
+**Cross-cutting:** lagging/leading masquerade likely threads across both branches — the reason the security budget conversation is hard is partly absence accounting AND partly that visible signals arrive too late. May be a typed edge in the graph rather than a node.
+
+**Open question:** where does this cluster sit relative to reward loop asymmetry and phase transition debt? strong gravitational pull in both directions.
