@@ -9,7 +9,7 @@ summary: The structural invisibility of preventive work to standard organization
 
 Some organizational functions exist to prevent bad outcomes rather than produce good ones. Their output is the absence of failures — suppressed bad ideas, avoided crises, coordination problems that never materialized. These functions are load-bearing — but invisibly so. When they work, nothing happens.
 
-Organizations evaluate contribution by what is legible. Events accumulate in org memory; non-events do not. This asymmetry is not a measurement failure that better metrics can fix. It is a structural property of how organizations perceive and record their own activity.
+Organizations evaluate contribution by what is legible. Events accumulate in organizational memory; non-events do not. This asymmetry is not a measurement failure that better metrics can fix. It is a structural property of how organizations perceive and record their own activity.
 
 ## Problem
 
