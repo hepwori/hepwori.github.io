@@ -69,3 +69,4 @@ You cannot destroy cost—only move it between visibility states.
 - [[Reward Loop Asymmetry]] — why short-term gains are often privileged over long-term balance.
 - [[Perverse Correlation]] — how metrics invert meaning once they dominate optimization.
 - [[Dual Competence]] — understanding system fluency to navigate where cost and effort truly flow.
+- [[Absence Accounting]] — preventive cost shifted to the future is organizational cost deferred, not eliminated.

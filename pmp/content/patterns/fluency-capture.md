@@ -59,3 +59,4 @@ The organization becomes efficient at perpetuating itself rather than creating e
 - [[Reward Loop Asymmetry]] — the asymmetric feedback mechanism that drives organizational selection toward fluency
 - [[Perverse Correlation]] — metrics theater is perverse correlation applied to organizational self-evaluation
 - [[Alignment Mirage]] — performative alignment, once stable, becomes a generator of Alignment Mirages at scale
+- [[Absence Accounting]] — a parallel selection dynamic: where Fluency Capture selects against craft, Absence Accounting selects against preventive invisibility
