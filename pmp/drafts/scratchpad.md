@@ -40,7 +40,7 @@ Move to a dedicated draft file once a pattern has a name and rough section struc
 
 ## Candidate: Phase Transition Debt
 
-**Status:** Early — name settled, core insight clear, navigation strategies undeveloped
+**Status:** Active development — name settled, core insight clear, navigation strategies mostly irremediable (awareness is the primary mitigation)
 
 **Source story:**
 
@@ -50,16 +50,36 @@ Move to a dedicated draft file once a pattern has a name and rough section struc
 
 The system gives no warning signal because every individual interaction still resolves successfully. There is no leading indicator that distinguishes "this is working" from "this is working AND we are three months from catastrophic knowledge loss."
 
-**Related pattern:** Reorgs that are six months too late exhibit the same structure — informal networks co-evolve with formal structure and become load-bearing; the reorg destroys the informal network without transferring its value; the cost doesn't disappear (conservation of organizational cost) but crystallizes as rebuild overhead plus transitional dysfunction, paid simultaneously. Hysteresis applies: you can't reorg back to the previous state.
+**Second instance:** Reorgs that are six months too late exhibit the same structure — informal networks co-evolve with formal structure and become load-bearing; the reorg destroys the informal network without transferring its value; the cost crystallizes as rebuild overhead plus transitional dysfunction, paid simultaneously. Hysteresis applies: you can't reorg back to the previous state.
 
 **Catastrophe theory framing:** The control parameter (headcount, time since last reorg) changes continuously. The state variable (knowledge accessibility, org coherence) tracks smoothly until a cusp, then snaps. Hysteresis means the snap point going forward differs from the recovery point going back — you can't simply reverse the control parameter to restore prior state.
 
 **Relationship to Conservation of Organizational Cost:** Phase transition debt is a specific failure mode within conservation — the deferred cost doesn't just displace, it *crystallizes* at a threshold event (retention policy, reorg) into a form that is partially unrecoverable. The "loophole" (no documentation overhead! just ask slack!) was always a deferral, never an elimination.
 
+**Recoverable vs unrecoverable crystallization:**
+
+The key question is: *what did the event destroy, and does that thing still exist somewhere?*
+
+- **Recoverable:** the asset survives the event but the organizational structure around it needs rebuilding. Late reorg: the informal network is destroyed, but the people who composed it are still there. Painful, expensive, workable.
+- **Unrecoverable:** something is gone from the world. Slack history after retention policy: not in anyone's head, not in a file. You cannot pay this debt because the asset that would let you pay it no longer exists.
+- **Partially unrecoverable (most common):** the Slack case is actually this — history gone, but people who were in those conversations carry some of it. You lose findability, onboardability, the searchable record. Not everything.
+- **Time-unrecoverable (practically equivalent):** some crystallizations are technically recoverable but so slow that the practical effect is the same. Market window that closes while product debt accumulates; team trust after repeated layoffs. Recoverable in principle, permanently lost given real time constraints.
+
+**Key implication:** the recoverable/unrecoverable distinction matters most for what to do *after* the threshold event. Before: mitigation calculus is mostly the same regardless. After: if recoverable, resource a recovery path. If not, stop trying to get back to prior state — hysteresis means you can't, and trying to "reorg back" is a common failure mode.
+
+**Critical property:** the unrecoverability is usually invisible until after the event. You didn't know the informal network was load-bearing until the reorg revealed it. You didn't know the Slack history was irreplaceable until the deletion made it so. This is the same no-warning-signal property as the core pattern.
+
+**Navigation strategies (mostly irremediable):**
+
+Awareness of the pattern as a phenomenon is the primary mitigation — recognizing the dynamic makes you more alert to its signs. Marginal interventions:
+
+- *Periodic triangulation* — can't eliminate the drift but can take GPS fixes before the cusp: documentation sprints, knowledge archaeology before retention policies, informal network mapping before reorgs.
+- *Instrumentation attempts* — hard because the system looks healthy right up to the edge. Candidate signals: growth rate vs. communication infrastructure investment rate; ratio of synchronous to asynchronous knowledge transfer; bus factor metrics. None are reliable leading indicators.
+- *Accept hysteresis post-event* — once you've crossed the cusp, work forward from the new state rather than trying to restore the prior one.
+
 **What still needs developing:**
-- Navigation strategies: what are the leading indicators? is instrumentation even possible before the cusp?
-- Whether "crystallization point" is a better name (implies irreversibility more clearly)
-- The distinction between recoverable and unrecoverable crystallization events
+- More instances beyond Stripe/Slack and late reorgs
+- Whether Cost Crystallization warrants a named force within this pattern (probably yes, not standalone)
 
 **Related patterns:** Conservation of Organizational Cost, Alignment Mirage, Representational Parallax (candidate below)
 
