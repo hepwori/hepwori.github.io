@@ -181,7 +181,7 @@ function renderMarkdown(body) {
 
 /* ── Contents page ─────────────────────────────────────────── */
 function renderContents() {
-  const page = document.getElementById('page');
+  const pageEl = document.getElementById('page');
 
   let html = `
     <div class="landing-header">
@@ -190,15 +190,27 @@ function renderContents() {
     </div>
     <p class="landing-description">${siteIndex.description}</p>
     <nav class="toc">
-      <div class="toc-frontmatter">
-        <a href="#introduction" class="toc-frontmatter-link">Introduction</a>
-        <a href="#about" class="toc-frontmatter-link">About</a>
-      </div>
   `;
 
+  // Background
+  if (siteIndex.pages && siteIndex.pages.length) {
+    html += `<div class="toc-block">
+      <h2 class="toc-section-heading">Background</h2>
+      <div class="toc-featured-grid">`;
+    for (const pg of siteIndex.pages) {
+      html += `
+        <a href="#${pg.slug}" class="toc-featured-pattern">
+          <span class="toc-featured-title">${pg.title}</span>
+          <span class="toc-featured-summary">${pg.summary}</span>
+        </a>`;
+    }
+    html += `</div></div>`;
+  }
+
+  // Featured Patterns
   if (siteIndex.featured && siteIndex.featured.length) {
-    html += `<div class="toc-featured">
-      <span class="toc-featured-label">Featured</span>
+    html += `<div class="toc-block">
+      <h2 class="toc-section-heading">Featured Patterns</h2>
       <div class="toc-featured-grid">`;
     for (const slug of siteIndex.featured) {
       html += `
@@ -210,25 +222,26 @@ function renderContents() {
     html += `</div></div>`;
   }
 
+  // All Patterns
+  html += `<div class="toc-block"><h2 class="toc-section-heading">All Patterns</h2>`;
   for (const cat of siteIndex.categories) {
-    html += `<div class="toc-section">
-      <h2 class="toc-section-title">${cat.title}</h2>
-      <ul class="toc-patterns">`;
-
+    html += `<div class="toc-category-group">
+      <h3 class="toc-category-subhead">${cat.title}</h3>
+      <div class="toc-featured-grid">`;
     for (const p of cat.patterns) {
       html += `
-        <li class="toc-pattern">
-          <a href="#patterns/${p.slug}" class="toc-pattern-title">${p.title}</a>
-          <span class="toc-pattern-summary">${p.summary}</span>
-        </li>`;
+        <a href="#patterns/${p.slug}" class="toc-featured-pattern">
+          <span class="toc-featured-title">${p.title}</span>
+          <span class="toc-featured-summary">${p.summary}</span>
+        </a>`;
     }
-
-    html += `</ul></div>`;
+    html += `</div></div>`;
   }
+  html += `</div>`;
 
   html += `</nav>`;
 
-  page.innerHTML = html;
+  pageEl.innerHTML = html;
   setActive('contents');
   scrollToTop();
 }
