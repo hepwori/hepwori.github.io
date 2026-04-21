@@ -3,6 +3,7 @@ let siteIndex = null;          // parsed _index.json
 let slugToTitle = {};          // "alignment-mirage" → "Alignment Mirage"
 let titleToSlug = {};          // "Alignment Mirage" → "alignment-mirage"
 let slugToCategory = {};       // "alignment-mirage" → { id, title }
+let slugToSummary = {};        // "alignment-mirage" → "The illusion of…"
 
 /* ── Boot ──────────────────────────────────────────────────── */
 async function boot() {
@@ -21,6 +22,7 @@ async function boot() {
       slugToTitle[p.slug] = p.title;
       titleToSlug[p.title] = p.slug;
       slugToCategory[p.slug] = { id: cat.id, title: cat.title };
+      slugToSummary[p.slug] = p.summary;
     }
   }
 
@@ -193,6 +195,20 @@ function renderContents() {
         <a href="#about" class="toc-frontmatter-link">About</a>
       </div>
   `;
+
+  if (siteIndex.featured && siteIndex.featured.length) {
+    html += `<div class="toc-featured">
+      <span class="toc-featured-label">Featured</span>
+      <div class="toc-featured-grid">`;
+    for (const slug of siteIndex.featured) {
+      html += `
+        <a href="#patterns/${slug}" class="toc-featured-pattern">
+          <span class="toc-featured-title">${slugToTitle[slug]}</span>
+          <span class="toc-featured-summary">${slugToSummary[slug]}</span>
+        </a>`;
+    }
+    html += `</div></div>`;
+  }
 
   for (const cat of siteIndex.categories) {
     html += `<div class="toc-section">
