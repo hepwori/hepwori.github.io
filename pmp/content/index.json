@@ -3,6 +3,12 @@
   "title_short": "A Pattern Language for Product Management",
   "author": "Isaac Hepworth",
   "description": "A reference vocabulary for the dynamics that experienced PMs recognize but have never quite pulled into focus.",
+  "featured": [
+    "creating-gravity",
+    "elastic-leadership",
+    "conservation-of-organizational-cost",
+    "absence-accounting"
+  ],
   "categories": [
     {
       "id": "meaning-and-communication",
