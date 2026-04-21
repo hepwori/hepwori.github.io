@@ -9,6 +9,18 @@
     "conservation-of-organizational-cost",
     "absence-accounting"
   ],
+  "pages": [
+    {
+      "slug": "introduction",
+      "title": "Introduction",
+      "summary": "What this collection is, how it's organized, and how to use it."
+    },
+    {
+      "slug": "about",
+      "title": "About",
+      "summary": "Who wrote it, and where these patterns came from."
+    }
+  ],
   "categories": [
     {
       "id": "meaning-and-communication",
