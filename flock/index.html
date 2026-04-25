@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>flock</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #000; overflow: hidden; font-family: system-ui, sans-serif; }
+canvas { display: block; cursor: crosshair; }
+
+#panel {
+  position: fixed;
+  top: 0; right: 0;
+  width: 210px;
+  height: 100vh;
+  background: rgba(4, 6, 16, 0.82);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  padding: 18px 14px 24px;
+  color: #9aa;
+  font-size: 11.5px;
+  overflow-y: auto;
+  border-left: 1px solid rgba(255,255,255,0.07);
+  transition: transform 0.2s ease;
+}
+
+#panel.hidden { transform: translateX(100%); }
+
+#panel h1 {
+  font-size: 13px;
+  font-weight: 600;
+  color: #dde;
+  margin-bottom: 18px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.section {
+  font-size: 9.5px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #556;
+  margin: 14px 0 8px;
+}
+
+.row {
+  margin-bottom: 10px;
+}
+
+.row label {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 3px;
+}
+
+.row label span { color: #cce; font-variant-numeric: tabular-nums; }
+
+input[type=range] {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 3px;
+  background: rgba(255,255,255,0.12);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: #7af;
+  cursor: pointer;
+}
+input[type=range]::-moz-range-thumb {
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: #7af;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-row { display: flex; gap: 6px; margin-top: 16px; }
+button {
+  flex: 1;
+  padding: 7px 4px;
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.12);
+  color: #aab;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 11px;
+  font-family: inherit;
+  letter-spacing: 0.05em;
+}
+button:hover { background: rgba(255,255,255,0.14); color: #dde; }
+
+#toggle {
+  position: fixed;
+  top: 14px; right: 14px;
+  width: 30px; height: 30px;
+  background: rgba(4, 6, 16, 0.7);
+  border: 1px solid rgba(255,255,255,0.12);
+  color: #aab;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+#toggle.visible { display: flex; }
+
+.hint {
+  margin-top: 18px;
+  font-size: 10px;
+  color: #445;
+  line-height: 1.6;
+}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<div id="panel">
+  <h1>flock</h1>
+
+  <div class="section">population</div>
+  <div class="row">
+    <label>boids <span id="v-count">200</span></label>
+    <input type="range" id="s-count" min="10" max="500" value="200" step="10">
+  </div>
+
+  <div class="section">perception</div>
+  <div class="row">
+    <label>visual range <span id="v-vrange">75</span></label>
+    <input type="range" id="s-vrange" min="10" max="200" value="75" step="1">
+  </div>
+  <div class="row">
+    <label>avoid dist <span id="v-sepdist">22</span></label>
+    <input type="range" id="s-sepdist" min="5" max="80" value="22" step="1">
+  </div>
+
+  <div class="section">forces</div>
+  <div class="row">
+    <label>separation <span id="v-sep">1.8</span></label>
+    <input type="range" id="s-sep" min="0" max="6" value="1.8" step="0.1">
+  </div>
+  <div class="row">
+    <label>alignment <span id="v-ali">1.0</span></label>
+    <input type="range" id="s-ali" min="0" max="6" value="1.0" step="0.1">
+  </div>
+  <div class="row">
+    <label>cohesion <span id="v-coh">0.8</span></label>
+    <input type="range" id="s-coh" min="0" max="6" value="0.8" step="0.1">
+  </div>
+
+  <div class="section">motion</div>
+  <div class="row">
+    <label>max speed <span id="v-speed">3.0</span></label>
+    <input type="range" id="s-speed" min="0.5" max="12" value="3.0" step="0.5">
+  </div>
+  <div class="row">
+    <label>max force <span id="v-force">0.06</span></label>
+    <input type="range" id="s-force" min="0.005" max="0.4" value="0.06" step="0.005">
+  </div>
+  <div class="row">
+    <label>turbulence <span id="v-turb">0.12</span></label>
+    <input type="range" id="s-turb" min="0" max="1" value="0.12" step="0.01">
+  </div>
+
+  <div class="section">depth</div>
+  <div class="row">
+    <label>slab depth <span id="v-slab">350</span></label>
+    <input type="range" id="s-slab" min="10" max="1200" value="350" step="10">
+  </div>
+  <div class="row">
+    <label>perspective <span id="v-focal">900</span></label>
+    <input type="range" id="s-focal" min="150" max="3000" value="900" step="50">
+  </div>
+
+  <div class="section">visual</div>
+  <div class="row">
+    <label>trail <span id="v-trail">0.35</span></label>
+    <input type="range" id="s-trail" min="0" max="1" value="0.35" step="0.01">
+  </div>
+  <div class="row">
+    <label>size <span id="v-size">1.0</span></label>
+    <input type="range" id="s-size" min="0.3" max="3" value="1.0" step="0.1">
+  </div>
+
+  <div class="btn-row">
+    <button id="btn-pause">pause</button>
+    <button id="btn-scatter">scatter</button>
+    <button id="btn-reset">reset</button>
+  </div>
+
+  <div class="hint">
+    drag canvas: orbit camera<br>
+    click canvas: predator scare<br>
+    space: pause<br>
+    h: toggle panel
+  </div>
+</div>
+
+<button id="toggle">☰</button>
+
+<script>
+const TAU = Math.PI * 2;
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+
+let W, H;
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+// params — sliders write directly into this
+const p = {
+  count: 200,
+  visualRange: 75,
+  separationDist: 22,
+  separation: 1.8,
+  alignment: 1.0,
+  cohesion: 0.8,
+  maxSpeed: 3.0,
+  maxForce: 0.06,
+  trail: 0.35,
+  size: 1.0,
+  turbulence: 0.12,
+  slabDepth: 350,   // full z extent of the slab
+  focalLength: 900, // perspective: lower = fishier, higher = flatter
+};
+
+// camera orientation — yaw rotates left/right, pitch up/down
+const cam = { yaw: 0, pitch: 0.2 };
+
+// predator state (mouse click, 2D)
+let predX = -9999, predY = -9999, predTimer = 0;
+const PRED_RADIUS = 120;
+const PRED_FORCE = 4.0;
+
+class Boid {
+  constructor() { this.spawn(); }
+
+  spawn() {
+    this.x  = Math.random() * W;
+    this.y  = Math.random() * H;
+    this.z  = (Math.random() - 0.5) * p.slabDepth;
+    const a = Math.random() * TAU;
+    const sp = p.maxSpeed;
+    this.vx = Math.cos(a) * sp;
+    this.vy = Math.sin(a) * sp;
+    this.vz = (Math.random() - 0.5) * sp * 0.4;
+    this.ax = 0; this.ay = 0; this.az = 0;
+  }
+
+  flock(boids) {
+    const vr2 = p.visualRange * p.visualRange;
+    const sd2 = p.separationDist * p.separationDist;
+
+    let sx = 0, sy = 0, sz = 0, sn = 0;    // separation
+    let avx = 0, avy = 0, avz = 0, an = 0; // alignment
+    let cx = 0,  cy = 0,  cz = 0,  cn = 0; // cohesion
+
+    for (let i = 0; i < boids.length; i++) {
+      const b = boids[i];
+      if (b === this) continue;
+      const dx = b.x - this.x, dy = b.y - this.y, dz = b.z - this.z;
+      const d2 = dx*dx + dy*dy + dz*dz;
+      if (d2 < sd2) {
+        const d = Math.sqrt(d2) + 0.001;
+        sx -= dx/d; sy -= dy/d; sz -= dz/d; sn++;
+      }
+      if (d2 < vr2) {
+        avx += b.vx; avy += b.vy; avz += b.vz; an++;
+        cx  += b.x;  cy  += b.y;  cz  += b.z;  cn++;
+      }
+    }
+
+    // predator flee — 2D only, ignores z
+    const pdx = this.x - predX, pdy = this.y - predY;
+    const pd2 = pdx*pdx + pdy*pdy;
+    if (pd2 < PRED_RADIUS*PRED_RADIUS && predTimer > 0) {
+      const pd = Math.sqrt(pd2) + 0.001;
+      sx += (pdx/pd) * PRED_FORCE;
+      sy += (pdy/pd) * PRED_FORCE;
+      sn = Math.max(sn, 1);
+    }
+
+    this.ax = 0; this.ay = 0; this.az = 0;
+
+    this.steer(
+      sn > 0 ? sx/sn : 0,
+      sn > 0 ? sy/sn : 0,
+      sn > 0 ? sz/sn : 0,
+      p.separation, sn > 0
+    );
+    this.steer(
+      an > 0 ? avx/an : 0,
+      an > 0 ? avy/an : 0,
+      an > 0 ? avz/an : 0,
+      p.alignment, an > 0
+    );
+    if (cn > 0) {
+      this.steer(cx/cn - this.x, cy/cn - this.y, cz/cn - this.z, p.cohesion, true);
+    }
+
+    // slab spring: gentle pull toward z=0
+    // at z = slabDepth/2 the force equals maxForce, so it's never overwhelming
+    const springK = (p.maxForce * 2) / p.slabDepth;
+    this.az -= this.z * springK;
+
+    // turbulence: per-boid noise breaks global momentum lock-in
+    const tn = p.turbulence * p.maxForce;
+    this.ax += (Math.random() - 0.5) * 2 * tn;
+    this.ay += (Math.random() - 0.5) * 2 * tn;
+    this.az += (Math.random() - 0.5) * 2 * tn;
+  }
+
+  // 3D steering: desired direction → clamped force toward it
+  steer(dx, dy, dz, weight, active) {
+    if (!active || weight === 0) return;
+    const m = Math.sqrt(dx*dx + dy*dy + dz*dz) || 1;
+    let fx = (dx/m)*p.maxSpeed - this.vx;
+    let fy = (dy/m)*p.maxSpeed - this.vy;
+    let fz = (dz/m)*p.maxSpeed - this.vz;
+    const fm = Math.sqrt(fx*fx + fy*fy + fz*fz);
+    if (fm > p.maxForce) { const r = p.maxForce/fm; fx*=r; fy*=r; fz*=r; }
+    this.ax += fx * weight;
+    this.ay += fy * weight;
+    this.az += fz * weight;
+  }
+
+  update() {
+    this.vx += this.ax; this.vy += this.ay; this.vz += this.az;
+
+    // clamp to maxSpeed in 3D
+    const speed3 = Math.sqrt(this.vx*this.vx + this.vy*this.vy + this.vz*this.vz);
+    if (speed3 > p.maxSpeed) {
+      const r = p.maxSpeed / speed3;
+      this.vx *= r; this.vy *= r; this.vz *= r;
+    }
+
+    // keep a minimum 2D speed so boids stay visually alive
+    const speed2 = Math.sqrt(this.vx*this.vx + this.vy*this.vy);
+    const minSpeed2 = p.maxSpeed * 0.15;
+    if (speed2 < minSpeed2) {
+      const r = minSpeed2 / (speed2 + 0.001);
+      this.vx *= r; this.vy *= r;
+    }
+
+    // z damping: bleed out oscillation from the slab spring
+    this.vz *= 0.92;
+
+    // wrap x/y, spring handles z containment
+    this.x = (this.x + this.vx + W) % W;
+    this.y = (this.y + this.vy + H) % H;
+    this.z += this.vz;
+
+    // hard clamp z as a backstop — just stop, don't bounce
+    const zMax = p.slabDepth * 0.65;
+    if (this.z >  zMax) { this.z =  zMax; this.vz = 0; }
+    if (this.z < -zMax) { this.z = -zMax; this.vz = 0; }
+  }
+
+  // project into camera space, cache results for sort + draw
+  project(s, cosYaw, sinYaw, cosPitch, sinPitch) {
+    // center world coords
+    const cx = this.x - W/2, cy = this.y - H/2, cz = this.z;
+    // yaw: rotate around Y axis
+    const x1 =  cx * cosYaw + cz * sinYaw;
+    const y1 =  cy;
+    const z1 = -cx * sinYaw + cz * cosYaw;
+    // pitch: rotate around X axis
+    const rx = x1;
+    const ry = y1 * cosPitch - z1 * sinPitch;
+    const rz = y1 * sinPitch + z1 * cosPitch;
+
+    this._rz = rz;
+    const pScale = p.focalLength / (p.focalLength - rz);
+    this._sx = W/2 + rx * pScale;
+    this._sy = H/2 + ry * pScale;
+    this._drawScale = s * pScale;
+
+    // opacity by camera-depth
+    const t = (rz / p.slabDepth) + 0.5;
+    this._alpha = 0.28 + 0.72 * Math.max(0, Math.min(1, t));
+  }
+
+  draw() {
+    const angle = Math.atan2(this.vy, this.vx);
+    ctx.save();
+    ctx.globalAlpha = this._alpha;
+    ctx.translate(this._sx, this._sy);
+    ctx.rotate(angle);
+    ctx.scale(this._drawScale, this._drawScale);
+    ctx.beginPath();
+    ctx.moveTo(7, 0);
+    ctx.lineTo(-4, -2.8);
+    ctx.lineTo(-2.2, 0);
+    ctx.lineTo(-4, 2.8);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
+// --- persistence ---
+const STORAGE_KEY = 'flock:params';
+
+function saveParams() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(p)); } catch(_) {}
+}
+
+function loadParams() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+    if (saved) Object.keys(p).forEach(k => { if (k in saved) p[k] = saved[k]; });
+  } catch(_) {}
+}
+
+loadParams(); // must happen before init() so p.count etc. are correct
+
+let boids = [];
+function init() { boids = Array.from({ length: p.count }, () => new Boid()); }
+init();
+
+let paused = false;
+
+// reusable sorted array to avoid allocation per frame
+let drawOrder = [];
+
+function frame() {
+  if (paused) return;
+  // trail / clear
+  if (p.trail < 0.01) {
+    ctx.clearRect(0, 0, W, H);
+  } else {
+    const alpha = 1 - p.trail * 0.97;
+    ctx.fillStyle = `rgba(4, 6, 20, ${alpha})`;
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  ctx.fillStyle = 'rgba(200, 210, 235, 0.9)';
+
+  const s = p.size;
+  for (const b of boids) b.flock(boids);
+  for (const b of boids) b.update();
+
+  // project all boids into camera space (precompute trig once)
+  const cosYaw = Math.cos(cam.yaw), sinYaw = Math.sin(cam.yaw);
+  const cosPitch = Math.cos(cam.pitch), sinPitch = Math.sin(cam.pitch);
+  for (const b of boids) b.project(s, cosYaw, sinYaw, cosPitch, sinPitch);
+
+  // painter's algorithm: sort by camera-space z (far first)
+  drawOrder = boids.slice().sort((a, b) => a._rz - b._rz);
+  for (const b of drawOrder) b.draw();
+
+  // predator indicator
+  if (predTimer > 0) {
+    predTimer--;
+    const a = predTimer / 40;
+    ctx.save();
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = `rgba(255, 90, 90, ${a * 0.5})`;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(predX, predY, PRED_RADIUS * (1 - a * 0.3), 0, TAU);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  requestAnimationFrame(frame);
+}
+
+frame();
+
+// --- interaction ---
+// drag → orbit camera; click (no drag) → predator scare
+const DRAG_SENSITIVITY = 0.006;
+const DRAG_THRESHOLD   = 4; // px before it's considered a drag
+
+let dragStart = null, dragLast = null, dragMoved = false;
+
+canvas.addEventListener('mousedown', (e) => {
+  dragStart = { x: e.clientX, y: e.clientY };
+  dragLast  = { x: e.clientX, y: e.clientY };
+  dragMoved = false;
+});
+
+canvas.addEventListener('mousemove', (e) => {
+  if (!dragStart) return;
+  const dx = e.clientX - dragLast.x;
+  const dy = e.clientY - dragLast.y;
+  if (Math.hypot(e.clientX - dragStart.x, e.clientY - dragStart.y) > DRAG_THRESHOLD) dragMoved = true;
+  if (dragMoved) {
+    cam.yaw  += dx * DRAG_SENSITIVITY;
+    cam.pitch = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, cam.pitch + dy * DRAG_SENSITIVITY));
+  }
+  dragLast = { x: e.clientX, y: e.clientY };
+});
+
+canvas.addEventListener('mouseup', (e) => {
+  if (!dragMoved) {
+    predX = e.clientX;
+    predY = e.clientY;
+    predTimer = 40;
+  }
+  dragStart = dragLast = null;
+});
+
+canvas.addEventListener('mouseleave', () => { dragStart = dragLast = null; });
+
+window.addEventListener('keydown', (e) => {
+  if (e.key === 'h' || e.key === 'H') togglePanel();
+  if (e.key === ' ') {
+    e.preventDefault();
+    document.getElementById('btn-pause').click();
+  }
+});
+
+// --- panel toggle ---
+const panel    = document.getElementById('panel');
+const toggleBtn = document.getElementById('toggle');
+let panelVisible = true;
+
+function togglePanel() {
+  panelVisible = !panelVisible;
+  panel.classList.toggle('hidden', !panelVisible);
+  toggleBtn.classList.toggle('visible', !panelVisible);
+}
+toggleBtn.addEventListener('click', togglePanel);
+
+// --- slider wiring ---
+const SLIDERS = [
+  ['s-vrange',  'v-vrange',  'visualRange',    v => v.toFixed(0)],
+  ['s-sepdist', 'v-sepdist', 'separationDist', v => v.toFixed(0)],
+  ['s-sep',     'v-sep',     'separation',     v => v.toFixed(1)],
+  ['s-ali',     'v-ali',     'alignment',      v => v.toFixed(1)],
+  ['s-coh',     'v-coh',     'cohesion',       v => v.toFixed(1)],
+  ['s-speed',   'v-speed',   'maxSpeed',       v => v.toFixed(1)],
+  ['s-force',   'v-force',   'maxForce',       v => v.toFixed(3)],
+  ['s-trail',   'v-trail',   'trail',          v => v.toFixed(2)],
+  ['s-turb',    'v-turb',    'turbulence',     v => v.toFixed(2)],
+  ['s-size',    'v-size',    'size',           v => v.toFixed(1)],
+  ['s-slab',    'v-slab',    'slabDepth',      v => v.toFixed(0)],
+  ['s-focal',   'v-focal',   'focalLength',    v => v.toFixed(0)],
+];
+
+// sync slider position + display from p, then wire input event
+SLIDERS.forEach(([sliderId, valId, key, fmt]) => {
+  const slider  = document.getElementById(sliderId);
+  const display = document.getElementById(valId);
+  slider.value = p[key];
+  display.textContent = fmt(p[key]);
+  slider.addEventListener('input', () => {
+    p[key] = +slider.value;
+    display.textContent = fmt(+slider.value);
+    saveParams();
+  });
+});
+
+// count slider is special (also resizes the boids array)
+const countSlider  = document.getElementById('s-count');
+const countDisplay = document.getElementById('v-count');
+countSlider.value = p.count;
+countDisplay.textContent = p.count;
+document.getElementById('s-count').addEventListener('input', (e) => {
+  const n = +e.target.value;
+  document.getElementById('v-count').textContent = n;
+  p.count = n;
+  while (boids.length < n) boids.push(new Boid());
+  if (boids.length > n) boids.length = n;
+  saveParams();
+});
+
+document.getElementById('btn-pause').addEventListener('click', () => {
+  paused = !paused;
+  document.getElementById('btn-pause').textContent = paused ? 'resume' : 'pause';
+  if (!paused) requestAnimationFrame(frame);
+});
+
+document.getElementById('btn-scatter').addEventListener('click', () => {
+  for (const b of boids) {
+    const a = Math.random() * TAU;
+    b.vx = Math.cos(a) * p.maxSpeed * (0.5 + Math.random() * 0.8);
+    b.vy = Math.sin(a) * p.maxSpeed * (0.5 + Math.random() * 0.8);
+    b.vz = (Math.random() - 0.5) * p.maxSpeed * 0.6;
+  }
+});
+
+document.getElementById('btn-reset').addEventListener('click', init);
+</script>
+</body>
+</html>
