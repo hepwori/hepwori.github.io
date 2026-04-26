@@ -128,7 +128,7 @@ button:hover { background: rgba(255,255,255,0.14); color: #dde; }
   <div class="section">population</div>
   <div class="row">
     <label>boids <span id="v-count">200</span></label>
-    <input type="range" id="s-count" min="10" max="500" value="200" step="10">
+    <input type="range" id="s-count" min="10" max="2000" value="200" step="10">
   </div>
 
   <div class="section">perception</div>
@@ -238,6 +238,40 @@ const p = {
 // camera orientation — yaw rotates left/right, pitch up/down
 const cam = { yaw: 0, pitch: 0.2 };
 
+// spatial grid — rebuilt every frame, reduces neighbor search from O(n²) to O(n)
+const grid = {
+  cells: new Map(),
+  cs: 0, // cell size = visualRange at build time
+
+  build(boids, cellSize) {
+    this.cs = cellSize;
+    this.cells.clear();
+    for (let i = 0; i < boids.length; i++) {
+      const b = boids[i];
+      const k = this._k(Math.floor(b.x / cellSize), Math.floor(b.y / cellSize), Math.floor(b.z / cellSize));
+      let cell = this.cells.get(k);
+      if (!cell) { cell = []; this.cells.set(k, cell); }
+      cell.push(i);
+    }
+  },
+
+  _k(ix, iy, iz) { return `${ix},${iy},${iz}`; },
+
+  // indices of all boids in the 27 cells surrounding (x,y,z)
+  query(x, y, z) {
+    const cs = this.cs;
+    const ix = Math.floor(x / cs), iy = Math.floor(y / cs), iz = Math.floor(z / cs);
+    const out = [];
+    for (let dx = -1; dx <= 1; dx++)
+      for (let dy = -1; dy <= 1; dy++)
+        for (let dz = -1; dz <= 1; dz++) {
+          const cell = this.cells.get(this._k(ix+dx, iy+dy, iz+dz));
+          if (cell) for (const i of cell) out.push(i);
+        }
+    return out;
+  },
+};
+
 // predator state (mouse click, 2D)
 let predX = -9999, predY = -9999, predTimer = 0;
 const PRED_RADIUS = 120;
@@ -266,8 +300,9 @@ class Boid {
     let avx = 0, avy = 0, avz = 0, an = 0; // alignment
     let cx = 0,  cy = 0,  cz = 0,  cn = 0; // cohesion
 
-    for (let i = 0; i < boids.length; i++) {
-      const b = boids[i];
+    const candidates = grid.query(this.x, this.y, this.z);
+    for (let ci = 0; ci < candidates.length; ci++) {
+      const b = boids[candidates[ci]];
       if (b === this) continue;
       const dx = b.x - this.x, dy = b.y - this.y, dz = b.z - this.z;
       const d2 = dx*dx + dy*dy + dz*dz;
@@ -448,6 +483,7 @@ function frame() {
   ctx.fillStyle = 'rgba(200, 210, 235, 0.9)';
 
   const s = p.size;
+  grid.build(boids, p.visualRange);
   for (const b of boids) b.flock(boids);
   for (const b of boids) b.update();
 
