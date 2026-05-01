@@ -170,3 +170,15 @@ counterfactual blindness (epistemic condition) ← next to develop
 ```
 
 **Open question:** where does this cluster sit relative to reward loop asymmetry and phase transition debt? strong gravitational pull in both directions.
+
+## Candidate: Epistemic Cover
+
+**Status:** Early — name strong, structure nascent
+
+**Source conversation:** Discussion of GDPR explainability requirements and the Stripe/Radar parallel explanation model architecture.
+
+**Core insight:** Systems can produce explanations that are technically compliant, user-legible, and causally disconnected from the actual decision process — a parallel construction rather than genuine introspection. The explanation launders the decision's legitimacy without illuminating it. This is distinct from the Algorithm–Product Gap, which treats explainability as a solution; Epistemic Cover treats it as a potential problem *within* that solution.
+
+**Key tension:** The benign and malicious versions are structurally identical and hard to distinguish — both are post-hoc, both are plausible, both may even be accurate. The difference is causal, not surface-visible.
+
+**Related patterns (likely):** Algorithm–Product Gap, Moral Crumple Zone (external), Absence Accounting
