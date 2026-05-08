@@ -70,3 +70,4 @@ You cannot destroy cost—only move it between visibility states.
 - [[Perverse Correlation]] — how metrics invert meaning once they dominate optimization.
 - [[Dual Competence]] — understanding system fluency to navigate where cost and effort truly flow.
 - [[Absence Accounting]] — preventive cost shifted to the future is organizational cost deferred, not eliminated.
+- [[Phase Transition Debt]] — a specific failure mode where displaced cost crystallizes discontinuously at a threshold event, sometimes in unrecoverable form.

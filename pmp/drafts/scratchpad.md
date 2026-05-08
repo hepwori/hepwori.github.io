@@ -40,7 +40,7 @@ Move to a dedicated draft file once a pattern has a name and rough section struc
 
 ## Candidate: Phase Transition Debt
 
-**Status:** Active development — name settled, core insight clear, navigation strategies mostly irremediable (awareness is the primary mitigation)
+**Status:** Published → `content/patterns/phase-transition-debt.md`
 
 **Source story:**
 
