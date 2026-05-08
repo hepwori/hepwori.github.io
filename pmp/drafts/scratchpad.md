@@ -182,3 +182,27 @@ counterfactual blindness (epistemic condition) ← next to develop
 **Key tension:** The benign and malicious versions are structurally identical and hard to distinguish — both are post-hoc, both are plausible, both may even be accurate. The difference is causal, not surface-visible.
 
 **Related patterns (likely):** Algorithm–Product Gap, Moral Crumple Zone (external), Absence Accounting
+
+## Candidate: Altitude Distortion
+
+**Status:** Early — name provisional, forces well-developed, navigation strategies not yet developed
+
+**Source stories:**
+
+1. **Google Security / AI threat landscape.** A ~50-person distributed security team operating in a fast-moving environment found it structurally impossible to provide leadership with sub-24hr status snapshots. The demand for high-cadence situational awareness was new — driven by AI upending both the external threat landscape and internal operating expectations simultaneously. The information infrastructure had never been built to support it because nobody had needed it to. Leadership was applying clear-domain reporting expectations to a complex-domain problem, and the information flows were taking the blame for a category error.
+
+2. **General observation.** In any hierarchical org, information traveling upward undergoes mandatory translation into the dialect of each successive altitude level. The altitude dialect optimizes for decisiveness — it systematically converts uncertainty into confidence, nuance into position, "we're still figuring this out" into "here's our approach." The rendered version becomes the authoritative version; the original is no longer in the room.
+
+**Core insight:** Hierarchy is a lossy compression scheme with predictable failure modes. The compression artifacts are: (1) **lossy summarization** — each layer compresses to its own cognitive resolution; (2) **political filtering** — people route information strategically, not faithfully; (3) **reframing under altitude** — problems get translated into the language and priorities of each layer, changing their meaning not just their precision; (4) **temporal smearing** — by the time something travels up and a decision travels back down, the original condition may have changed. Most dangerously, the altitude dialect actively resolves ambiguity that shouldn't be resolved yet — the hierarchy doesn't just compress signal, it forces premature conclusions. This is particularly destructive when the underlying domain is genuinely complex rather than merely complicated.
+
+This is distinct from [[Cultural Dialects]], which treats dialect differences as horizontal (between disciplines) and symmetric (neither side has authority over the other's interpretation). Altitude distortion is vertical and asymmetric — the upward translation overwrites the original. It's also distinct from [[Explanatory Power vs Precision]], which is a craft pattern about deliberate fidelity choices by a communicator. Altitude distortion is structural and cumulative, operating regardless of individual communicator intent.
+
+**Candidate name alternatives:** *Hierarchical Signal Decay*, *Vertical Dialect*, *Altitude Translation*, *Upward Compression*. "Altitude Distortion" is the current favorite — evokes both the mechanism and the direction.
+
+**What still needs developing:**
+- Navigation strategies: bypass mechanisms (direct channels, skip-levels), making the compression explicit to leadership, negotiating what "knowing where we're at" actually means for complex-domain work
+- Whether the asymmetric overwrite (upward translation as authoritative) deserves more prominence — this may be the sharpest edge
+- Relationship to cynefin: altitude distortion is most dangerous at the complicated/complex boundary, where the altitude dialect's bias toward resolution manufactures false confidence about domain type
+- Whether *decision closure* (see above) is a related pattern or a partial antidote
+
+**Related patterns (likely):** Cultural Dialects, Explanatory Power vs Precision, Phase Transition Debt, Conservation of Organizational Cost
