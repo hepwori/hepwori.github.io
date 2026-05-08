@@ -13,13 +13,17 @@ The mechanism borrows from catastrophe theory. The control parameter — headcou
 
 ## Problem
 
-The system gives no warning signal, because every individual interaction still resolves successfully right up to the edge. "How do I find out X?" gets answered. The meeting ends with clarity. The hire integrates smoothly. There is no leading indicator that distinguishes *this is working* from *this is working AND we are three months from catastrophic knowledge loss*.
+Superheated water looks exactly like normal water. It sits still in the cup. No steam, no bubbling, no signal that it has been heated past its boiling point without boiling. A small disturbance — moving the cup, dropping in a spoon — provides a nucleation site, and the stored energy releases all at once.
 
-Unlike most organizational debt, which is theoretically payable, phase transition debt can become unrecoverable. The Slack history is gone. The informal network is destroyed. The institutional knowledge left with the people. You cannot pay this debt because the asset that would let you pay it no longer exists.
+The organizational equivalent is a system that has already crossed the phase transition threshold without transitioning. It reads as functional because it *is* locally functional — people get their questions answered, new hires get up to speed, decisions get made. The seams don't show. There is no indicator that distinguishes *this is working* from *this is working, and we are already past the threshold, waiting for nucleation*.
+
+The crucial implication: the triggering event — the retention policy, the reorg, the founding-team departure — does not cause the transition. It provides the nucleation site. The energy was already stored. The organization was already superheated. Treating the triggering event as the problem misses where the debt actually accumulated.
+
+Unlike most organizational debt, crystallization can destroy the thing itself — the knowledge, the relationships, the informal infrastructure. Not deferred. Gone.
 
 ## Forces
 
-- **Continuous accumulation:** The conditions for the threshold event build gradually through individually rational decisions — asking Slack instead of writing a doc, delaying a reorg until everyone agrees the timing is better
+- **Continuous accumulation:** The conditions for the threshold event build gradually through individually rational local decisions — each one the right call given local information, collectively drifting the system toward a superheated state without any individual step being legible as the cause
 - **No warning signal:** The system appears locally functional at every step; there is no leading indicator that compounds to flag systemic risk
 - **Threshold crystallization:** Costs manifest discontinuously at a triggering event — a retention policy takes effect, a reorg goes through, a founding team disperses — not as a gradual increase in difficulty but as a sudden state change
 - **Hysteresis:** After the cusp, the prior state cannot be restored by reversing the control parameter; the informal network is gone, not merely dormant
@@ -33,11 +37,11 @@ Awareness of the pattern as a phenomenon is the primary mitigation. Recognizing 
 
 - *Periodic triangulation* — documentation sprints, knowledge archaeology before retention policies, informal network mapping before reorgs. These don't eliminate drift but establish ground truth at intervals. The value compounds if done before, not after, the triggering event.
 - *Instrumentation attempts* — no reliable leading indicators are known, but candidate signals include: growth rate versus communication infrastructure investment rate; ratio of synchronous to asynchronous knowledge transfer; bus factor by team and function. Treat these as early warning attempts, not reliable gauges.
-- *Name the loophole explicitly* — when a team adopts a practice because it eliminates a visible cost ("just ask Slack"), ask where that cost went, not whether it's gone.
+- *Name the loophole explicitly* — when a team adopts a practice because it eliminates a visible cost today, ask where that cost went rather than whether it's gone.
 
 **After the threshold:**
 
-- *Accept hysteresis* — once you've crossed the cusp, work forward from the new state rather than attempting to restore the prior one. Trying to "reorg back" to a structure that worked a year ago is a common failure mode; the informal networks that made it work are gone.
+- *Accept hysteresis* — once you've crossed the cusp, work forward from the new state rather than attempting to restore the prior one. Trying to “reorg back” to a structure that worked a year ago is a common failure mode; the informal networks that made it work are gone.
 - *Triage recoverable from unrecoverable* — assess what the threshold event actually destroyed. If people are still present, informal knowledge can be reconstructed; this is painful and expensive but workable. If artifacts are gone (deleted records, departed people), the debt cannot be paid and recovery planning should be directed elsewhere.
 
 ## Consequences
@@ -52,7 +56,7 @@ The threshold event destroys the asset itself. Knowledge after a retention polic
 
 ### Partially unrecoverable (most common)
 
-Most real instances fall between these. The Slack case: history gone, but people who were in those conversations carry some of it. Findability and onboardability are lost; the conversations themselves are partially recoverable through interviews. Full restoration is impossible; partial recovery through deliberate archaeology is available at a cost.
+Most real instances fall between these. The triggering event destroys the searchable record and the onboarding surface while leaving partial knowledge in the heads of people who were present. Findability is gone; the underlying knowledge is partially recoverable through deliberate archaeology. Full restoration is impossible; partial recovery is available at a cost.
 
 ### Time-unrecoverable (practically equivalent)
 
