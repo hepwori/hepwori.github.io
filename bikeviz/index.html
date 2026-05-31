@@ -150,6 +150,16 @@
     <div class="chart-title">avg heart rate — <span id="hr-route-label">selected route</span></div>
     <canvas id="chart-hr" height="130"></canvas>
   </div>
+
+  <div class="chart-card" id="hr-dur-card" style="display:none">
+    <div class="chart-title">heart rate vs duration — <span id="hr-dur-route-label">selected route</span></div>
+    <canvas id="chart-hr-dur" height="130"></canvas>
+  </div>
+
+  <div class="chart-card" id="time-card" style="display:none">
+    <div class="chart-title">completion time — <span id="time-route-label">selected route</span></div>
+    <canvas id="chart-time" height="130"></canvas>
+  </div>
 </div>
 
 <script>
@@ -432,6 +442,8 @@ function updateRouteLabels() {
   g('hr-route-label').textContent = name;
   g('map-route-label').textContent = name;
   g('traces-route-label').textContent = name;
+  g('time-route-label').textContent = name;
+  g('hr-dur-route-label').textContent = name;
 }
 
 // ── Route map ──────────────────────────────────────────────────────────────
@@ -560,6 +572,63 @@ function renderTraceChart(key) {
   }); // end requestAnimationFrame
 }
 
+// ── HR vs duration scatter ─────────────────────────────────────────────────
+
+function linReg(pts) {
+  const n = pts.length;
+  const mx = pts.reduce((s,p)=>s+p.x,0)/n, my = pts.reduce((s,p)=>s+p.y,0)/n;
+  const ssxy = pts.reduce((s,p)=>s+(p.x-mx)*(p.y-my),0);
+  const ssxx = pts.reduce((s,p)=>s+(p.x-mx)**2,0);
+  const ssyy = pts.reduce((s,p)=>s+(p.y-my)**2,0);
+  const slope = ssxy/ssxx, intercept = my - slope*mx;
+  const r2 = ssxx && ssyy ? (ssxy**2)/(ssxx*ssyy) : 0;
+  return { slope, intercept, r2 };
+}
+
+function renderHrDurChart(key) {
+  dc('hr-dur');
+  const rr = filteredRides().filter(r => r.route === key && r.hr_avg && r.dur_mins);
+  if (rr.length < 3) { g('hr-dur-card').style.display = 'none'; return; }
+  g('hr-dur-card').style.display = 'block';
+  const dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const tc = dark ? '#8e8e8a' : '#777770';
+  const gc = dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
+  const pts = rr.map(r => ({ x: +r.dur_mins.toFixed(1), y: Math.round(r.hr_avg) }));
+  const { slope, intercept, r2 } = linReg(pts);
+  const xs = [Math.min(...pts.map(p=>p.x)), Math.max(...pts.map(p=>p.x))];
+  const fitLine = xs.map(x => ({ x, y: +(slope*x+intercept).toFixed(1) }));
+  g('hr-dur-route-label').textContent = `${dn(key)} · r² = ${r2.toFixed(2)}`;
+  charts['hr-dur'] = new Chart(g('chart-hr-dur'), {
+    type: 'scatter',
+    data: { datasets: [
+      { data: pts, backgroundColor: '#D85A3099', pointRadius: 4 },
+      { data: fitLine, type: 'line', borderColor: '#D85A30cc', borderWidth: 1.5, borderDash: [4,3], pointRadius: 0, fill: false },
+    ]},
+    options: {
+      responsive: true, maintainAspectRatio: true,
+      plugins: { legend: { display: false }, tooltip: { filter: i => i.datasetIndex === 0, callbacks: { label: c => `${c.parsed.y} bpm @ ${c.parsed.x} min` } } },
+      scales: {
+        x: { type: 'linear', title: { display: true, text: 'min', color: tc, font: { size: 11 } }, ticks: { color: tc, font: { size: 11 } }, grid: { color: gc } },
+        y: { title: { display: true, text: 'bpm', color: tc, font: { size: 11 } }, ticks: { color: tc, font: { size: 11 } }, grid: { color: gc } },
+      }
+    }
+  });
+}
+
+// ── Completion time chart ──────────────────────────────────────────────────
+
+function renderTimeChart(key) {
+  dc('time');
+  const rr = filteredRides().filter(r => r.route === key).sort((a,b) => a.date - b.date);
+  if (rr.length < 2) { g('time-card').style.display = 'none'; return; }
+  g('time-card').style.display = 'block';
+  charts.time = new Chart(g('chart-time'), {
+    type: 'scatter',
+    data: { datasets: [{ data: rr.map(r => ({ x: r.date, y: +r.dur_mins.toFixed(1) })), backgroundColor: '#5DCAA599', pointRadius: 4 }] },
+    options: (() => { const o = co({ xIsDate: true, yLabel: 'min' }); o.scales.y.min = 0; return o; })()
+  });
+}
+
 // ── Route selection ────────────────────────────────────────────────────────
 
 function selectRoute(key) {
@@ -572,10 +641,12 @@ function selectRoute(key) {
   dc('hr');
   if (hrRides.length > 2) {
     g('hr-card').style.display = 'block';
-    charts.hr = new Chart(g('chart-hr'),{ type:'scatter', data:{ datasets:[{ data:hrRides.map(r=>({x:r.date,y:Math.round(r.hr_avg)})), backgroundColor:'#D85A3099', pointRadius:4 }] }, options:co({ xIsDate:true, yLabel:'bpm' }) });
+    charts.hr = new Chart(g('chart-hr'),{ type:'scatter', data:{ datasets:[{ data:hrRides.map(r=>({x:r.date,y:Math.round(r.hr_avg)})), backgroundColor:'#D85A3099', pointRadius:4 }] }, options: (() => { const o = co({ xIsDate:true, yLabel:'bpm' }); o.scales.y.min = 0; return o; })() });
   } else { g('hr-card').style.display = 'none'; }
   renderRouteMap(key);
   renderTraceChart(key);
+  renderHrDurChart(key);
+  renderTimeChart(key);
 }
 </script>
 </body>
