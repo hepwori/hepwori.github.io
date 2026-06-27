@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>House Temperatures</title>
+<style>
+* { box-sizing: border-box; }
+body { font-family: -apple-system, sans-serif; margin: 0; padding: 1.5rem 2rem; background: #fff; color: #222; }
+h2 { font-weight: 500; margin: 0 0 0.5rem; font-size: 1.2rem; }
+.legend { display: flex; gap: 20px; margin-bottom: 0.75rem; font-size: 13px; color: #555; flex-wrap: wrap; align-items: center; }
+.controls { display: flex; gap: 8px; margin-bottom: 1rem; flex-wrap: wrap; }
+button { font-size: 12px; padding: 4px 12px; border: 1px solid #ccc; border-radius: 4px; background: #fff; cursor: pointer; color: #333; }
+button:hover { background: #f5f5f5; }
+button.active { background: #e8f0fe; border-color: #4285f4; color: #1a73e8; }
+.hint { font-size: 11px; color: #aaa; margin-left: auto; align-self: center; }
+</style>
+</head>
+<body>
+<h2>House temperatures — Jun 16–27</h2>
+<div class="legend">
+  <span><span style="display:inline-block;width:24px;height:3px;background:#378ADD;margin-right:6px;vertical-align:middle;border-radius:2px;"></span>basement</span>
+  <span><span style="display:inline-block;width:24px;height:3px;background:#1D9E75;margin-right:6px;vertical-align:middle;border-radius:2px;"></span>main floor</span>
+  <span><span style="display:inline-block;width:24px;height:3px;background:#D4537E;margin-right:6px;vertical-align:middle;border-radius:2px;"></span>upstairs</span>
+  <span><span style="display:inline-block;width:24px;height:3px;background:#888780;margin-right:6px;vertical-align:middle;border-radius:2px;border-top:2px dashed #888780;height:0;"></span>outdoor</span>
+  <span><span style="display:inline-block;width:14px;height:14px;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.4);margin-right:6px;vertical-align:middle;border-radius:2px;"></span>A/C running</span>
+</div>
+<div class="controls">
+  <button onclick="resetZoom()">Reset zoom</button>
+  <button onclick="setRange(1)" id="btn1d">1 day</button>
+  <button onclick="setRange(3)" id="btn3d">3 days</button>
+  <button onclick="setRange(7)" id="btn7d">7 days</button>
+  <button onclick="setRange(null)" id="btnAll" class="active">All</button>
+  <span class="hint">scroll to zoom · drag to pan</span>
+</div>
+<div style="position:relative;width:100%;height:520px;">
+  <canvas id="chart"></canvas>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/luxon@3/build/global/luxon.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1.3.1/dist/chartjs-adapter-luxon.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-annotation/3.0.1/chartjs-plugin-annotation.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-zoom/2.0.1/chartjs-plugin-zoom.min.js"></script>
+<script>
+
+fetch('data.json').then(r => r.json()).then(({data, windows}) => {
+
+const mk = (key, color, dash) => ({
+  label: key.replace('_',' '),
+  data: data.map(d => ({ x: d.ts, y: d[key] })),
+  borderColor: color, borderWidth: 1.5,
+  borderDash: dash || [], pointRadius: 0,
+  tension: 0.3, spanGaps: true
+});
+
+const annotations = {};
+windows.forEach((w, i) => {
+  annotations['ac'+i] = {
+    type: 'box',
+    xMin: w.start, xMax: w.end,
+    backgroundColor: 'rgba(59,130,246,0.08)',
+    borderColor: 'rgba(59,130,246,0.25)',
+    borderWidth: 1,
+  };
+});
+
+window.chart = new Chart(document.getElementById('chart'), {
+  type: 'line',
+  data: { datasets: [
+    mk('basement','#378ADD'),
+    mk('main_floor','#1D9E75'),
+    mk('upstairs','#D4537E'),
+    mk('outdoor','#888780',[5,3])
+  ]},
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    interaction: { mode: 'index', intersect: false },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          title: items => new Date(items[0].parsed.x).toLocaleString('en-US', {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}),
+          label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y != null ? ctx.parsed.y.toFixed(1)+'°F' : '—'}`
+        }
+      },
+      annotation: { annotations },
+      zoom: {
+        pan: { enabled: true, mode: 'x' },
+        zoom: {
+          wheel: { enabled: true },
+          pinch: { enabled: true },
+          mode: 'x',
+          onZoom: () => setActiveBtn(null),
+          onPan: () => setActiveBtn(null),
+        }
+      }
+    },
+    scales: {
+      x: {
+        type: 'time',
+        time: { displayFormats: { hour: 'M/d ha', day: 'M/d' } },
+        ticks: { maxTicksLimit: 12, color: '#888' },
+        grid: { color: '#eee' }
+      },
+      y: {
+        ticks: { callback: v => v + '°F', color: '#888' },
+        grid: { color: '#eee' }
+      }
+    }
+  }
+});
+
+window.resetZoom = () => { chart.resetZoom(); setActiveBtn('btnAll'); };
+
+window.setRange = (days) => {
+  if (!days) { chart.resetZoom(); setActiveBtn('btnAll'); return; }
+  const max = data[data.length-1].ts;
+  const min = max - days * 86400 * 1000;
+  chart.zoomScale('x', {min, max}, 'default');
+  setActiveBtn('btn'+days+'d');
+};
+
+window.clearRangeButtons = () => setActiveBtn(null);
+
+function setActiveBtn(id) {
+  ['btn1d','btn3d','btn7d','btnAll'].forEach(b => document.getElementById(b).classList.toggle('active', b===id));
+}
+
+});
+</script>
+</body>
+</html>
