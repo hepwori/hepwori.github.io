@@ -1,7 +1,7 @@
 {
-  "generated": "2026-06-20T13:44:54.908383+00:00",
+  "generated": "2026-07-05T17:33:16.951717+00:00",
   "source_file": "export.xml",
-  "total_rides": 698,
+  "total_rides": 704,
   "rides": [
     {
       "date": "2015-07-16T17:25:23-06:00",
@@ -8377,6 +8377,78 @@
       "hr_min": 114.0,
       "energy_kcal": 231.8,
       "elev_gain_ft": 878,
+      "source": "Isaac\u2019s Apple\u00a0Watch"
+    },
+    {
+      "date": "2026-06-20T12:43:53-06:00",
+      "dist_mi": 23.0191,
+      "dur_mins": 72.32,
+      "speed_mph": 19.098,
+      "hr_avg": 139.6,
+      "hr_max": 162.0,
+      "hr_min": 80.0,
+      "energy_kcal": 243.2,
+      "elev_gain_ft": 867,
+      "source": "Isaac\u2019s Apple\u00a0Watch"
+    },
+    {
+      "date": "2026-06-27T10:24:38-06:00",
+      "dist_mi": 23.0063,
+      "dur_mins": 77.11,
+      "speed_mph": 17.901,
+      "hr_avg": 154.5,
+      "hr_max": 168.0,
+      "hr_min": 105.0,
+      "energy_kcal": 256.8,
+      "elev_gain_ft": 877,
+      "source": "Isaac\u2019s Apple\u00a0Watch"
+    },
+    {
+      "date": "2026-06-28T10:08:05-06:00",
+      "dist_mi": 23.0055,
+      "dur_mins": 77.82,
+      "speed_mph": 17.736,
+      "hr_avg": 149.0,
+      "hr_max": 168.0,
+      "hr_min": 87.0,
+      "energy_kcal": 253.6,
+      "elev_gain_ft": 904,
+      "source": "Isaac\u2019s Apple\u00a0Watch"
+    },
+    {
+      "date": "2026-07-02T16:16:43-06:00",
+      "dist_mi": 23.0086,
+      "dur_mins": 72.43,
+      "speed_mph": 19.06,
+      "hr_avg": 152.2,
+      "hr_max": 171.0,
+      "hr_min": 121.0,
+      "energy_kcal": 201.0,
+      "elev_gain_ft": 859,
+      "source": "Isaac\u2019s Apple\u00a0Watch"
+    },
+    {
+      "date": "2026-07-03T12:55:54-06:00",
+      "dist_mi": 23.0072,
+      "dur_mins": 76.17,
+      "speed_mph": 18.124,
+      "hr_avg": 135.5,
+      "hr_max": 160.0,
+      "hr_min": 103.0,
+      "energy_kcal": 201.0,
+      "elev_gain_ft": 871,
+      "source": "Isaac\u2019s Apple\u00a0Watch"
+    },
+    {
+      "date": "2026-07-05T09:30:44-06:00",
+      "dist_mi": 23.0086,
+      "dur_mins": 72.76,
+      "speed_mph": 18.974,
+      "hr_avg": 143.6,
+      "hr_max": 159.0,
+      "hr_min": 104.0,
+      "energy_kcal": 211.9,
+      "elev_gain_ft": 868,
       "source": "Isaac\u2019s Apple\u00a0Watch"
     }
   ]
