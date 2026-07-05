@@ -497,7 +497,7 @@ function computeTrace(track) {
   let cumDist = 0;
   return track.map((p, i) => {
     if (i > 0) cumDist += haversine(track[i-1][0], track[i-1][1], p[0], p[1]);
-    return p[3] != null ? { x: +cumDist.toFixed(3), y: p[3] } : null;
+    return p[3] != null ? { x: p[3], y: +cumDist.toFixed(3) } : null;
   }).filter(Boolean);
 }
 
@@ -558,13 +558,13 @@ function renderTraceChart(key) {
           mode: 'nearest', intersect: false,
           callbacks: {
             title: items => items[0]?.dataset.label || '',
-            label: c => `${c.parsed.y.toFixed(1)} min at ${c.parsed.x.toFixed(2)} mi`,
+            label: c => `${c.parsed.y.toFixed(2)} mi at ${c.parsed.x.toFixed(1)} min`,
           }
         }
       },
       scales: {
-        x: { type:'linear', title:{display:true,text:'miles',color:tc,font:{size:11}}, ticks:{color:tc,font:{size:11}}, grid:{color:gc} },
-        y: { title:{display:true,text:'min',color:tc,font:{size:11}}, ticks:{color:tc,font:{size:11}}, grid:{color:gc} },
+        x: { type:'linear', title:{display:true,text:'min',color:tc,font:{size:11}}, ticks:{color:tc,font:{size:11}}, grid:{color:gc} },
+        y: { title:{display:true,text:'miles',color:tc,font:{size:11}}, ticks:{color:tc,font:{size:11}}, grid:{color:gc} },
       }
     }
   });
