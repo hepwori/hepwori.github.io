@@ -67,6 +67,13 @@
   .route-name-row { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
   .route-name-row label { font-size: 12px; color: var(--text2); white-space: nowrap; }
   .route-name-row input[type=text] { flex: 1; max-width: 260px; padding: 6px 10px; font-size: 13px; border: 1px solid var(--border2); border-radius: var(--radius); background: var(--bg); color: var(--text); font-family: inherit; }
+  /* PR badges */
+  .route-records { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 1rem; }
+  .pr-badge { display: flex; align-items: center; gap: 8px; background: var(--bg2); border-radius: var(--radius); padding: 8px 12px; }
+  .pr-badge-icon { font-size: 15px; }
+  .pr-badge-label { font-size: 10px; color: var(--text2); text-transform: uppercase; letter-spacing: 0.06em; }
+  .pr-badge-value { font-size: 14px; font-weight: 500; font-family: 'Menlo', 'Courier New', monospace; }
+  .pr-badge-sub { font-size: 10px; color: var(--text2); }
 </style>
 </head>
 <body>
@@ -131,6 +138,7 @@
   </div>
   <div class="cluster-hint" id="cluster-hint"></div>
   <div class="route-pills" id="route-pills"></div>
+  <div class="route-records" id="route-records"></div>
   <div class="route-name-row">
     <label>rename selected route</label>
     <input type="text" id="route-name-input" placeholder="e.g. morning loop">
@@ -160,12 +168,31 @@
     <div class="chart-title">completion time — <span id="time-route-label">selected route</span></div>
     <canvas id="chart-time" height="130"></canvas>
   </div>
+
+  <div class="chart-card" id="pace-card" style="display:none">
+    <div class="chart-title">pace trend — <span id="pace-route-label">selected route</span></div>
+    <canvas id="chart-pace" height="130"></canvas>
+  </div>
 </div>
 
 <script>
 const g = id => document.getElementById(id);
 let charts = {}, allRides = [], activeRoute = null, epsilon = 0.1;
-const routeNames = {};
+const ROUTE_NAMES_STORAGE_KEY = 'bikeviz-route-names';
+let allRouteNames = {};
+try { allRouteNames = JSON.parse(localStorage.getItem(ROUTE_NAMES_STORAGE_KEY)) || {}; } catch {}
+let routeNames = {}; // current epsilon's {bucketKey: name} slice of allRouteNames
+
+function ensureRouteNamesForEpsilon() {
+  const k = epsilon.toFixed(2);
+  if (!allRouteNames[k]) allRouteNames[k] = {};
+  routeNames = allRouteNames[k];
+}
+
+function persistRouteNames() {
+  try { localStorage.setItem(ROUTE_NAMES_STORAGE_KEY, JSON.stringify(allRouteNames)); } catch {}
+}
+
 let selectedYears = new Set();
 let lastN = 0;
 let trackData = {};
@@ -219,6 +246,7 @@ function loadTracks(data) {
 // ── Route clustering ───────────────────────────────────────────────────────
 
 function assignRoutes() {
+  ensureRouteNamesForEpsilon();
   allRides.forEach(r => r.route = null);
   const map = {};
   allRides.forEach(r => {
@@ -227,9 +255,12 @@ function assignRoutes() {
     map[key].rides.push(r);
   });
   const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  // key = the distance-bucket string itself (stable across reloads for a given epsilon),
+  // rather than an index — so custom names and localStorage persistence stay attached
+  // to the same physical route even if ride counts shift the sort order.
   Object.values(map).filter(b=>b.rides.length>=3).sort((a,b)=>b.rides.length-a.rides.length)
     .forEach((b,i) => {
-      const key = `route_${i}`;
+      const key = b.key;
       if (!routeNames[key]) routeNames[key] = `route ${letters[i]||i+1}`;
       b.rides.forEach(r => r.route = key);
     });
@@ -327,10 +358,12 @@ function rerenderRoutes() {
   activeRoute = sel;
   if (sel) selectRoute(sel);
   else {
-    dc('hr'); dc('traces');
+    dc('hr'); dc('traces'); dc('pace');
     g('hr-card').style.display = 'none';
     g('traces-card').style.display = 'none';
     g('route-map-card').style.display = 'none';
+    g('pace-card').style.display = 'none';
+    g('route-records').innerHTML = '';
   }
 }
 
@@ -343,6 +376,7 @@ g('eps-slider').addEventListener('input', function() {
 g('route-name-input').addEventListener('input', function() {
   if (!activeRoute) return;
   routeNames[activeRoute] = this.value.trim() || activeRoute;
+  persistRouteNames();
   renderRoutePills(getRoutes()); updateRouteLabels();
 });
 
@@ -444,6 +478,76 @@ function updateRouteLabels() {
   g('traces-route-label').textContent = name;
   g('time-route-label').textContent = name;
   g('hr-dur-route-label').textContent = name;
+  g('pace-route-label').textContent = name;
+}
+
+// ── Personal records ───────────────────────────────────────────────────────
+
+function fmtDate(d) { return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); }
+
+function renderRouteRecords(key) {
+  const rr = filteredRides().filter(r => r.route === key);
+  const c = g('route-records');
+  if (rr.length < 3) { c.innerHTML = ''; return; }
+
+  const fastest = rr.reduce((a, b) => (b.dur_mins < a.dur_mins ? b : a));
+  const bestPace = rr.reduce((a, b) => (b.speed_mph > a.speed_mph ? b : a));
+  const newestByDate = [...rr].sort((a, b) => a.date - b.date).at(-1);
+  const isFreshPR = newestByDate === fastest || newestByDate === bestPace;
+
+  const badges = [
+    { icon: '⏱️', label: 'fastest', value: `${fastest.dur_mins.toFixed(1)} min`, sub: fmtDate(fastest.date) },
+    { icon: '⚡', label: 'best pace', value: `${bestPace.speed_mph.toFixed(1)} mph`, sub: fmtDate(bestPace.date) },
+  ];
+  const elevRides = rr.filter(r => r.elev_gain_ft != null);
+  if (elevRides.length) {
+    const mostClimb = elevRides.reduce((a, b) => (b.elev_gain_ft > a.elev_gain_ft ? b : a));
+    badges.push({ icon: '⛰️', label: 'most climbing', value: `${mostClimb.elev_gain_ft.toLocaleString()} ft`, sub: fmtDate(mostClimb.date) });
+  }
+  if (isFreshPR) {
+    badges.unshift({ icon: '🎉', label: 'new PR', value: 'latest ride', sub: 'nice work' });
+  }
+
+  c.innerHTML = badges.map(b => `
+    <div class="pr-badge">
+      <span class="pr-badge-icon">${b.icon}</span>
+      <div>
+        <div class="pr-badge-label">${b.label}</div>
+        <div class="pr-badge-value">${b.value}</div>
+        <div class="pr-badge-sub">${b.sub}</div>
+      </div>
+    </div>`).join('');
+}
+
+// ── Pace trend ─────────────────────────────────────────────────────────────
+
+function renderPaceChart(key) {
+  dc('pace');
+  const rr = filteredRides().filter(r => r.route === key && r.speed_mph).sort((a, b) => a.date - b.date);
+  if (rr.length < 3) { g('pace-card').style.display = 'none'; return; }
+  g('pace-card').style.display = 'block';
+
+  const scatterPts = rr.map(r => ({ x: r.date, y: +r.speed_mph.toFixed(2) }));
+  const window = Math.min(5, rr.length);
+  const avgPts = rr.map((r, i) => {
+    const slice = rr.slice(Math.max(0, i - window + 1), i + 1);
+    const avg = slice.reduce((s, x) => s + x.speed_mph, 0) / slice.length;
+    return { x: r.date, y: +avg.toFixed(2) };
+  });
+
+  const opts = co({ xIsDate: true, yLabel: 'mph' });
+  opts.plugins.tooltip.callbacks.label = c => `${c.dataset.label}: ${c.parsed.y.toFixed(1)} mph`;
+  opts.plugins.legend.display = true;
+  opts.plugins.legend.labels = { color: opts.scales.x.ticks.color, font: { size: 11 }, boxWidth: 12 };
+
+  charts.pace = new Chart(g('chart-pace'), {
+    type: 'line',
+    data: { datasets: [
+      { type: 'scatter', label: 'ride', data: scatterPts, backgroundColor: '#1D9E7555', pointRadius: 3, showLine: false },
+      { label: `${window}-ride avg`, data: avgPts, borderColor: '#D85A30', backgroundColor: 'transparent', borderWidth: 2, tension: 0.25, pointRadius: 0 },
+    ]},
+    options: opts,
+  });
 }
 
 // ── Route map ──────────────────────────────────────────────────────────────
@@ -647,6 +751,8 @@ function selectRoute(key) {
   renderTraceChart(key);
   renderHrDurChart(key);
   renderTimeChart(key);
+  renderPaceChart(key);
+  renderRouteRecords(key);
 }
 </script>
 </body>

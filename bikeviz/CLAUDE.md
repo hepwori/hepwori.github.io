@@ -90,28 +90,31 @@ this is a pragmatic approximation — it works well because isaac does very few 
 - **distance scatter** — all rides over time
 - **cumulative distance** — running total
 - **cumulative elevation** — running total (conditional on elevation data)
+- **personal records** — fastest time / best pace / most climbing badges per route (conditional on 3+ rides), plus a "new PR" badge when the most recent ride is the record holder. `renderRouteRecords()`.
 - **route map** — SVG overlay of all filtered rides on the selected route; segments colored by elevation (blue→green→red, normalised per-route); rendered as 32 color-bucketed paths for performance
 - **per-route ride traces** — multi-series chart (x=distance mi, y=elapsed min), one line per ride, colored grey→green by date
 - **HR trend** — per-route heart rate over time (conditional on 3+ rides with HR data)
+- **pace trend** — per-route speed (mph) over time: raw scatter + trailing 5-ride rolling average line, to surface whether the rider is getting faster on a given route. `renderPaceChart()`.
 
 ## dashboard architecture notes
 
 - `allRides` — all rides with `.route` assigned; never filtered
 - `filteredRides()` — applies `selectedYears` + `lastN` to `allRides`; used everywhere for rendering
 - `trackData` — `{dateStr: [[lat,lon,ele_m,elapsed_min],…]}` loaded from tracks.json; joined via `ride.dateStr`
-- `assignRoutes()` — always runs on `allRides`; called on load and when epsilon changes
+- `assignRoutes()` — always runs on `allRides`; called on load and when epsilon changes. route identity is the distance-bucket key itself (e.g. `"18.350"`), not a sort-order index — this keeps a route's identity (and its name) stable across reloads even if ride counts shift which bucket is "biggest"
+- `allRouteNames` — `{epsilonKey: {bucketKey: name}}`, persisted to `localStorage['bikeviz-route-names']`; `routeNames` is a live reference into the slice for the current epsilon, set by `ensureRouteNamesForEpsilon()`. Renaming calls `persistRouteNames()` on every keystroke.
 - `refilter()` — rebuilds filter pills + re-renders all charts; called on any filter change
 - fetch-based boot: `Promise.allSettled([fetch('./rides.json'), fetch('./tracks.json')])`; tracks.json failure is non-fatal
 
 ## known limitations / good next tasks
 
-- **route names don't persist** — renaming is session-only. could use localStorage or a `routes.json` sidecar
 - **clustering is distance-only** — two routes of similar length are indistinguishable. real fix requires GPS fingerprinting (start point + shape matching)
 - **no segment analysis** — strava-style segment detection would require correlating GPX traces
 - **no power data** — isaac doesn't have a power meter; schema supports it if added
 - **single-file HTML** — deliberate constraint for portability. if complexity grows, consider a simple vite app
 - **CDN dependency** — chart.js loaded from CDN; requires internet on first open. could be bundled
 - **HR data sparsity** — HR chart only renders if 3+ rides on the route have HR data
+- **pace trend isn't elevation-adjusted** — two rides of the same route can differ in effort due to wind/climb variance the schema doesn't fully capture; an elevation-normalized pace metric would be a sharper fitness signal than raw mph
 
 ## philosophy
 
