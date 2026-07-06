@@ -44,10 +44,12 @@ requires an internet connection to load chart.js from CDN.
 - **cumulative distance** — running total over the filtered date range
 - **cumulative elevation gain** — running total climbing (if GPS data available)
 - **route detection** — automatic clustering by distance with adjustable epsilon slider
-- **route renaming** — labels persist in-session
+- **route renaming** — labels persist across sessions via localStorage
+- **personal records** — fastest time, best pace, and most climbing badges per route, with a "new PR" callout when your latest ride sets one
 - **route map** — GPS track overlay for all rides on the selected route, colored by elevation (blue=low → green → red=high)
 - **per-route ride traces** — multi-series chart (x=distance, y=elapsed time), one line per ride, colored by date
 - **HR trend** — per-route heart rate over time (when data available)
+- **pace trend** — per-route speed over time with a rolling average, to see whether you're getting faster on a route
 
 ## re-running after a new export
 
