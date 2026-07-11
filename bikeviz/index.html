@@ -164,6 +164,16 @@
     <canvas id="chart-hr-dur" height="130"></canvas>
   </div>
 
+  <div class="chart-card" id="power-card" style="display:none">
+    <div class="chart-title">avg power — <span id="power-route-label">selected route</span></div>
+    <canvas id="chart-power" height="130"></canvas>
+  </div>
+
+  <div class="chart-card" id="cadence-card" style="display:none">
+    <div class="chart-title">avg cadence — <span id="cadence-route-label">selected route</span></div>
+    <canvas id="chart-cadence" height="130"></canvas>
+  </div>
+
   <div class="chart-card" id="time-card" style="display:none">
     <div class="chart-title">completion time — <span id="time-route-label">selected route</span></div>
     <canvas id="chart-time" height="130"></canvas>
@@ -358,11 +368,13 @@ function rerenderRoutes() {
   activeRoute = sel;
   if (sel) selectRoute(sel);
   else {
-    dc('hr'); dc('traces'); dc('pace');
+    dc('hr'); dc('traces'); dc('pace'); dc('power'); dc('cadence');
     g('hr-card').style.display = 'none';
     g('traces-card').style.display = 'none';
     g('route-map-card').style.display = 'none';
     g('pace-card').style.display = 'none';
+    g('power-card').style.display = 'none';
+    g('cadence-card').style.display = 'none';
     g('route-records').innerHTML = '';
   }
 }
@@ -479,6 +491,8 @@ function updateRouteLabels() {
   g('time-route-label').textContent = name;
   g('hr-dur-route-label').textContent = name;
   g('pace-route-label').textContent = name;
+  g('power-route-label').textContent = name;
+  g('cadence-route-label').textContent = name;
 }
 
 // ── Personal records ───────────────────────────────────────────────────────
@@ -747,6 +761,21 @@ function selectRoute(key) {
     g('hr-card').style.display = 'block';
     charts.hr = new Chart(g('chart-hr'),{ type:'scatter', data:{ datasets:[{ data:hrRides.map(r=>({x:r.date,y:Math.round(r.hr_avg)})), backgroundColor:'#D85A3099', pointRadius:4 }] }, options: (() => { const o = co({ xIsDate:true, yLabel:'bpm' }); o.scales.y.min = 0; return o; })() });
   } else { g('hr-card').style.display = 'none'; }
+
+  const powerRides = rr.filter(r=>r.power_avg);
+  dc('power');
+  if (powerRides.length > 2) {
+    g('power-card').style.display = 'block';
+    charts.power = new Chart(g('chart-power'),{ type:'scatter', data:{ datasets:[{ data:powerRides.map(r=>({x:r.date,y:Math.round(r.power_avg)})), backgroundColor:'#5A7ED899', pointRadius:4 }] }, options: (() => { const o = co({ xIsDate:true, yLabel:'W' }); o.scales.y.min = 0; return o; })() });
+  } else { g('power-card').style.display = 'none'; }
+
+  const cadenceRides = rr.filter(r=>r.cadence_avg);
+  dc('cadence');
+  if (cadenceRides.length > 2) {
+    g('cadence-card').style.display = 'block';
+    charts.cadence = new Chart(g('chart-cadence'),{ type:'scatter', data:{ datasets:[{ data:cadenceRides.map(r=>({x:r.date,y:+r.cadence_avg.toFixed(1)})), backgroundColor:'#8E5AD899', pointRadius:4 }] }, options: (() => { const o = co({ xIsDate:true, yLabel:'rpm' }); o.scales.y.min = 0; return o; })() });
+  } else { g('cadence-card').style.display = 'none'; }
+
   renderRouteMap(key);
   renderTraceChart(key);
   renderHrDurChart(key);

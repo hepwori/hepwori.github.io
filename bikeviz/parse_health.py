@@ -299,6 +299,24 @@ def main():
                         energy_kcal = v if "kcal" in unit else v * 0.239001
                         break
 
+                # cadence (rpm)
+                cadence_avg = None
+                cadence_max = None
+                cad_key = "HKQuantityTypeIdentifierCyclingCadence"
+                if cad_key in current_stats:
+                    cs = current_stats[cad_key]
+                    cadence_avg = float(cs.get("average", 0) or 0) or None
+                    cadence_max = float(cs.get("maximum", 0) or 0) or None
+
+                # power (watts)
+                power_avg = None
+                power_max = None
+                pwr_key = "HKQuantityTypeIdentifierCyclingPower"
+                if pwr_key in current_stats:
+                    ps = current_stats[pwr_key]
+                    power_avg = float(ps.get("average", 0) or 0) or None
+                    power_max = float(ps.get("maximum", 0) or 0) or None
+
                 ride = {
                     "date": parse_date(w.get("startDate")),
                     "dist_mi": round(dist_mi, 4),
@@ -308,6 +326,10 @@ def main():
                     "hr_max": round(hr_max, 1) if hr_max else None,
                     "hr_min": round(hr_min, 1) if hr_min else None,
                     "energy_kcal": round(energy_kcal, 1) if energy_kcal else None,
+                    "cadence_avg": round(cadence_avg, 1) if cadence_avg else None,
+                    "cadence_max": round(cadence_max, 1) if cadence_max else None,
+                    "power_avg": round(power_avg, 1) if power_avg else None,
+                    "power_max": round(power_max, 1) if power_max else None,
                     "elev_gain_ft": None,
                     "source": w.get("sourceName", None),
                 }
