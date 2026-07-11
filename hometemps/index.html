@@ -22,7 +22,7 @@ button.active { background: #e8f0fe; border-color: #4285f4; color: #1a73e8; }
   <span><span style="display:inline-block;width:24px;height:3px;background:#1D9E75;margin-right:6px;vertical-align:middle;border-radius:2px;"></span>main floor</span>
   <span><span style="display:inline-block;width:24px;height:3px;background:#D4537E;margin-right:6px;vertical-align:middle;border-radius:2px;"></span>upstairs</span>
   <span><span style="display:inline-block;width:24px;height:3px;background:#888780;margin-right:6px;vertical-align:middle;border-radius:2px;border-top:2px dashed #888780;height:0;"></span>outdoor</span>
-  <span><span style="display:inline-block;width:14px;height:14px;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.4);margin-right:6px;vertical-align:middle;border-radius:2px;"></span>A/C running</span>
+  <span><span style="display:inline-block;width:14px;height:14px;background:rgba(59,130,246,0.15);margin-right:6px;vertical-align:middle;border-radius:2px;"></span>A/C running</span>
 </div>
 <div class="controls">
   <button onclick="resetZoom()">Reset zoom</button>
@@ -60,8 +60,7 @@ windows.forEach((w, i) => {
     type: 'box',
     xMin: w.start, xMax: w.end,
     backgroundColor: 'rgba(59,130,246,0.08)',
-    borderColor: 'rgba(59,130,246,0.25)',
-    borderWidth: 1,
+    borderWidth: 0,
   };
 });
 
