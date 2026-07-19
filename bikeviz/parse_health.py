@@ -10,6 +10,7 @@ streams the XML iteratively so 2.7GB+ files are no problem.
 
 import sys
 import json
+import bisect
 import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 from pathlib import Path
@@ -23,6 +24,16 @@ def parse_date(s):
         return datetime.strptime(s, "%Y-%m-%d %H:%M:%S %z").isoformat()
     except ValueError:
         return s
+
+
+def parse_ts(s):
+    """Parse apple health date string to unix timestamp for fast range matching."""
+    if not s:
+        return None
+    try:
+        return datetime.strptime(s, "%Y-%m-%d %H:%M:%S %z").timestamp()
+    except Exception:
+        return None
 
 
 def to_miles(value, unit):
@@ -206,6 +217,11 @@ def main():
     workouts_seen = 0
     records_seen = 0
 
+    # Raw per-second sensor records buffered for nonzero-avg computation.
+    # Records precede Workout elements in the XML so we collect them in one pass.
+    cad_raw = []  # (unix_ts, rpm)
+    pwr_raw = []  # (unix_ts, watts)
+
     context = ET.iterparse(str(input_path), events=("start", "end"))
 
     current_workout = None
@@ -224,6 +240,15 @@ def main():
                 last_print = now
             if elem.tag == "Record":
                 records_seen += 1
+                rtype = elem.get("type", "")
+                if rtype == "HKQuantityTypeIdentifierCyclingCadence":
+                    ts = parse_ts(elem.get("startDate", ""))
+                    if ts is not None:
+                        cad_raw.append((ts, float(elem.get("value", 0) or 0)))
+                elif rtype == "HKQuantityTypeIdentifierCyclingPower":
+                    ts = parse_ts(elem.get("startDate", ""))
+                    if ts is not None:
+                        pwr_raw.append((ts, float(elem.get("value", 0) or 0)))
             elif elem.tag == "Workout":
                 workouts_seen += 1
 
@@ -319,6 +344,8 @@ def main():
 
                 ride = {
                     "date": parse_date(w.get("startDate")),
+                    "_start_ts": parse_ts(w.get("startDate")),
+                    "_end_ts": parse_ts(w.get("endDate")),
                     "dist_mi": round(dist_mi, 4),
                     "dur_mins": round(dur_mins, 2),
                     "speed_mph": round((dist_mi / dur_mins) * 60, 3) if dur_mins > 0 else None,
@@ -340,6 +367,39 @@ def main():
             in_workout = False
             current_workout = None
             elem.clear()  # free memory — critical for large files
+
+    # Recompute cadence/power averages excluding zeros (coasting) using raw records.
+    # WorkoutStatistics avg includes zero samples; nonzero avg reflects active pedaling only.
+    if cad_raw or pwr_raw:
+        cad_raw.sort()
+        pwr_raw.sort()
+        cad_ts = [r[0] for r in cad_raw]
+        pwr_ts = [r[0] for r in pwr_raw]
+        sensor_corrected = 0
+        for ride in rides:
+            start_ts = ride.pop("_start_ts", None)
+            end_ts = ride.pop("_end_ts", None)
+            if start_ts is None or end_ts is None:
+                continue
+            if ride.get("cadence_avg") is not None and cad_raw:
+                lo = bisect.bisect_left(cad_ts, start_ts)
+                hi = bisect.bisect_right(cad_ts, end_ts)
+                vals = [cad_raw[i][1] for i in range(lo, hi) if cad_raw[i][1] > 0]
+                if vals:
+                    ride["cadence_avg"] = round(sum(vals) / len(vals), 1)
+                    sensor_corrected += 1
+            if ride.get("power_avg") is not None and pwr_raw:
+                lo = bisect.bisect_left(pwr_ts, start_ts)
+                hi = bisect.bisect_right(pwr_ts, end_ts)
+                vals = [pwr_raw[i][1] for i in range(lo, hi) if pwr_raw[i][1] > 0]
+                if vals:
+                    ride["power_avg"] = round(sum(vals) / len(vals), 1)
+        if sensor_corrected:
+            print(f"  corrected cadence/power averages to exclude zeros ({sensor_corrected} sensor rides)")
+    # Strip temp timestamp fields from any rides not yet cleaned up
+    for ride in rides:
+        ride.pop("_start_ts", None)
+        ride.pop("_end_ts", None)
 
     # Deduplicate: third-party apps (Strava etc.) re-syncing to Apple Health
     # can write identical Workout records multiple times into export.xml
