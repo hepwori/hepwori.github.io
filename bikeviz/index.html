@@ -743,7 +743,7 @@ function renderTimeChart(key) {
   charts.time = new Chart(g('chart-time'), {
     type: 'scatter',
     data: { datasets: [{ data: rr.map(r => ({ x: r.date, y: +r.dur_mins.toFixed(1) })), backgroundColor: '#5DCAA599', pointRadius: 4 }] },
-    options: (() => { const o = co({ xIsDate: true, yLabel: 'min' }); o.scales.y.min = 0; return o; })()
+    options: co({ xIsDate: true, yLabel: 'min' })
   });
 }
 
@@ -759,21 +759,21 @@ function selectRoute(key) {
   dc('hr');
   if (hrRides.length > 2) {
     g('hr-card').style.display = 'block';
-    charts.hr = new Chart(g('chart-hr'),{ type:'scatter', data:{ datasets:[{ data:hrRides.map(r=>({x:r.date,y:Math.round(r.hr_avg)})), backgroundColor:'#D85A3099', pointRadius:4 }] }, options: (() => { const o = co({ xIsDate:true, yLabel:'bpm' }); o.scales.y.min = 0; return o; })() });
+    charts.hr = new Chart(g('chart-hr'),{ type:'scatter', data:{ datasets:[{ data:hrRides.map(r=>({x:r.date,y:Math.round(r.hr_avg)})), backgroundColor:'#D85A3099', pointRadius:4 }] }, options: co({ xIsDate:true, yLabel:'bpm' }) });
   } else { g('hr-card').style.display = 'none'; }
 
   const powerRides = rr.filter(r=>r.power_avg);
   dc('power');
   if (powerRides.length > 2) {
     g('power-card').style.display = 'block';
-    charts.power = new Chart(g('chart-power'),{ type:'scatter', data:{ datasets:[{ data:powerRides.map(r=>({x:r.date,y:Math.round(r.power_avg)})), backgroundColor:'#5A7ED899', pointRadius:4 }] }, options: (() => { const o = co({ xIsDate:true, yLabel:'W' }); o.scales.y.min = 0; return o; })() });
+    charts.power = new Chart(g('chart-power'),{ type:'scatter', data:{ datasets:[{ data:powerRides.map(r=>({x:r.date,y:Math.round(r.power_avg)})), backgroundColor:'#5A7ED899', pointRadius:4 }] }, options: co({ xIsDate:true, yLabel:'W' }) });
   } else { g('power-card').style.display = 'none'; }
 
   const cadenceRides = rr.filter(r=>r.cadence_avg);
   dc('cadence');
   if (cadenceRides.length > 2) {
     g('cadence-card').style.display = 'block';
-    charts.cadence = new Chart(g('chart-cadence'),{ type:'scatter', data:{ datasets:[{ data:cadenceRides.map(r=>({x:r.date,y:+r.cadence_avg.toFixed(1)})), backgroundColor:'#8E5AD899', pointRadius:4 }] }, options: (() => { const o = co({ xIsDate:true, yLabel:'rpm' }); o.scales.y.min = 0; return o; })() });
+    charts.cadence = new Chart(g('chart-cadence'),{ type:'scatter', data:{ datasets:[{ data:cadenceRides.map(r=>({x:r.date,y:+r.cadence_avg.toFixed(1)})), backgroundColor:'#8E5AD899', pointRadius:4 }] }, options: co({ xIsDate:true, yLabel:'rpm' }) });
   } else { g('cadence-card').style.display = 'none'; }
 
   renderRouteMap(key);
