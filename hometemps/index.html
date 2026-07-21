@@ -16,7 +16,7 @@ button.active { background: #e8f0fe; border-color: #4285f4; color: #1a73e8; }
 </style>
 </head>
 <body>
-<h2>House temperatures — Jun 16–27</h2>
+<h2 id="chartTitle">House temperatures</h2>
 <div class="legend">
   <span><span style="display:inline-block;width:24px;height:3px;background:#378ADD;margin-right:6px;vertical-align:middle;border-radius:2px;"></span>basement</span>
   <span><span style="display:inline-block;width:24px;height:3px;background:#1D9E75;margin-right:6px;vertical-align:middle;border-radius:2px;"></span>main floor</span>
@@ -48,6 +48,9 @@ button.active { background: #e8f0fe; border-color: #4285f4; color: #1a73e8; }
 <script>
 
 fetch('data.json').then(r => r.json()).then(({data, windows}) => {
+const fmt = ts => new Date(ts).toLocaleDateString('en-US', {month:'short', day:'numeric'});
+document.getElementById('chartTitle').textContent = `House temperatures — ${fmt(data[0].ts)} – ${fmt(data[data.length-1].ts)}`;
+
 
 const mk = (key, color, dash) => ({
   label: key.replace('_',' '),
