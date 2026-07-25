@@ -25,11 +25,18 @@ GROUPS = {
 
 def fetch_db():
     print(f'fetching DB from {HA_HOST}...')
-    for suffix in ['', '-wal', '-shm']:
-        r = subprocess.run(['scp', f'{HA_HOST}:{HA_DB}{suffix}', str(RAW / f'ha_v2.db{suffix}')], capture_output=True)
-        if r.returncode != 0 and suffix == '':
-            print('scp failed:', r.stderr.decode(), file=sys.stderr)
-            sys.exit(1)
+    # snapshot the db on HA first (same filesystem = fast, avoids mid-checkpoint corruption),
+    # then scp the snapshot. immutable=1 at open time means we don't need the WAL files.
+    snap = '/tmp/ha_snap.db'
+    r = subprocess.run(['ssh', HA_HOST, f'cp {HA_DB} {snap}'], capture_output=True)
+    if r.returncode != 0:
+        print('ssh cp failed:', r.stderr.decode(), file=sys.stderr)
+        sys.exit(1)
+    r = subprocess.run(['scp', f'{HA_HOST}:{snap}', str(DB)], capture_output=True)
+    if r.returncode != 0:
+        print('scp failed:', r.stderr.decode(), file=sys.stderr)
+        sys.exit(1)
+    subprocess.run(['ssh', HA_HOST, f'rm {snap}'], capture_output=True)
     print(f'  → {DB.stat().st_size // 1024 // 1024}MB')
 
 def load_existing():
@@ -125,12 +132,11 @@ def merge_windows(existing, new_windows, since_ts_ms):
 
 def main():
     fetch_db()
-    conn = sqlite3.connect(str(DB))
+    # open in immutable mode to avoid WAL conflicts with live HA writes
+    conn = sqlite3.connect(f'file:{DB}?immutable=1', uri=True)
 
     existing_data, existing_windows = load_existing()
     last_ts = existing_data[-1]['ts'] if existing_data else None
-
-    conn.execute('PRAGMA wal_checkpoint(FULL)')
 
     print(f'existing data: {len(existing_data)} hourly points, last={datetime.datetime.utcfromtimestamp(last_ts/1000).strftime("%Y-%m-%d %H:%M") if last_ts else "none"}')
 
