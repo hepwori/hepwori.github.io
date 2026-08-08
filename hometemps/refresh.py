@@ -131,9 +131,18 @@ def merge_windows(existing, new_windows, since_ts_ms):
     return deduped
 
 def main():
-    fetch_db()
-    # open in immutable mode to avoid WAL conflicts with live HA writes
-    conn = sqlite3.connect(f'file:{DB}?immutable=1', uri=True)
+    for attempt in range(1, 4):
+        fetch_db()
+        conn = sqlite3.connect(f'file:{DB}?immutable=1', uri=True)
+        try:
+            conn.execute('SELECT count(*) FROM states LIMIT 1').fetchone()
+            break  # db is good
+        except sqlite3.DatabaseError:
+            print(f'db malformed on attempt {attempt}, retrying...')
+            conn.close()
+            if attempt == 3:
+                print('giving up after 3 attempts', file=sys.stderr)
+                sys.exit(1)
 
     existing_data, existing_windows = load_existing()
     last_ts = existing_data[-1]['ts'] if existing_data else None
