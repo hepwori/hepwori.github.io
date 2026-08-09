@@ -188,6 +188,22 @@ button:hover { background: rgba(255,255,255,0.14); color: #dde; }
     <label>size <span id="v-size">1.0</span></label>
     <input type="range" id="s-size" min="0.3" max="3" value="1.0" step="0.1">
   </div>
+  <div class="row">
+    <label>color mode <span id="v-cmode">0</span></label>
+    <input type="range" id="s-cmode" min="0" max="1" value="0" step="1">
+  </div>
+  <div class="row">
+    <label>hue <span id="v-hue">210</span></label>
+    <input type="range" id="s-hue" min="0" max="360" value="210" step="1">
+  </div>
+  <div class="row">
+    <label>color var <span id="v-cvar">0.5</span></label>
+    <input type="range" id="s-cvar" min="0" max="1" value="0.5" step="0.05">
+  </div>
+  <div class="row">
+    <label>predator <span id="v-pred">0</span></label>
+    <input type="range" id="s-pred" min="0" max="1" value="0" step="1">
+  </div>
 
   <div class="btn-row">
     <button id="btn-pause">pause</button>
@@ -230,6 +246,10 @@ const p = {
   maxForce: 0.06,
   trail: 0.35,
   size: 1.0,
+  colorMode: 0,     // 0: mono, 1: speed
+  hue: 210,         // base hue
+  colorVar: 0.5,    // color variance / intensity
+  predator: 0,      // 0: off, 1: on
   turbulence: 0.12,
   slabDepth: 350,   // full z extent of the slab
   focalLength: 900, // perspective: lower = fishier, higher = flatter
@@ -242,9 +262,12 @@ const cam = { yaw: 0, pitch: 0.2 };
 const grid = {
   cells: new Map(),
   cs: 0, // cell size = visualRange at build time
+  _q: [], // reusable query results array
 
   build(boids, cellSize) {
     this.cs = cellSize;
+    this.nx = Math.ceil(W / cellSize);
+    this.ny = Math.ceil(H / cellSize);
     this.cells.clear();
     for (let i = 0; i < boids.length; i++) {
       const b = boids[i];
@@ -255,20 +278,25 @@ const grid = {
     }
   },
 
-  _k(ix, iy, iz) { return `${ix},${iy},${iz}`; },
+  // numeric hash for better performance than string keys
+  _k(ix, iy, iz) { return (ix * 73856093) ^ (iy * 19349663) ^ (iz * 83492791); },
 
   // indices of all boids in the 27 cells surrounding (x,y,z)
   query(x, y, z) {
     const cs = this.cs;
     const ix = Math.floor(x / cs), iy = Math.floor(y / cs), iz = Math.floor(z / cs);
-    const out = [];
-    for (let dx = -1; dx <= 1; dx++)
-      for (let dy = -1; dy <= 1; dy++)
+    this._q.length = 0;
+    for (let dx = -1; dx <= 1; dx++) {
+      const qix = (ix + dx + this.nx) % this.nx;
+      for (let dy = -1; dy <= 1; dy++) {
+        const qiy = (iy + dy + this.ny) % this.ny;
         for (let dz = -1; dz <= 1; dz++) {
-          const cell = this.cells.get(this._k(ix+dx, iy+dy, iz+dz));
-          if (cell) for (const i of cell) out.push(i);
+          const cell = this.cells.get(this._k(qix, qiy, iz + dz));
+          if (cell) for (let i = 0; i < cell.length; i++) this._q.push(cell[i]);
         }
-    return out;
+      }
+    }
+    return this._q;
   },
 };
 
@@ -276,6 +304,46 @@ const grid = {
 let predX = -9999, predY = -9999, predTimer = 0;
 const PRED_RADIUS = 120;
 const PRED_FORCE = 4.0;
+
+class Predator {
+  constructor() {
+    this.x = W/2; this.y = H/2;
+    this.t = 0;
+  }
+  update() {
+    this.t += 0.01;
+    // Lissajous curve movement
+    this.x = W/2 + Math.cos(this.t) * W * 0.4;
+    this.y = H/2 + Math.sin(this.t * 0.7) * H * 0.4;
+  }
+  draw() {
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255, 50, 50, 0.8)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(this._sx, this._sy, 15 * this._pScale, 0, TAU);
+    ctx.stroke();
+    // Inner pulsing glow
+    const pulse = 0.5 + 0.5 * Math.sin(this.t * 10);
+    ctx.fillStyle = `rgba(255, 50, 50, ${pulse * 0.3})`;
+    ctx.fill();
+    ctx.restore();
+  }
+  project(cosYaw, sinYaw, cosPitch, sinPitch) {
+    const cx = this.x - W/2, cy = this.y - H/2, cz = 0;
+    const x1 = cx * cosYaw + cz * sinYaw;
+    const z1 = -cx * sinYaw + cz * cosYaw;
+    const rx = x1;
+    const ry = cy * cosPitch - z1 * sinPitch;
+    const rz = cy * sinPitch + z1 * cosPitch;
+    this._rz = rz;
+    this._pScale = p.focalLength / (p.focalLength - rz);
+    this._sx = W/2 + rx * this._pScale;
+    this._sy = H/2 + ry * this._pScale;
+  }
+}
+
+const activePredator = new Predator();
 
 class Boid {
   constructor() { this.spawn(); }
@@ -304,7 +372,9 @@ class Boid {
     for (let ci = 0; ci < candidates.length; ci++) {
       const b = boids[candidates[ci]];
       if (b === this) continue;
-      const dx = b.x - this.x, dy = b.y - this.y, dz = b.z - this.z;
+      let dx = b.x - this.x, dy = b.y - this.y, dz = b.z - this.z;
+      if (dx > W / 2) dx -= W; else if (dx < -W / 2) dx += W;
+      if (dy > H / 2) dy -= H; else if (dy < -H / 2) dy += H;
       const d2 = dx*dx + dy*dy + dz*dz;
       if (d2 < sd2) {
         const d = Math.sqrt(d2) + 0.001;
@@ -324,6 +394,17 @@ class Boid {
       sx += (pdx/pd) * PRED_FORCE;
       sy += (pdy/pd) * PRED_FORCE;
       sn = Math.max(sn, 1);
+    }
+
+    if (p.predator) {
+      const adx = this.x - activePredator.x, ady = this.y - activePredator.y;
+      const ad2 = adx*adx + ady*ady;
+      if (ad2 < PRED_RADIUS*PRED_RADIUS*1.5) {
+        const ad = Math.sqrt(ad2) + 0.001;
+        sx += (adx/ad) * PRED_FORCE * 1.2;
+        sy += (ady/ad) * PRED_FORCE * 1.2;
+        sn = Math.max(sn, 1);
+      }
     }
 
     this.ax = 0; this.ay = 0; this.az = 0;
@@ -429,7 +510,18 @@ class Boid {
   draw() {
     const angle = Math.atan2(this.vy, this.vx);
     ctx.save();
-    ctx.globalAlpha = this._alpha;
+
+    if (p.colorMode === 1) {
+      const speed = Math.sqrt(this.vx*this.vx + this.vy*this.vy + this.vz*this.vz);
+      const t = Math.min(1, speed / p.maxSpeed);
+      const h = p.hue + (t - 0.5) * 100 * p.colorVar;
+      const s = 40 + 60 * t * p.colorVar;
+      const l = 50 + 20 * t;
+      ctx.fillStyle = `hsla(${h}, ${s}%, ${l}%, ${this._alpha})`;
+    } else {
+      ctx.globalAlpha = this._alpha;
+    }
+
     ctx.translate(this._sx, this._sy);
     ctx.rotate(angle);
     ctx.scale(this._drawScale, this._drawScale);
@@ -483,6 +575,8 @@ function frame() {
   ctx.fillStyle = 'rgba(200, 210, 235, 0.9)';
 
   const s = p.size;
+  if (p.predator) activePredator.update();
+
   grid.build(boids, p.visualRange);
   for (const b of boids) b.flock(boids);
   for (const b of boids) b.update();
@@ -491,10 +585,13 @@ function frame() {
   const cosYaw = Math.cos(cam.yaw), sinYaw = Math.sin(cam.yaw);
   const cosPitch = Math.cos(cam.pitch), sinPitch = Math.sin(cam.pitch);
   for (const b of boids) b.project(s, cosYaw, sinYaw, cosPitch, sinPitch);
+  if (p.predator) activePredator.project(cosYaw, sinYaw, cosPitch, sinPitch);
 
   // painter's algorithm: sort by camera-space z (far first)
-  drawOrder = boids.slice().sort((a, b) => a._rz - b._rz);
-  for (const b of drawOrder) b.draw();
+  const drawItems = boids.slice();
+  if (p.predator) drawItems.push(activePredator);
+  drawItems.sort((a, b) => a._rz - b._rz);
+  for (const b of drawItems) b.draw();
 
   // predator indicator
   if (predTimer > 0) {
@@ -583,6 +680,10 @@ const SLIDERS = [
   ['s-trail',   'v-trail',   'trail',          v => v.toFixed(2)],
   ['s-turb',    'v-turb',    'turbulence',     v => v.toFixed(2)],
   ['s-size',    'v-size',    'size',           v => v.toFixed(1)],
+  ['s-cmode',   'v-cmode',   'colorMode',      v => v.toFixed(0)],
+  ['s-hue',     'v-hue',     'hue',            v => v.toFixed(0)],
+  ['s-cvar',    'v-cvar',    'colorVar',       v => v.toFixed(2)],
+  ['s-pred',    'v-pred',    'predator',       v => v.toFixed(0)],
   ['s-slab',    'v-slab',    'slabDepth',      v => v.toFixed(0)],
   ['s-focal',   'v-focal',   'focalLength',    v => v.toFixed(0)],
 ];
