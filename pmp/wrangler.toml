@@ -1,0 +1,4 @@
+name = "isaa-ch-patterns"
+main = "cloudflare-worker.js"
+compatibility_date = "2026-08-01"
+account_id = "4dc8078f89fe953211c9e647a67b2022"
