@@ -4,6 +4,19 @@ let slugToTitle = {};          // "alignment-mirage" → "Alignment Mirage"
 let titleToSlug = {};          // "Alignment Mirage" → "alignment-mirage"
 let slugToCategory = {};       // "alignment-mirage" → { id, title }
 let slugToSummary = {};        // "alignment-mirage" → "The illusion of…"
+let flatPatternOrder = [];     // [{ slug, title }, …] walked through categories in order
+
+/* Where this document is mounted — "/pmp/" on GitHub Pages, "/patterns/" when
+   served via the isaa.ch Cloudflare Worker (which injects a <base> tag).
+   Fixed at load time; unaffected by later pushState calls. */
+let mountPath = new URL(document.baseURI).pathname;
+if (!mountPath.endsWith('/')) mountPath += '/';
+
+function currentRouteSegment() {
+  const path = window.location.pathname;
+  if (!path.startsWith(mountPath)) return '';
+  return path.slice(mountPath.length).replace(/\/+$/, '');
+}
 
 /* ── Boot ──────────────────────────────────────────────────── */
 async function boot() {
@@ -23,23 +36,82 @@ async function boot() {
       titleToSlug[p.title] = p.slug;
       slugToCategory[p.slug] = { id: cat.id, title: cat.title };
       slugToSummary[p.slug] = p.summary;
+      flatPatternOrder.push({ slug: p.slug, title: p.title });
     }
   }
 
   buildNav();
   route();
 
-  window.addEventListener('hashchange', route);
+  window.addEventListener('popstate', route);
 
-  document.getElementById('menu-toggle').addEventListener('click', () => {
-    document.getElementById('sidebar').classList.toggle('open');
+  // Intercept clicks on in-app links and route via pushState instead of a
+  // full page load (which would work too, via the Worker's SPA fallback on
+  // isaa.ch — but wouldn't on a bare GitHub Pages load of a deep path).
+  document.addEventListener('click', e => {
+    const a = e.target.closest('a[href]');
+    if (!a || a.target === '_blank' || a.hasAttribute('download')) return;
+
+    let url;
+    try {
+      url = new URL(a.href);
+    } catch (err) {
+      return;
+    }
+
+    if (url.origin !== location.origin || !url.pathname.startsWith(mountPath)) return;
+
+    e.preventDefault();
+    const target = url.pathname + url.search;
+    if (target !== location.pathname + location.search) {
+      history.pushState(null, '', target);
+      route();
+    }
   });
 
+  const sidebar = document.getElementById('sidebar');
+  const backdrop = document.getElementById('sidebar-backdrop');
+
+  function closeSidebar() {
+    sidebar.classList.remove('open');
+    backdrop.classList.remove('open');
+  }
+
+  document.getElementById('menu-toggle').addEventListener('click', () => {
+    sidebar.classList.toggle('open');
+    backdrop.classList.toggle('open');
+  });
+
+  backdrop.addEventListener('click', closeSidebar);
+
   // Close sidebar when a nav link is clicked (mobile)
-  document.getElementById('sidebar').addEventListener('click', e => {
-    if (e.target.closest('a')) {
-      document.getElementById('sidebar').classList.remove('open');
-    }
+  sidebar.addEventListener('click', e => {
+    if (e.target.closest('a')) closeSidebar();
+  });
+
+  document.getElementById('nav-search').addEventListener('input', e => {
+    filterNav(e.target.value);
+  });
+}
+
+/* ── Sidebar search filter ────────────────────────────────────── */
+function filterNav(query) {
+  const q = query.trim().toLowerCase();
+
+  document.querySelectorAll('.nav-category').forEach(section => {
+    let anyVisible = false;
+
+    section.querySelectorAll('li').forEach(li => {
+      const a = li.querySelector('a');
+      const slug = a.dataset.slug;
+      const matches = !q ||
+        a.textContent.toLowerCase().includes(q) ||
+        (slugToSummary[slug] || '').toLowerCase().includes(q);
+      li.classList.toggle('nav-link-hidden', !matches);
+      if (matches) anyVisible = true;
+    });
+
+    section.classList.toggle('nav-category-hidden', !anyVisible);
   });
 }
 
@@ -62,7 +134,7 @@ function buildNav() {
     for (const p of cat.patterns) {
       const li = document.createElement('li');
       const a = document.createElement('a');
-      a.href = `#patterns/${p.slug}`;
+      a.href = p.slug;
       a.textContent = p.title;
       a.className = 'nav-link';
       a.dataset.slug = p.slug;
@@ -76,31 +148,29 @@ function buildNav() {
 
 /* ── Router ────────────────────────────────────────────────── */
 function route() {
-  const hash = window.location.hash.replace(/^#\/?/, '');
+  const seg = currentRouteSegment();
 
-  if (!hash || hash === '') {
+  if (!seg) {
     renderContents();
     setActive('contents');
     document.title = siteIndex.title;
     return;
   }
 
-  if (hash === 'introduction') {
+  if (seg === 'introduction') {
     loadMarkdownPage('content/introduction.md', null, 'introduction');
     document.title = `Introduction — ${siteIndex.title}`;
     return;
   }
 
-  if (hash === 'about') {
+  if (seg === 'about') {
     loadMarkdownPage('content/about.md', null, 'about');
     document.title = `About — ${siteIndex.title}`;
     return;
   }
 
-  const patternMatch = hash.match(/^patterns\/(.+)$/);
-  if (patternMatch) {
-    const slug = patternMatch[1];
-    loadPattern(slug);
+  if (!seg.includes('/')) {
+    loadPattern(seg);
     return;
   }
 
@@ -116,9 +186,9 @@ function setActive(type, slug) {
   if (type === 'contents') {
     document.querySelector('.nav-contents')?.classList.add('active');
   } else if (type === 'introduction') {
-    document.querySelector('a[href="#introduction"]')?.classList.add('active');
+    document.querySelector('a[href="introduction"]')?.classList.add('active');
   } else if (type === 'about') {
-    document.querySelector('a[href="#about"]')?.classList.add('active');
+    document.querySelector('a[href="about"]')?.classList.add('active');
   } else if (type === 'pattern' && slug) {
     document.querySelector(`a[data-slug="${slug}"]`)?.classList.add('active');
   }
@@ -151,26 +221,58 @@ function parseFrontmatter(raw) {
   return { meta, body: body.trimStart() };
 }
 
+/* ── Wikilink resolution ───────────────────────────────────── */
+function resolveWikilinkSlug(title) {
+  if (titleToSlug[title]) return titleToSlug[title];
+
+  const lower = title.toLowerCase();
+  const match = Object.keys(titleToSlug).find(t => t.toLowerCase() === lower);
+  return match ? titleToSlug[match] : null;
+}
+
 /* ── Wikilink processor ────────────────────────────────────── */
 function processWikilinks(html) {
   // [[Pattern Title]] → linked pattern name
   return html.replace(/\[\[([^\]]+)\]\]/g, (match, title) => {
-    // Try exact match first
-    let slug = titleToSlug[title];
-
-    // Try case-insensitive match
-    if (!slug) {
-      const lower = title.toLowerCase();
-      slug = Object.keys(titleToSlug).find(t => t.toLowerCase() === lower)
-               ? titleToSlug[Object.keys(titleToSlug).find(t => t.toLowerCase() === lower)]
-               : null;
-    }
-
+    const slug = resolveWikilinkSlug(title);
     if (slug) {
-      return `<a href="#patterns/${slug}">${title}</a>`;
+      return `<a href="${slug}">${title}</a>`;
     }
     return `<span class="broken-link">${title}</span>`;
   });
+}
+
+/* ── Related Patterns card parser ─────────────────────────────
+   Parses bullets of the form `- [[Pattern Title]] — description`
+   into the same card grid used for TOC/featured patterns. */
+function renderRelatedCards(relatedBody) {
+  const bulletRe = /^-\s*\[\[([^\]]+)\]\]\s*—\s*(.+)$/gm;
+  let html = '<div class="toc-featured-grid">';
+  let match;
+  let found = false;
+
+  while ((match = bulletRe.exec(relatedBody)) !== null) {
+    found = true;
+    const [, title, summary] = match;
+    const slug = resolveWikilinkSlug(title);
+
+    if (slug) {
+      html += `
+        <a href="${slug}" class="toc-featured-pattern">
+          <span class="toc-featured-title">${title}</span>
+          <span class="toc-featured-summary">${summary}</span>
+        </a>`;
+    } else {
+      html += `
+        <div class="toc-featured-pattern related-broken">
+          <span class="toc-featured-title">${title}</span>
+          <span class="toc-featured-summary">${summary}</span>
+        </div>`;
+    }
+  }
+
+  html += '</div>';
+  return found ? html : null;
 }
 
 /* ── Markdown renderer ─────────────────────────────────────── */
@@ -199,7 +301,7 @@ function renderContents() {
       <div class="toc-featured-grid">`;
     for (const pg of siteIndex.pages) {
       html += `
-        <a href="#${pg.slug}" class="toc-featured-pattern">
+        <a href="${pg.slug}" class="toc-featured-pattern">
           <span class="toc-featured-title">${pg.title}</span>
           <span class="toc-featured-summary">${pg.summary}</span>
         </a>`;
@@ -214,7 +316,7 @@ function renderContents() {
       <div class="toc-featured-grid">`;
     for (const slug of siteIndex.featured) {
       html += `
-        <a href="#patterns/${slug}" class="toc-featured-pattern">
+        <a href="${slug}" class="toc-featured-pattern">
           <span class="toc-featured-title">${slugToTitle[slug]}</span>
           <span class="toc-featured-summary">${slugToSummary[slug]}</span>
         </a>`;
@@ -230,7 +332,7 @@ function renderContents() {
       <div class="toc-featured-grid">`;
     for (const p of cat.patterns) {
       html += `
-        <a href="#patterns/${p.slug}" class="toc-featured-pattern">
+        <a href="${p.slug}" class="toc-featured-pattern">
           <span class="toc-featured-title">${p.title}</span>
           <span class="toc-featured-summary">${p.summary}</span>
         </a>`;
@@ -272,7 +374,7 @@ async function loadPattern(slug) {
 
   let headerHtml = `<header class="pattern-header">`;
   if (cat) {
-    headerHtml += `<a href="#" class="pattern-category-label" onclick="event.preventDefault(); showCategory('${cat.id}')">${cat.title}</a>`;
+    headerHtml += `<span class="pattern-breadcrumb">${cat.title}</span>`;
   }
   headerHtml += `<h1>${title}</h1>`;
   if (meta.also_known_as) {
@@ -284,20 +386,43 @@ async function loadPattern(slug) {
 
   let relatedHtml = '';
   if (relatedBody.trim()) {
-    relatedHtml = `<section class="related-patterns prose">
-      <h2>Related Patterns</h2>
-      ${renderMarkdown(relatedBody)}
-    </section>`;
+    const cardsHtml = renderRelatedCards(relatedBody);
+    if (cardsHtml) {
+      relatedHtml = `<section class="related-patterns">
+        <h2>Related Patterns</h2>
+        ${cardsHtml}
+      </section>`;
+    }
   }
 
   page.innerHTML = `
     ${headerHtml}
     <div class="prose">${bodyHtml}</div>
     ${relatedHtml}
+    ${renderPagination(slug)}
   `;
 
   setActive('pattern', slug);
   scrollToTop();
+}
+
+/* ── Prev / Next pagination ───────────────────────────────────── */
+function renderPagination(slug) {
+  const i = flatPatternOrder.findIndex(p => p.slug === slug);
+  const prev = i > 0 ? flatPatternOrder[i - 1] : null;
+  const next = i >= 0 && i < flatPatternOrder.length - 1 ? flatPatternOrder[i + 1] : null;
+
+  if (!prev && !next) return '';
+
+  let html = '<nav class="pattern-pagination">';
+  html += prev
+    ? `<a href="${prev.slug}" class="pagination-prev">← ${prev.title}</a>`
+    : '<span></span>';
+  html += next
+    ? `<a href="${next.slug}" class="pagination-next">${next.title} →</a>`
+    : '';
+  html += '</nav>';
+  return html;
 }
 
 /* ── Generic markdown page (intro, about) ──────────────────── */
@@ -330,11 +455,6 @@ async function loadMarkdownPage(path, title, activeType) {
 /* ── Helpers ───────────────────────────────────────────────── */
 function scrollToTop() {
   window.scrollTo({ top: 0, behavior: 'instant' });
-}
-
-function showCategory(catId) {
-  // Navigate to contents and scroll to category (future enhancement)
-  window.location.hash = '';
 }
 
 /* ── Go ────────────────────────────────────────────────────── */
