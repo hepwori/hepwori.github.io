@@ -1,5 +1,5 @@
 {
-  "total_readings": 941,
+  "total_readings": 940,
   "readings": [
     {
       "date": "2015-07-18",
@@ -3140,10 +3140,6 @@
     {
       "date": "2024-01-27",
       "weight_lb": 205.88
-    },
-    {
-      "date": "2024-08-23",
-      "weight_lb": 106.41
     },
     {
       "date": "2024-11-10",
