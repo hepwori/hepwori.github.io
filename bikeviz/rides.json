@@ -1,7 +1,7 @@
 {
-  "generated": "2026-08-16T00:31:09.360036+00:00",
+  "generated": "2026-08-23T20:20:01.550451+00:00",
   "source_file": "export.xml",
-  "total_rides": 715,
+  "total_rides": 718,
   "rides": [
     {
       "date": "2015-07-16T17:25:23-06:00",
@@ -11441,6 +11441,54 @@
       "power_avg": 188.0,
       "power_max": 800.0,
       "elev_gain_ft": 871,
+      "source": "Isaac\u2019s Apple\u00a0Watch"
+    },
+    {
+      "date": "2026-08-16T10:37:35-06:00",
+      "dist_mi": 23.0186,
+      "dur_mins": 78.36,
+      "speed_mph": 17.625,
+      "hr_avg": 133.6,
+      "hr_max": 157.0,
+      "hr_min": 99.0,
+      "energy_kcal": 234.9,
+      "cadence_avg": 88.4,
+      "cadence_max": 109.9,
+      "power_avg": 169.3,
+      "power_max": 777.0,
+      "elev_gain_ft": 880,
+      "source": "Isaac\u2019s Apple\u00a0Watch"
+    },
+    {
+      "date": "2026-08-22T11:58:40-06:00",
+      "dist_mi": 23.0121,
+      "dur_mins": 78.88,
+      "speed_mph": 17.505,
+      "hr_avg": 154.3,
+      "hr_max": 170.0,
+      "hr_min": 122.0,
+      "energy_kcal": 249.4,
+      "cadence_avg": 89.1,
+      "cadence_max": 117.7,
+      "power_avg": 180.7,
+      "power_max": 836.0,
+      "elev_gain_ft": 884,
+      "source": "Isaac\u2019s Apple\u00a0Watch"
+    },
+    {
+      "date": "2026-08-23T11:32:40-06:00",
+      "dist_mi": 22.2572,
+      "dur_mins": 75.6,
+      "speed_mph": 17.664,
+      "hr_avg": 150.0,
+      "hr_max": 166.0,
+      "hr_min": 81.0,
+      "energy_kcal": 242.7,
+      "cadence_avg": 90.7,
+      "cadence_max": 120.7,
+      "power_avg": 169.0,
+      "power_max": 575.0,
+      "elev_gain_ft": 936,
       "source": "Isaac\u2019s Apple\u00a0Watch"
     }
   ]
