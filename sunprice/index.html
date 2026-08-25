@@ -3,118 +3,194 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Sunshine vs. home prices</title>
+<title>The price of sunshine</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>%E2%98%80%EF%B8%8F</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;900&display=swap" rel="stylesheet">
 <style>
   :root {
     color-scheme: light;
-    --page:        #f9f9f7;
-    --surface-1:   #fcfcfb;
-    --text-primary:   #0b0b0b;
-    --text-secondary: #52514e;
-    --text-muted:     #898781;
-    --grid:        #e1e0d9;
-    --axis:        #c3c2b7;
-    --series-1:    #2a78d6;
-    --series-1-wash: rgba(42, 120, 214, 0.10);
-    --border:      rgba(11,11,11,0.10);
-    --trend:       #b4b2a8;
-    --tooltip-bg:  #0b0b0b;
-    --tooltip-fg:  #ffffff;
+    --page:        #f4f2ec;
+    --surface-1:   #fdfcf9;
+    --text-primary:   #191712;
+    --text-secondary: #55503f;
+    --text-muted:     #918a72;
+    --grid:        #e4dfd0;
+    --axis:        #cec6ac;
+    --border:      rgba(25,23,18,0.10);
+    --trend:       #8c8468;
+    --tooltip-bg:  #191712;
+    --tooltip-fg:  #fdfcf9;
+    --quad-warm:   rgba(210,160,60,0.14);
+    --quad-warm-2: rgba(210,160,60,0.24);
+    --quad-cool:   rgba(90,105,120,0.14);
+    /* region palette — fixed order, never cycled */
+    --reg-pacific:   #2a78d6;
+    --reg-southwest: #eb6834;
+    --reg-southeast: #1baf7a;
+    --reg-mountain:  #eda100;
+    --reg-midatl:    #e87ba4;
+    --reg-newengland:#008300;
+    --reg-midwest:   #4a3aa7;
+    --reg-texsc:     #e34948;
   }
   @media (prefers-color-scheme: dark) {
     :root:where(:not([data-theme="light"])) {
       color-scheme: dark;
-      --page:        #0d0d0d;
-      --surface-1:   #1a1a19;
-      --text-primary:   #ffffff;
-      --text-secondary: #c3c2b7;
-      --text-muted:     #898781;
-      --grid:        #2c2c2a;
-      --axis:        #383835;
-      --series-1:    #3987e5;
-      --series-1-wash: rgba(57, 135, 229, 0.14);
+      --page:        #0e0d0a;
+      --surface-1:   #1c1a15;
+      --text-primary:   #fbfaf6;
+      --text-secondary: #c9c3af;
+      --text-muted:     #8f886f;
+      --grid:        #322f26;
+      --axis:        #47432f;
       --border:      rgba(255,255,255,0.10);
-      --trend:       #46453f;
-      --tooltip-bg:  #ffffff;
-      --tooltip-fg:  #0b0b0b;
+      --trend:       #9c9270;
+      --tooltip-bg:  #fbfaf6;
+      --tooltip-fg:  #191712;
+      --quad-warm:   rgba(210,160,60,0.10);
+      --quad-warm-2: rgba(210,160,60,0.18);
+      --quad-cool:   rgba(120,140,160,0.12);
+      --reg-pacific:   #3987e5;
+      --reg-southwest: #d95926;
+      --reg-southeast: #199e70;
+      --reg-mountain:  #c98500;
+      --reg-midatl:    #d55181;
+      --reg-newengland:#1fae1f;
+      --reg-midwest:   #9085e9;
+      --reg-texsc:     #e66767;
     }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --page:        #0e0d0a;
+    --surface-1:   #1c1a15;
+    --text-primary:   #fbfaf6;
+    --text-secondary: #c9c3af;
+    --text-muted:     #8f886f;
+    --grid:        #322f26;
+    --axis:        #47432f;
+    --border:      rgba(255,255,255,0.10);
+    --trend:       #9c9270;
+    --tooltip-bg:  #fbfaf6;
+    --tooltip-fg:  #191712;
+    --quad-warm:   rgba(210,160,60,0.10);
+    --quad-warm-2: rgba(210,160,60,0.18);
+    --quad-cool:   rgba(120,140,160,0.12);
+    --reg-pacific:   #3987e5;
+    --reg-southwest: #d95926;
+    --reg-southeast: #199e70;
+    --reg-mountain:  #c98500;
+    --reg-midatl:    #d55181;
+    --reg-newengland:#1fae1f;
+    --reg-midwest:   #9085e9;
+    --reg-texsc:     #e66767;
   }
   * { box-sizing: border-box; }
   html, body { background: var(--page); }
   body {
     font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
     margin: 0;
-    padding: 2rem 1.5rem 4rem;
+    padding: 2.5rem 1.5rem 4rem;
     color: var(--text-primary);
   }
-  .wrap { max-width: 880px; margin: 0 auto; }
+  .wrap { max-width: 1160px; margin: 0 auto; }
+  .kicker {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin: 0 0 0.6rem;
+  }
   h1 {
-    font-size: 1.4rem;
-    font-weight: 600;
-    margin: 0 0 0.35rem;
+    font-family: "Playfair Display", Georgia, "Times New Roman", serif;
+    font-weight: 700;
+    font-size: clamp(2rem, 4.4vw, 3.1rem);
+    line-height: 1.05;
     letter-spacing: -0.01em;
+    margin: 0 0 0.5rem;
   }
   p.sub {
     color: var(--text-secondary);
-    font-size: 0.95rem;
+    font-size: 1.05rem;
     line-height: 1.5;
     margin: 0 0 1.5rem;
     max-width: 62ch;
   }
+  .meta-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 1rem 2rem;
+    margin-bottom: 1.1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .meta {
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.6;
+  }
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 16px;
+    justify-content: flex-end;
+    max-width: 560px;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+  }
+  .legend-dot {
+    width: 9px; height: 9px; border-radius: 50%;
+    flex: none;
+  }
   .card {
     background: var(--surface-1);
     border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 1.25rem 1.25rem 0.75rem;
+    border-radius: 14px;
+    padding: 0.5rem 1.25rem 0.9rem;
   }
-  .chart-head {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    margin-bottom: 0.25rem;
-  }
-  .chart-head h2 {
-    font-size: 0.95rem;
-    font-weight: 600;
-    margin: 0;
-    color: var(--text-primary);
-  }
-  .stat {
-    font-size: 0.8rem;
-    color: var(--text-muted);
-  }
-  .stat strong { color: var(--text-secondary); font-weight: 600; }
   svg { display: block; width: 100%; height: auto; overflow: visible; }
   .axis-label {
-    font-size: 11px;
+    font-size: 11.5px;
     fill: var(--text-muted);
+    font-weight: 600;
   }
-  .tick text {
-    font-size: 11px;
-    fill: var(--text-muted);
-  }
+  .tick text { font-size: 11px; fill: var(--text-muted); }
   .gridline { stroke: var(--grid); stroke-width: 1; shape-rendering: crispEdges; }
   .baseline { stroke: var(--axis); stroke-width: 1; shape-rendering: crispEdges; }
-  .trendline { stroke: var(--trend); stroke-width: 2; fill: none; }
-  .dot {
-    fill: var(--series-1);
-    stroke: var(--surface-1);
-    stroke-width: 2;
-    pointer-events: none;
-    transition: r 0.1s ease;
+  .median-line { stroke: var(--axis); stroke-width: 1.25; stroke-dasharray: 3 4; }
+  .trendline { stroke: var(--trend); stroke-width: 1.75; fill: none; }
+  .trend-label { font-size: 11px; fill: var(--text-muted); font-style: italic; }
+  .quad-label-title {
+    font-family: "Playfair Display", Georgia, serif;
+    font-weight: 700;
+    font-size: 15px;
+    fill: var(--text-secondary);
   }
+  .quad-label-sub { font-size: 10.5px; fill: var(--text-muted); }
+  .dot { stroke: var(--surface-1); stroke-width: 1.75; pointer-events: none; }
   .dot-hit { fill: transparent; pointer-events: all; cursor: pointer; }
-  .dot-hit:hover + .dot,
-  .dot-hit:focus + .dot { r: 7; }
+  .dot-hit:hover + .dot, .dot-hit:focus + .dot { r: 8.5; }
   .dot-hit:focus { outline: none; }
   .point-label {
-    font-size: 11px;
-    font-weight: 600;
+    font-size: 10.5px;
     fill: var(--text-secondary);
     pointer-events: none;
+  }
+  .point-label.label-bold {
+    font-size: 11.5px;
+    font-weight: 700;
+    fill: var(--text-primary);
   }
   .tooltip {
     position: absolute;
@@ -123,33 +199,29 @@
     color: var(--tooltip-fg);
     font-size: 12px;
     line-height: 1.45;
-    padding: 7px 10px;
-    border-radius: 7px;
+    padding: 8px 11px;
+    border-radius: 8px;
     opacity: 0;
-    transform: translate(-50%, calc(-100% - 10px));
     transition: opacity 0.08s ease;
     white-space: nowrap;
     z-index: 10;
   }
   .tooltip.show { opacity: 1; }
-  .tooltip .t-city { font-weight: 600; }
-  .tooltip .t-row { color: var(--tooltip-fg); opacity: 0.85; }
-  .tooltip .t-row strong { opacity: 1; font-variant-numeric: tabular-nums; }
+  .tooltip .t-city { font-weight: 700; display: flex; align-items: center; gap: 6px; }
+  .tooltip .t-key { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+  .tooltip .t-row { opacity: 0.85; }
+  .tooltip .t-row strong { opacity: 1; font-variant-numeric: tabular-nums; font-weight: 700; }
   .foot {
     display: flex;
     justify-content: space-between;
     align-items: center;
     gap: 1rem;
     flex-wrap: wrap;
-    margin-top: 0.75rem;
+    margin-top: 0.5rem;
     padding-top: 0.75rem;
     border-top: 1px solid var(--border);
   }
-  .source {
-    font-size: 11px;
-    color: var(--text-muted);
-    line-height: 1.5;
-  }
+  .source { font-size: 11px; color: var(--text-muted); line-height: 1.5; }
   .source a { color: var(--text-muted); }
   button.tbl-toggle {
     font-size: 12px;
@@ -160,45 +232,32 @@
     color: var(--text-secondary);
     cursor: pointer;
   }
-  button.tbl-toggle:hover { background: var(--series-1-wash); border-color: var(--series-1); color: var(--series-1); }
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 12.5px;
-    margin-top: 1rem;
-    display: none;
-  }
+  button.tbl-toggle:hover { background: var(--quad-warm); border-color: var(--trend); }
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; margin-top: 1rem; display: none; }
   table.show { display: table; }
-  th, td {
-    text-align: left;
-    padding: 6px 10px;
-    border-bottom: 1px solid var(--grid);
-  }
-  th {
-    color: var(--text-muted);
-    font-weight: 600;
-    cursor: pointer;
-    user-select: none;
-    white-space: nowrap;
-  }
+  th, td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--grid); }
+  th { color: var(--text-muted); font-weight: 600; cursor: pointer; user-select: none; white-space: nowrap; }
   th:hover { color: var(--text-primary); }
   th.num, td.num { text-align: right; font-variant-numeric: tabular-nums; }
   td.city { color: var(--text-primary); font-weight: 500; }
-  .credit { font-size: 11.5px; color: var(--text-muted); margin: 1.25rem 0 0; }
+  td.region-cell { display: flex; align-items: center; gap: 6px; }
+  .credit { font-size: 11.5px; color: var(--text-muted); margin: 1.25rem 0 0; line-height: 1.6; }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <h1>Sunshine vs. home prices, across 53 U.S. cities</h1>
-  <p class="sub">Each dot is a metro area. The x‑axis is average clear (sunny) days per year; the y‑axis is the current median home value. Hover a dot for details, or switch to the table.</p>
+  <p class="kicker">U.S. Metro Data</p>
+  <h1>The Price of Sunshine</h1>
+  <p class="sub">What pleasant weather adds to the cost of a home. Each dot is one of 53 major U.S. metros, plotted by average sunny days per year against median home value, and colored by region.</p>
+
+  <div class="meta-row">
+    <div class="meta" id="metaNote"></div>
+    <div class="legend" id="legend"></div>
+  </div>
 
   <div class="card">
-    <div class="chart-head">
-      <h2 id="chartTitle">Median home price by average sunny days / year</h2>
-      <span class="stat" id="corrStat"></span>
-    </div>
     <div style="position:relative;">
-      <svg id="chart" viewBox="0 0 880 520" preserveAspectRatio="xMidYMid meet"></svg>
+      <svg id="chart" viewBox="0 0 1180 700" preserveAspectRatio="xMidYMid meet"></svg>
       <div class="tooltip" id="tooltip"></div>
     </div>
     <div class="foot">
@@ -209,6 +268,7 @@
       <thead>
         <tr>
           <th data-key="label">City</th>
+          <th data-key="region">Region</th>
           <th class="num" data-key="sunshineDays">Sunny days / yr</th>
           <th class="num" data-key="medianHomePrice">Median home price</th>
         </tr>
@@ -217,27 +277,42 @@
     </table>
   </div>
 
-  <p class="credit">Sunshine: average annual clear days, NOAA-derived, via <a href="https://www.currentresults.com/Weather/US/average-annual-sunshine-by-city.php" target="_blank" rel="noopener">Current Results</a>. Home prices: Zillow Home Value Index (all homes, smoothed &amp; seasonally adjusted), July 2026, via <a href="https://www.zillow.com/research/data/" target="_blank" rel="noopener">Zillow Research</a>.</p>
+  <p class="credit">Sunshine: average annual clear days, NOAA-derived, via <a href="https://www.currentresults.com/Weather/US/average-annual-sunshine-by-city.php" target="_blank" rel="noopener">Current Results</a>. Home prices: Zillow Home Value Index (all homes, smoothed &amp; seasonally adjusted), July 2026, via <a href="https://www.zillow.com/research/data/" target="_blank" rel="noopener">Zillow Research</a>. Regions are hand-assigned Census-style groupings, adapted for this chart — a supplementary layer; city identity always rides on the label, hover, and table, never on color alone.</p>
 </div>
 
 <script>
 const NS = 'http://www.w3.org/2000/svg';
 const svg = document.getElementById('chart');
 const tooltip = document.getElementById('tooltip');
-const W = 880, H = 520;
-const M = { top: 20, right: 24, bottom: 46, left: 78 };
+const W = 1180, H = 700;
+const M = { top: 26, right: 34, bottom: 50, left: 60 };
 const plotW = W - M.left - M.right;
 const plotH = H - M.top - M.bottom;
 
-// Cities picked for direct labels: the extremes of the story.
-const LABELED = new Set(['San Francisco, CA', 'Detroit, MI', 'Phoenix, AZ', 'Buffalo, NY', 'Seattle, WA']);
+const REGIONS = [
+  { key: 'Pacific',                var: '--reg-pacific' },
+  { key: 'Southwest',               var: '--reg-southwest' },
+  { key: 'Southeast',               var: '--reg-southeast' },
+  { key: 'Mountain West',           var: '--reg-mountain' },
+  { key: 'Mid-Atlantic',            var: '--reg-midatl' },
+  { key: 'New England',             var: '--reg-newengland' },
+  { key: 'Midwest',                 var: '--reg-midwest' },
+  { key: 'Texas & South Central',   var: '--reg-texsc' },
+];
+const regionColor = key => getComputedStyle(document.documentElement).getPropertyValue(REGIONS.find(r => r.key === key).var).trim();
+
+const BOLD = new Set([
+  'Los Angeles', 'San Francisco', 'San Diego', 'Seattle', 'Portland', 'Sacramento',
+  'Denver', 'Phoenix', 'Las Vegas', 'Houston', 'Dallas', 'Austin', 'San Antonio',
+  'Chicago', 'Detroit', 'Minneapolis', 'Miami', 'Atlanta', 'Boston',
+  'New York', 'Washington', 'Philadelphia'
+]);
 
 function el(tag, attrs) {
   const e = document.createElementNS(NS, tag);
   for (const k in attrs) e.setAttribute(k, attrs[k]);
   return e;
 }
-
 function fmtDollar(v) {
   if (v >= 1000000) {
     const m = v / 1000000;
@@ -245,81 +320,145 @@ function fmtDollar(v) {
   }
   return '$' + Math.round(v / 1000) + 'K';
 }
-function fmtDollarFull(v) {
-  return '$' + Math.round(v).toLocaleString('en-US');
-}
+function fmtDollarFull(v) { return '$' + Math.round(v).toLocaleString('en-US'); }
+
+// build legend (always-present identity channel — color is never the only cue)
+const legendEl = document.getElementById('legend');
+REGIONS.forEach(r => {
+  const item = document.createElement('span');
+  item.className = 'legend-item';
+  const dot = document.createElement('span');
+  dot.className = 'legend-dot';
+  dot.style.background = `var(${r.var})`;
+  const label = document.createElement('span');
+  label.textContent = r.key;
+  item.appendChild(dot);
+  item.appendChild(label);
+  legendEl.appendChild(item);
+});
 
 fetch('data.json').then(r => r.json()).then(({ meta, cities }) => {
   document.getElementById('sourceNote').textContent = `Zillow ZHVI as of ${meta.asOf} · ${cities.length} metros`;
+  document.getElementById('metaNote').innerHTML = `${cities.length} U.S. cities<br>1990s–present NOAA sunshine normals &amp; current Zillow prices`;
 
-  const xs = cities.map(c => c.sunshineDays);
-  const ys = cities.map(c => c.medianHomePrice);
-  const xMin = 40, xMax = 220;
-  const yMax = Math.ceil(Math.max(...ys) / 250000) * 250000;
-  const yMin = 0;
-
-  const sx = v => M.left + ((v - xMin) / (xMax - xMin)) * plotW;
+  // --- scales: log price (x), linear sunny days (y) ---
+  const xMin = 60000, xMax = 1700000;
+  const yMin = 40, yMax = 225;
+  const lx0 = Math.log10(xMin), lx1 = Math.log10(xMax);
+  const sx = v => M.left + (Math.log10(v) - lx0) / (lx1 - lx0) * plotW;
   const sy = v => M.top + plotH - ((v - yMin) / (yMax - yMin)) * plotH;
 
-  // --- correlation + regression (population stats over the 53 metros) ---
-  const n = xs.length;
-  const mx = xs.reduce((a, b) => a + b, 0) / n;
-  const my = ys.reduce((a, b) => a + b, 0) / n;
-  const cov = xs.reduce((s, x, i) => s + (x - mx) * (ys[i] - my), 0) / n;
-  const vx = xs.reduce((s, x) => s + (x - mx) ** 2, 0) / n;
-  const vy = ys.reduce((s, y) => s + (y - my) ** 2, 0) / n;
-  const r = cov / Math.sqrt(vx * vy);
-  const slope = cov / vx;
-  const intercept = my - slope * mx;
-  document.getElementById('corrStat').innerHTML = `r = <strong>${r.toFixed(2)}</strong> (weak positive)`;
+  // --- stats: median split + log-linear regression ---
+  const prices = cities.map(c => c.medianHomePrice).sort((a, b) => a - b);
+  const days = cities.map(c => c.sunshineDays).sort((a, b) => a - b);
+  const mid = n => n % 2 ? arr => arr[(n - 1) / 2] : arr => (arr[n / 2 - 1] + arr[n / 2]) / 2;
+  const n = cities.length;
+  const medPrice = n % 2 ? prices[(n - 1) / 2] : (prices[n / 2 - 1] + prices[n / 2]) / 2;
+  const medDays = n % 2 ? days[(n - 1) / 2] : (days[n / 2 - 1] + days[n / 2]) / 2;
 
-  // --- gridlines + y axis ---
-  const yTicks = [];
-  for (let v = 0; v <= yMax; v += 250000) yTicks.push(v);
+  const lxs = cities.map(c => Math.log10(c.medianHomePrice));
+  const ys = cities.map(c => c.sunshineDays);
+  const mlx = lxs.reduce((a, b) => a + b, 0) / n;
+  const my = ys.reduce((a, b) => a + b, 0) / n;
+  const cov = lxs.reduce((s, x, i) => s + (x - mlx) * (ys[i] - my), 0) / n;
+  const vlx = lxs.reduce((s, x) => s + (x - mlx) ** 2, 0) / n;
+  const vy = ys.reduce((s, y) => s + (y - my) ** 2, 0) / n;
+  const r = cov / Math.sqrt(vlx * vy);
+  const slope = cov / vlx;
+  const intercept = my - slope * mlx;
+
+  // === quadrant background wash ===
+  const midX = sx(medPrice), midY = sy(medDays);
+  const qTL = el('rect', { x: M.left, y: M.top, width: midX - M.left, height: midY - M.top, fill: 'var(--quad-warm)' });
+  const qTR = el('rect', { x: midX, y: M.top, width: M.left + plotW - midX, height: midY - M.top, fill: 'var(--quad-warm-2)' });
+  const qBL = el('rect', { x: M.left, y: midY, width: midX - M.left, height: M.top + plotH - midY, fill: 'none' });
+  const qBR = el('rect', { x: midX, y: midY, width: M.left + plotW - midX, height: M.top + plotH - midY, fill: 'var(--quad-cool)' });
+  [qTL, qTR, qBL, qBR].forEach(q => svg.appendChild(q));
+
+  // === gridlines & axes ===
+  const yTicks = [50, 75, 100, 125, 150, 175, 200];
   yTicks.forEach(v => {
     svg.appendChild(el('line', { class: 'gridline', x1: M.left, x2: W - M.right, y1: sy(v), y2: sy(v) }));
     const t = el('text', { class: 'tick', x: M.left - 10, y: sy(v) + 4, 'text-anchor': 'end' });
-    t.textContent = v === 0 ? '$0' : fmtDollar(v);
-    svg.appendChild(t);
-  });
-
-  // --- x axis ---
-  const xTicks = [50, 75, 100, 125, 150, 175, 200];
-  xTicks.forEach(v => {
-    const t = el('text', { class: 'tick', x: sx(v), y: M.top + plotH + 22, 'text-anchor': 'middle' });
     t.textContent = v;
     svg.appendChild(t);
   });
+  const xTicks = [100000, 200000, 400000, 800000, 1600000];
+  xTicks.forEach(v => {
+    svg.appendChild(el('line', { class: 'gridline', x1: sx(v), x2: sx(v), y1: M.top, y2: M.top + plotH }));
+    const t = el('text', { class: 'tick', x: sx(v), y: M.top + plotH + 20, 'text-anchor': 'middle' });
+    t.textContent = fmtDollar(v);
+    svg.appendChild(t);
+  });
   svg.appendChild(el('line', { class: 'baseline', x1: M.left, x2: W - M.right, y1: M.top + plotH, y2: M.top + plotH }));
+  svg.appendChild(el('line', { class: 'baseline', x1: M.left, x2: M.left, y1: M.top, y2: M.top + plotH }));
 
-  // axis titles
-  const xLabel = el('text', { class: 'axis-label', x: M.left + plotW / 2, y: H - 6, 'text-anchor': 'middle' });
-  xLabel.textContent = 'Average sunny (clear) days per year →';
+  const xLabel = el('text', { class: 'axis-label', x: M.left + plotW / 2, y: H - 8, 'text-anchor': 'middle' });
+  xLabel.textContent = 'Median home price (log scale) →';
   svg.appendChild(xLabel);
-
-  const yLabel = el('text', { class: 'axis-label', x: 0, y: 0, 'text-anchor': 'middle', transform: `translate(12, ${M.top + plotH / 2}) rotate(-90)` });
-  yLabel.textContent = 'Median home price →';
+  const yLabel = el('text', { class: 'axis-label', x: 0, y: 0, 'text-anchor': 'middle', transform: `translate(14, ${M.top + plotH / 2}) rotate(-90)` });
+  yLabel.textContent = 'Average sunny days per year →';
   svg.appendChild(yLabel);
 
-  // --- trend line ---
-  const tx1 = xMin + 6, tx2 = xMax - 6;
-  svg.appendChild(el('line', {
-    class: 'trendline',
-    x1: sx(tx1), y1: sy(slope * tx1 + intercept),
-    x2: sx(tx2), y2: sy(slope * tx2 + intercept)
-  }));
+  // === median split lines ===
+  svg.appendChild(el('line', { class: 'median-line', x1: midX, x2: midX, y1: M.top, y2: M.top + plotH }));
+  svg.appendChild(el('line', { class: 'median-line', x1: M.left, x2: W - M.right, y1: midY, y2: midY }));
 
-  // --- dots ---
+  // === quadrant labels ===
+  function quadLabel(x, y, anchor, title, sub) {
+    const t1 = el('text', { class: 'quad-label-title', x, y, 'text-anchor': anchor });
+    t1.textContent = title;
+    svg.appendChild(t1);
+    const t2 = el('text', { class: 'quad-label-sub', x, y: y + 15, 'text-anchor': anchor });
+    t2.textContent = sub;
+    svg.appendChild(t2);
+  }
+  quadLabel(M.left + 14, M.top + 24, 'start', 'The Sweet Spot', 'Plenty of sun, still affordable');
+  quadLabel(W - M.right - 14, M.top + 24, 'end', 'Paradise Pricing', 'You pay a premium for the sunshine');
+  quadLabel(M.left + 14, M.top + plotH - 30, 'start', 'Budget & Overcast', "Cheap, but don’t expect much sun");
+  quadLabel(W - M.right - 14, M.top + plotH - 30, 'end', 'Cloudy and Costly', 'High prices without the sunshine to show for it');
+
+  // === regression trend line (log-linear) ===
+  const tx1 = xMin * 1.08, tx2 = xMax * 0.94;
+  const ty1 = slope * Math.log10(tx1) + intercept, ty2 = slope * Math.log10(tx2) + intercept;
+  svg.appendChild(el('line', { class: 'trendline', x1: sx(tx1), y1: sy(ty1), x2: sx(tx2), y2: sy(ty2) }));
+
+  // reserve label space so city labels route around it (see placement system below)
+  const placedBoxes = [];
+  const overlaps = (a, b) => !(a.x + a.w < b.x || b.x + b.w < a.x || a.y + a.h < b.y || b.y + b.h < a.y);
+  const PAD = 2;
+
+  const tl = el('text', { class: 'trend-label', x: sx(tx2) - 10, y: sy(ty2) - 12, 'text-anchor': 'end' });
+  tl.textContent = `Typical relationship — r = ${r.toFixed(2)}`;
+  svg.appendChild(tl);
+  {
+    const bb = tl.getBBox();
+    placedBoxes.push({ x: bb.x - PAD, y: bb.y - PAD, w: bb.width + PAD * 2, h: bb.height + PAD * 2 });
+  }
+
+  // === dots (largest price first, so small dots don't hide under big clusters oddly — z-order by price desc) ===
   const sorted = [...cities].sort((a, b) => b.medianHomePrice - a.medianHomePrice);
+  const dotLayer = el('g', {});
+  svg.appendChild(dotLayer);
   sorted.forEach(c => {
-    const cx = sx(c.sunshineDays), cy = sy(c.medianHomePrice);
-    const hit = el('circle', { class: 'dot-hit', cx, cy, r: 14, tabindex: 0, role: 'img', 'aria-label': `${c.label}: ${c.sunshineDays} sunny days, ${fmtDollarFull(c.medianHomePrice)}` });
-    const dot = el('circle', { class: 'dot', cx, cy, r: 5 });
+    const cx = sx(c.medianHomePrice), cy = sy(c.sunshineDays);
+    const color = regionColor(c.region);
+    const hit = el('circle', { class: 'dot-hit', cx, cy, r: 14, tabindex: 0, role: 'img', 'aria-label': `${c.label}, ${c.region}: ${c.sunshineDays} sunny days, ${fmtDollarFull(c.medianHomePrice)}` });
+    const dot = el('circle', { class: 'dot', cx, cy, r: 6, fill: color });
     const showTip = () => {
       tooltip.innerHTML = '';
       const cityEl = document.createElement('div');
       cityEl.className = 't-city';
-      cityEl.textContent = c.label;
+      const key = document.createElement('span');
+      key.className = 't-key';
+      key.style.background = color;
+      const nameSpan = document.createElement('span');
+      nameSpan.textContent = c.label;
+      cityEl.appendChild(key);
+      cityEl.appendChild(nameSpan);
+      const regionEl = document.createElement('div');
+      regionEl.className = 't-row';
+      regionEl.textContent = c.region;
       const priceEl = document.createElement('div');
       priceEl.className = 't-row';
       priceEl.innerHTML = 'Median home price: <strong></strong>';
@@ -329,6 +468,7 @@ fetch('data.json').then(r => r.json()).then(({ meta, cities }) => {
       daysEl.innerHTML = 'Sunny days / yr: <strong></strong>';
       daysEl.querySelector('strong').textContent = c.sunshineDays;
       tooltip.appendChild(cityEl);
+      tooltip.appendChild(regionEl);
       tooltip.appendChild(priceEl);
       tooltip.appendChild(daysEl);
       const pt = svg.createSVGPoint();
@@ -337,12 +477,10 @@ fetch('data.json').then(r => r.json()).then(({ meta, cities }) => {
       const hostRect = svg.parentElement.getBoundingClientRect();
       const left = screenPt.x - hostRect.left;
       const top = screenPt.y - hostRect.top;
-      const flipBelow = screenPt.y - hostRect.top < 70;
+      const flipBelow = top < 70;
       tooltip.style.left = left + 'px';
       tooltip.style.top = top + 'px';
-      tooltip.style.transform = flipBelow
-        ? 'translate(-50%, 14px)'
-        : 'translate(-50%, calc(-100% - 10px))';
+      tooltip.style.transform = flipBelow ? 'translate(-50%, 14px)' : 'translate(-50%, calc(-100% - 10px))';
       tooltip.classList.add('show');
     };
     const hideTip = () => tooltip.classList.remove('show');
@@ -350,23 +488,72 @@ fetch('data.json').then(r => r.json()).then(({ meta, cities }) => {
     hit.addEventListener('focus', showTip);
     hit.addEventListener('pointerleave', hideTip);
     hit.addEventListener('blur', hideTip);
-    svg.appendChild(hit);
-    svg.appendChild(dot);
-
-    if (LABELED.has(c.label)) {
-      const above = c.medianHomePrice > 700000 || (c.sunshineDays > 150 && c.medianHomePrice < 500000);
-      const t = el('text', {
-        class: 'point-label',
-        x: cx + (c.sunshineDays > 195 ? -9 : 9),
-        y: above ? cy - 11 : cy + 18,
-        'text-anchor': c.sunshineDays > 195 ? 'end' : 'start'
-      });
-      t.textContent = c.city;
-      svg.appendChild(t);
-    }
+    dotLayer.appendChild(hit);
+    dotLayer.appendChild(dot);
   });
 
-  // --- table ---
+  // dots count as obstacles too, so a neighbor's label doesn't land on top of another city's dot
+  const DOT_R = 6;
+  const dotBoxes = cities.map(c => {
+    const cx = sx(c.medianHomePrice), cy = sy(c.sunshineDays);
+    return { key: c.city, x: cx - DOT_R - 2, y: cy - DOT_R - 2, w: (DOT_R + 2) * 2, h: (DOT_R + 2) * 2 };
+  });
+
+  // === direct labels: greedy collision-avoiding placement, measured via real getBBox ===
+  // (placedBoxes/overlaps/PAD declared above, seeded with the trend-line label's box)
+  const labelLayer = el('g', {});
+  svg.appendChild(labelLayer);
+
+  function tryPlace(c, isBold) {
+    const cx = sx(c.medianHomePrice), cy = sy(c.sunshineDays);
+    const candidates = [
+      { dx: 9, dy: 3.5, anchor: 'start' },
+      { dx: -9, dy: 3.5, anchor: 'end' },
+      { dx: 0, dy: -9, anchor: 'middle' },
+      { dx: 0, dy: 17, anchor: 'middle' },
+      { dx: 9, dy: -7, anchor: 'start' },
+      { dx: -9, dy: -7, anchor: 'end' },
+      { dx: 9, dy: 15, anchor: 'start' },
+      { dx: -9, dy: 15, anchor: 'end' },
+    ];
+    const t = el('text', {
+      class: isBold ? 'point-label label-bold' : 'point-label',
+      x: cx, y: cy
+    });
+    t.textContent = c.city;
+    labelLayer.appendChild(t);
+
+    const otherDots = dotBoxes.filter(d => d.key !== c.city);
+    let chosen = null, fallback = null, fallbackOverlapCount = Infinity;
+    for (const cand of candidates) {
+      t.setAttribute('x', cx + cand.dx);
+      t.setAttribute('y', cy + cand.dy);
+      t.setAttribute('text-anchor', cand.anchor);
+      const bb = t.getBBox();
+      const box = { x: bb.x - PAD, y: bb.y - PAD, w: bb.width + PAD * 2, h: bb.height + PAD * 2 };
+      const inBounds = box.x >= 0 && box.x + box.w <= W && box.y >= M.top - 4 && box.y + box.h <= H;
+      const collisionCount = placedBoxes.reduce((acc, p) => acc + (overlaps(box, p) ? 1 : 0), 0)
+        + otherDots.reduce((acc, p) => acc + (overlaps(box, p) ? 1 : 0), 0);
+      if (inBounds && collisionCount === 0) { chosen = { cand, box }; break; }
+      if (isBold && collisionCount < fallbackOverlapCount) { fallbackOverlapCount = collisionCount; fallback = { cand, box }; }
+    }
+    if (!chosen && isBold && fallback) chosen = fallback;
+
+    if (chosen) {
+      t.setAttribute('x', cx + chosen.cand.dx);
+      t.setAttribute('y', cy + chosen.cand.dy);
+      t.setAttribute('text-anchor', chosen.cand.anchor);
+      placedBoxes.push(chosen.box);
+    } else {
+      t.remove();
+    }
+  }
+
+  const byPriceDesc = [...cities].sort((a, b) => b.medianHomePrice - a.medianHomePrice);
+  byPriceDesc.filter(c => BOLD.has(c.city)).forEach(c => tryPlace(c, true));
+  byPriceDesc.filter(c => !BOLD.has(c.city)).forEach(c => tryPlace(c, false));
+
+  // === table ===
   const tblBody = document.getElementById('tblBody');
   let sortKey = 'medianHomePrice', sortDir = -1;
   function renderTable() {
@@ -377,6 +564,15 @@ fetch('data.json').then(r => r.json()).then(({ meta, cities }) => {
       const tdCity = document.createElement('td');
       tdCity.className = 'city';
       tdCity.textContent = c.label;
+      const tdRegion = document.createElement('td');
+      tdRegion.className = 'region-cell';
+      const dot = document.createElement('span');
+      dot.className = 'legend-dot';
+      dot.style.background = regionColor(c.region);
+      const regionText = document.createElement('span');
+      regionText.textContent = c.region;
+      tdRegion.appendChild(dot);
+      tdRegion.appendChild(regionText);
       const tdDays = document.createElement('td');
       tdDays.className = 'num';
       tdDays.textContent = c.sunshineDays;
@@ -384,6 +580,7 @@ fetch('data.json').then(r => r.json()).then(({ meta, cities }) => {
       tdPrice.className = 'num';
       tdPrice.textContent = fmtDollarFull(c.medianHomePrice);
       tr.appendChild(tdCity);
+      tr.appendChild(tdRegion);
       tr.appendChild(tdDays);
       tr.appendChild(tdPrice);
       tblBody.appendChild(tr);
@@ -393,7 +590,7 @@ fetch('data.json').then(r => r.json()).then(({ meta, cities }) => {
   document.querySelectorAll('#tbl th').forEach(th => {
     th.addEventListener('click', () => {
       const key = th.dataset.key;
-      sortDir = (key === sortKey) ? -sortDir : (key === 'label' ? 1 : -1);
+      sortDir = (key === sortKey) ? -sortDir : (key === 'label' || key === 'region' ? 1 : -1);
       sortKey = key;
       renderTable();
     });
