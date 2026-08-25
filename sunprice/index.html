@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sunshine vs. home prices</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>%E2%98%80%EF%B8%8F</text></svg>">
+<style>
+  :root {
+    color-scheme: light;
+    --page:        #f9f9f7;
+    --surface-1:   #fcfcfb;
+    --text-primary:   #0b0b0b;
+    --text-secondary: #52514e;
+    --text-muted:     #898781;
+    --grid:        #e1e0d9;
+    --axis:        #c3c2b7;
+    --series-1:    #2a78d6;
+    --series-1-wash: rgba(42, 120, 214, 0.10);
+    --border:      rgba(11,11,11,0.10);
+    --trend:       #b4b2a8;
+    --tooltip-bg:  #0b0b0b;
+    --tooltip-fg:  #ffffff;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) {
+      color-scheme: dark;
+      --page:        #0d0d0d;
+      --surface-1:   #1a1a19;
+      --text-primary:   #ffffff;
+      --text-secondary: #c3c2b7;
+      --text-muted:     #898781;
+      --grid:        #2c2c2a;
+      --axis:        #383835;
+      --series-1:    #3987e5;
+      --series-1-wash: rgba(57, 135, 229, 0.14);
+      --border:      rgba(255,255,255,0.10);
+      --trend:       #46453f;
+      --tooltip-bg:  #ffffff;
+      --tooltip-fg:  #0b0b0b;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { background: var(--page); }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    margin: 0;
+    padding: 2rem 1.5rem 4rem;
+    color: var(--text-primary);
+  }
+  .wrap { max-width: 880px; margin: 0 auto; }
+  h1 {
+    font-size: 1.4rem;
+    font-weight: 600;
+    margin: 0 0 0.35rem;
+    letter-spacing: -0.01em;
+  }
+  p.sub {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    line-height: 1.5;
+    margin: 0 0 1.5rem;
+    max-width: 62ch;
+  }
+  .card {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem 1.25rem 0.75rem;
+  }
+  .chart-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 0.25rem;
+  }
+  .chart-head h2 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin: 0;
+    color: var(--text-primary);
+  }
+  .stat {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+  }
+  .stat strong { color: var(--text-secondary); font-weight: 600; }
+  svg { display: block; width: 100%; height: auto; overflow: visible; }
+  .axis-label {
+    font-size: 11px;
+    fill: var(--text-muted);
+  }
+  .tick text {
+    font-size: 11px;
+    fill: var(--text-muted);
+  }
+  .gridline { stroke: var(--grid); stroke-width: 1; shape-rendering: crispEdges; }
+  .baseline { stroke: var(--axis); stroke-width: 1; shape-rendering: crispEdges; }
+  .trendline { stroke: var(--trend); stroke-width: 2; fill: none; }
+  .dot {
+    fill: var(--series-1);
+    stroke: var(--surface-1);
+    stroke-width: 2;
+    pointer-events: none;
+    transition: r 0.1s ease;
+  }
+  .dot-hit { fill: transparent; pointer-events: all; cursor: pointer; }
+  .dot-hit:hover + .dot,
+  .dot-hit:focus + .dot { r: 7; }
+  .dot-hit:focus { outline: none; }
+  .point-label {
+    font-size: 11px;
+    font-weight: 600;
+    fill: var(--text-secondary);
+    pointer-events: none;
+  }
+  .tooltip {
+    position: absolute;
+    pointer-events: none;
+    background: var(--tooltip-bg);
+    color: var(--tooltip-fg);
+    font-size: 12px;
+    line-height: 1.45;
+    padding: 7px 10px;
+    border-radius: 7px;
+    opacity: 0;
+    transform: translate(-50%, calc(-100% - 10px));
+    transition: opacity 0.08s ease;
+    white-space: nowrap;
+    z-index: 10;
+  }
+  .tooltip.show { opacity: 1; }
+  .tooltip .t-city { font-weight: 600; }
+  .tooltip .t-row { color: var(--tooltip-fg); opacity: 0.85; }
+  .tooltip .t-row strong { opacity: 1; font-variant-numeric: tabular-nums; }
+  .foot {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--border);
+  }
+  .source {
+    font-size: 11px;
+    color: var(--text-muted);
+    line-height: 1.5;
+  }
+  .source a { color: var(--text-muted); }
+  button.tbl-toggle {
+    font-size: 12px;
+    padding: 5px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+  }
+  button.tbl-toggle:hover { background: var(--series-1-wash); border-color: var(--series-1); color: var(--series-1); }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12.5px;
+    margin-top: 1rem;
+    display: none;
+  }
+  table.show { display: table; }
+  th, td {
+    text-align: left;
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--grid);
+  }
+  th {
+    color: var(--text-muted);
+    font-weight: 600;
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+  }
+  th:hover { color: var(--text-primary); }
+  th.num, td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  td.city { color: var(--text-primary); font-weight: 500; }
+  .credit { font-size: 11.5px; color: var(--text-muted); margin: 1.25rem 0 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Sunshine vs. home prices, across 53 U.S. cities</h1>
+  <p class="sub">Each dot is a metro area. The x‑axis is average clear (sunny) days per year; the y‑axis is the current median home value. Hover a dot for details, or switch to the table.</p>
+
+  <div class="card">
+    <div class="chart-head">
+      <h2 id="chartTitle">Median home price by average sunny days / year</h2>
+      <span class="stat" id="corrStat"></span>
+    </div>
+    <div style="position:relative;">
+      <svg id="chart" viewBox="0 0 880 520" preserveAspectRatio="xMidYMid meet"></svg>
+      <div class="tooltip" id="tooltip"></div>
+    </div>
+    <div class="foot">
+      <div class="source" id="sourceNote"></div>
+      <button class="tbl-toggle" id="tblToggle">View as table</button>
+    </div>
+    <table id="tbl">
+      <thead>
+        <tr>
+          <th data-key="label">City</th>
+          <th class="num" data-key="sunshineDays">Sunny days / yr</th>
+          <th class="num" data-key="medianHomePrice">Median home price</th>
+        </tr>
+      </thead>
+      <tbody id="tblBody"></tbody>
+    </table>
+  </div>
+
+  <p class="credit">Sunshine: average annual clear days, NOAA-derived, via <a href="https://www.currentresults.com/Weather/US/average-annual-sunshine-by-city.php" target="_blank" rel="noopener">Current Results</a>. Home prices: Zillow Home Value Index (all homes, smoothed &amp; seasonally adjusted), July 2026, via <a href="https://www.zillow.com/research/data/" target="_blank" rel="noopener">Zillow Research</a>.</p>
+</div>
+
+<script>
+const NS = 'http://www.w3.org/2000/svg';
+const svg = document.getElementById('chart');
+const tooltip = document.getElementById('tooltip');
+const W = 880, H = 520;
+const M = { top: 20, right: 24, bottom: 46, left: 78 };
+const plotW = W - M.left - M.right;
+const plotH = H - M.top - M.bottom;
+
+// Cities picked for direct labels: the extremes of the story.
+const LABELED = new Set(['San Francisco, CA', 'Detroit, MI', 'Phoenix, AZ', 'Buffalo, NY', 'Seattle, WA']);
+
+function el(tag, attrs) {
+  const e = document.createElementNS(NS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  return e;
+}
+
+function fmtDollar(v) {
+  if (v >= 1000000) {
+    const m = v / 1000000;
+    return '$' + (Math.round(m * 10) / 10).toFixed(m % 1 === 0 ? 0 : 1) + 'M';
+  }
+  return '$' + Math.round(v / 1000) + 'K';
+}
+function fmtDollarFull(v) {
+  return '$' + Math.round(v).toLocaleString('en-US');
+}
+
+fetch('data.json').then(r => r.json()).then(({ meta, cities }) => {
+  document.getElementById('sourceNote').textContent = `Zillow ZHVI as of ${meta.asOf} · ${cities.length} metros`;
+
+  const xs = cities.map(c => c.sunshineDays);
+  const ys = cities.map(c => c.medianHomePrice);
+  const xMin = 40, xMax = 220;
+  const yMax = Math.ceil(Math.max(...ys) / 250000) * 250000;
+  const yMin = 0;
+
+  const sx = v => M.left + ((v - xMin) / (xMax - xMin)) * plotW;
+  const sy = v => M.top + plotH - ((v - yMin) / (yMax - yMin)) * plotH;
+
+  // --- correlation + regression (population stats over the 53 metros) ---
+  const n = xs.length;
+  const mx = xs.reduce((a, b) => a + b, 0) / n;
+  const my = ys.reduce((a, b) => a + b, 0) / n;
+  const cov = xs.reduce((s, x, i) => s + (x - mx) * (ys[i] - my), 0) / n;
+  const vx = xs.reduce((s, x) => s + (x - mx) ** 2, 0) / n;
+  const vy = ys.reduce((s, y) => s + (y - my) ** 2, 0) / n;
+  const r = cov / Math.sqrt(vx * vy);
+  const slope = cov / vx;
+  const intercept = my - slope * mx;
+  document.getElementById('corrStat').innerHTML = `r = <strong>${r.toFixed(2)}</strong> (weak positive)`;
+
+  // --- gridlines + y axis ---
+  const yTicks = [];
+  for (let v = 0; v <= yMax; v += 250000) yTicks.push(v);
+  yTicks.forEach(v => {
+    svg.appendChild(el('line', { class: 'gridline', x1: M.left, x2: W - M.right, y1: sy(v), y2: sy(v) }));
+    const t = el('text', { class: 'tick', x: M.left - 10, y: sy(v) + 4, 'text-anchor': 'end' });
+    t.textContent = v === 0 ? '$0' : fmtDollar(v);
+    svg.appendChild(t);
+  });
+
+  // --- x axis ---
+  const xTicks = [50, 75, 100, 125, 150, 175, 200];
+  xTicks.forEach(v => {
+    const t = el('text', { class: 'tick', x: sx(v), y: M.top + plotH + 22, 'text-anchor': 'middle' });
+    t.textContent = v;
+    svg.appendChild(t);
+  });
+  svg.appendChild(el('line', { class: 'baseline', x1: M.left, x2: W - M.right, y1: M.top + plotH, y2: M.top + plotH }));
+
+  // axis titles
+  const xLabel = el('text', { class: 'axis-label', x: M.left + plotW / 2, y: H - 6, 'text-anchor': 'middle' });
+  xLabel.textContent = 'Average sunny (clear) days per year →';
+  svg.appendChild(xLabel);
+
+  const yLabel = el('text', { class: 'axis-label', x: 0, y: 0, 'text-anchor': 'middle', transform: `translate(12, ${M.top + plotH / 2}) rotate(-90)` });
+  yLabel.textContent = 'Median home price →';
+  svg.appendChild(yLabel);
+
+  // --- trend line ---
+  const tx1 = xMin + 6, tx2 = xMax - 6;
+  svg.appendChild(el('line', {
+    class: 'trendline',
+    x1: sx(tx1), y1: sy(slope * tx1 + intercept),
+    x2: sx(tx2), y2: sy(slope * tx2 + intercept)
+  }));
+
+  // --- dots ---
+  const sorted = [...cities].sort((a, b) => b.medianHomePrice - a.medianHomePrice);
+  sorted.forEach(c => {
+    const cx = sx(c.sunshineDays), cy = sy(c.medianHomePrice);
+    const hit = el('circle', { class: 'dot-hit', cx, cy, r: 14, tabindex: 0, role: 'img', 'aria-label': `${c.label}: ${c.sunshineDays} sunny days, ${fmtDollarFull(c.medianHomePrice)}` });
+    const dot = el('circle', { class: 'dot', cx, cy, r: 5 });
+    const showTip = () => {
+      tooltip.innerHTML = '';
+      const cityEl = document.createElement('div');
+      cityEl.className = 't-city';
+      cityEl.textContent = c.label;
+      const priceEl = document.createElement('div');
+      priceEl.className = 't-row';
+      priceEl.innerHTML = 'Median home price: <strong></strong>';
+      priceEl.querySelector('strong').textContent = fmtDollarFull(c.medianHomePrice);
+      const daysEl = document.createElement('div');
+      daysEl.className = 't-row';
+      daysEl.innerHTML = 'Sunny days / yr: <strong></strong>';
+      daysEl.querySelector('strong').textContent = c.sunshineDays;
+      tooltip.appendChild(cityEl);
+      tooltip.appendChild(priceEl);
+      tooltip.appendChild(daysEl);
+      const pt = svg.createSVGPoint();
+      pt.x = cx; pt.y = cy;
+      const screenPt = pt.matrixTransform(svg.getScreenCTM());
+      const hostRect = svg.parentElement.getBoundingClientRect();
+      const left = screenPt.x - hostRect.left;
+      const top = screenPt.y - hostRect.top;
+      const flipBelow = screenPt.y - hostRect.top < 70;
+      tooltip.style.left = left + 'px';
+      tooltip.style.top = top + 'px';
+      tooltip.style.transform = flipBelow
+        ? 'translate(-50%, 14px)'
+        : 'translate(-50%, calc(-100% - 10px))';
+      tooltip.classList.add('show');
+    };
+    const hideTip = () => tooltip.classList.remove('show');
+    hit.addEventListener('pointerenter', showTip);
+    hit.addEventListener('focus', showTip);
+    hit.addEventListener('pointerleave', hideTip);
+    hit.addEventListener('blur', hideTip);
+    svg.appendChild(hit);
+    svg.appendChild(dot);
+
+    if (LABELED.has(c.label)) {
+      const above = c.medianHomePrice > 700000 || (c.sunshineDays > 150 && c.medianHomePrice < 500000);
+      const t = el('text', {
+        class: 'point-label',
+        x: cx + (c.sunshineDays > 195 ? -9 : 9),
+        y: above ? cy - 11 : cy + 18,
+        'text-anchor': c.sunshineDays > 195 ? 'end' : 'start'
+      });
+      t.textContent = c.city;
+      svg.appendChild(t);
+    }
+  });
+
+  // --- table ---
+  const tblBody = document.getElementById('tblBody');
+  let sortKey = 'medianHomePrice', sortDir = -1;
+  function renderTable() {
+    const rows = [...cities].sort((a, b) => (a[sortKey] > b[sortKey] ? 1 : -1) * sortDir);
+    tblBody.innerHTML = '';
+    rows.forEach(c => {
+      const tr = document.createElement('tr');
+      const tdCity = document.createElement('td');
+      tdCity.className = 'city';
+      tdCity.textContent = c.label;
+      const tdDays = document.createElement('td');
+      tdDays.className = 'num';
+      tdDays.textContent = c.sunshineDays;
+      const tdPrice = document.createElement('td');
+      tdPrice.className = 'num';
+      tdPrice.textContent = fmtDollarFull(c.medianHomePrice);
+      tr.appendChild(tdCity);
+      tr.appendChild(tdDays);
+      tr.appendChild(tdPrice);
+      tblBody.appendChild(tr);
+    });
+  }
+  renderTable();
+  document.querySelectorAll('#tbl th').forEach(th => {
+    th.addEventListener('click', () => {
+      const key = th.dataset.key;
+      sortDir = (key === sortKey) ? -sortDir : (key === 'label' ? 1 : -1);
+      sortKey = key;
+      renderTable();
+    });
+  });
+
+  const tbl = document.getElementById('tbl');
+  const tblToggle = document.getElementById('tblToggle');
+  tblToggle.addEventListener('click', () => {
+    const showing = tbl.classList.toggle('show');
+    tblToggle.textContent = showing ? 'Hide table' : 'View as table';
+  });
+});
+</script>
+</body>
+</html>
