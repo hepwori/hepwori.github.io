@@ -248,7 +248,7 @@
 <div class="wrap">
   <p class="kicker">U.S. Metro Data</p>
   <h1>The Price of Sunshine</h1>
-  <p class="sub">What pleasant weather adds to the cost of a home. Each dot is one of 53 major U.S. metros, plotted by average sunny days per year against median home value, and colored by region.</p>
+  <p class="sub">What pleasant weather adds to the cost of a home. Each dot is one of 53 major U.S. metros, plotted by average hours of sunshine per year against median home value, and colored by region.</p>
 
   <div class="meta-row">
     <div class="meta" id="metaNote"></div>
@@ -269,7 +269,7 @@
         <tr>
           <th data-key="label">City</th>
           <th data-key="region">Region</th>
-          <th class="num" data-key="sunshineDays">Sunny days / yr</th>
+          <th class="num" data-key="sunshineHours">Sunshine hours / yr</th>
           <th class="num" data-key="medianHomePrice">Median home price</th>
         </tr>
       </thead>
@@ -277,7 +277,7 @@
     </table>
   </div>
 
-  <p class="credit">Sunshine: average annual clear days, NOAA-derived, via <a href="https://www.currentresults.com/Weather/US/average-annual-sunshine-by-city.php" target="_blank" rel="noopener">Current Results</a>. Home prices: Zillow Home Value Index (all homes, smoothed &amp; seasonally adjusted), July 2026, via <a href="https://www.zillow.com/research/data/" target="_blank" rel="noopener">Zillow Research</a>. Regions are hand-assigned Census-style groupings, adapted for this chart — a supplementary layer; city identity always rides on the label, hover, and table, never on color alone.</p>
+  <p class="credit">Sunshine: average annual hours of sunshine, NOAA-derived, mostly via <a href="https://www.currentresults.com/Weather/US/average-annual-sunshine-by-city.php" target="_blank" rel="noopener">Current Results</a>; 6 cities missing there (Fresno, Honolulu, Los Angeles, San Francisco, Tucson, Tulsa) filled from <a href="https://en.wikipedia.org/wiki/List_of_cities_by_sunshine_duration" target="_blank" rel="noopener">Wikipedia's sunshine-duration table</a> (same underlying climate-normal data, summed from monthly figures — cross-checked to the hour against independently reported totals for the same cities). Grand Rapids (marked *) has no published figure anywhere found; its value is <em>estimated</em> from NOAA's percent-of-possible-sunshine for that city, scaled by a possible-sunshine-hours constant calibrated against nearby Great Lakes stations — see the dashed dot outline and the README for the full method. Home prices: Zillow Home Value Index (all homes, smoothed &amp; seasonally adjusted), July 2026, via <a href="https://www.zillow.com/research/data/" target="_blank" rel="noopener">Zillow Research</a>. Regions are hand-assigned Census-style groupings, adapted for this chart — a supplementary layer; city identity always rides on the label, hover, and table, never on color alone.</p>
 </div>
 
 <script>
@@ -285,7 +285,7 @@ const NS = 'http://www.w3.org/2000/svg';
 const svg = document.getElementById('chart');
 const tooltip = document.getElementById('tooltip');
 const W = 1180, H = 700;
-const M = { top: 26, right: 34, bottom: 50, left: 60 };
+const M = { top: 26, right: 34, bottom: 50, left: 68 };
 const plotW = W - M.left - M.right;
 const plotH = H - M.top - M.bottom;
 
@@ -302,7 +302,7 @@ const REGIONS = [
 const regionColor = key => getComputedStyle(document.documentElement).getPropertyValue(REGIONS.find(r => r.key === key).var).trim();
 
 const BOLD = new Set([
-  'Los Angeles', 'San Francisco', 'San Diego', 'Seattle', 'Portland', 'Sacramento',
+  'Los Angeles', 'San Francisco', 'Seattle', 'Portland', 'Sacramento',
   'Denver', 'Phoenix', 'Las Vegas', 'Houston', 'Dallas', 'Austin', 'San Antonio',
   'Chicago', 'Detroit', 'Minneapolis', 'Miami', 'Atlanta', 'Boston',
   'New York', 'Washington', 'Philadelphia'
@@ -339,25 +339,24 @@ REGIONS.forEach(r => {
 
 fetch('data.json').then(r => r.json()).then(({ meta, cities }) => {
   document.getElementById('sourceNote').textContent = `Zillow ZHVI as of ${meta.asOf} · ${cities.length} metros`;
-  document.getElementById('metaNote').innerHTML = `${cities.length} U.S. cities<br>1990s–present NOAA sunshine normals &amp; current Zillow prices`;
+  document.getElementById('metaNote').innerHTML = `${cities.length} U.S. cities<br>NOAA sunshine-hours normals &amp; current Zillow prices`;
 
-  // --- scales: log price (x), linear sunny days (y) ---
+  // --- scales: log price (x), linear sunshine hours (y) ---
   const xMin = 60000, xMax = 1700000;
-  const yMin = 40, yMax = 225;
+  const yMin = 1900, yMax = 4050;
   const lx0 = Math.log10(xMin), lx1 = Math.log10(xMax);
   const sx = v => M.left + (Math.log10(v) - lx0) / (lx1 - lx0) * plotW;
   const sy = v => M.top + plotH - ((v - yMin) / (yMax - yMin)) * plotH;
 
   // --- stats: median split + log-linear regression ---
   const prices = cities.map(c => c.medianHomePrice).sort((a, b) => a - b);
-  const days = cities.map(c => c.sunshineDays).sort((a, b) => a - b);
-  const mid = n => n % 2 ? arr => arr[(n - 1) / 2] : arr => (arr[n / 2 - 1] + arr[n / 2]) / 2;
+  const hoursSorted = cities.map(c => c.sunshineHours).sort((a, b) => a - b);
   const n = cities.length;
   const medPrice = n % 2 ? prices[(n - 1) / 2] : (prices[n / 2 - 1] + prices[n / 2]) / 2;
-  const medDays = n % 2 ? days[(n - 1) / 2] : (days[n / 2 - 1] + days[n / 2]) / 2;
+  const medHours = n % 2 ? hoursSorted[(n - 1) / 2] : (hoursSorted[n / 2 - 1] + hoursSorted[n / 2]) / 2;
 
   const lxs = cities.map(c => Math.log10(c.medianHomePrice));
-  const ys = cities.map(c => c.sunshineDays);
+  const ys = cities.map(c => c.sunshineHours);
   const mlx = lxs.reduce((a, b) => a + b, 0) / n;
   const my = ys.reduce((a, b) => a + b, 0) / n;
   const cov = lxs.reduce((s, x, i) => s + (x - mlx) * (ys[i] - my), 0) / n;
@@ -368,7 +367,7 @@ fetch('data.json').then(r => r.json()).then(({ meta, cities }) => {
   const intercept = my - slope * mlx;
 
   // === quadrant background wash ===
-  const midX = sx(medPrice), midY = sy(medDays);
+  const midX = sx(medPrice), midY = sy(medHours);
   const qTL = el('rect', { x: M.left, y: M.top, width: midX - M.left, height: midY - M.top, fill: 'var(--quad-warm)' });
   const qTR = el('rect', { x: midX, y: M.top, width: M.left + plotW - midX, height: midY - M.top, fill: 'var(--quad-warm-2)' });
   const qBL = el('rect', { x: M.left, y: midY, width: midX - M.left, height: M.top + plotH - midY, fill: 'none' });
@@ -376,11 +375,11 @@ fetch('data.json').then(r => r.json()).then(({ meta, cities }) => {
   [qTL, qTR, qBL, qBR].forEach(q => svg.appendChild(q));
 
   // === gridlines & axes ===
-  const yTicks = [50, 75, 100, 125, 150, 175, 200];
+  const yTicks = [2000, 2400, 2800, 3200, 3600, 4000];
   yTicks.forEach(v => {
     svg.appendChild(el('line', { class: 'gridline', x1: M.left, x2: W - M.right, y1: sy(v), y2: sy(v) }));
     const t = el('text', { class: 'tick', x: M.left - 10, y: sy(v) + 4, 'text-anchor': 'end' });
-    t.textContent = v;
+    t.textContent = v.toLocaleString('en-US');
     svg.appendChild(t);
   });
   const xTicks = [100000, 200000, 400000, 800000, 1600000];
@@ -397,7 +396,7 @@ fetch('data.json').then(r => r.json()).then(({ meta, cities }) => {
   xLabel.textContent = 'Median home price (log scale) →';
   svg.appendChild(xLabel);
   const yLabel = el('text', { class: 'axis-label', x: 0, y: 0, 'text-anchor': 'middle', transform: `translate(14, ${M.top + plotH / 2}) rotate(-90)` });
-  yLabel.textContent = 'Average sunny days per year →';
+  yLabel.textContent = 'Average hours of sunshine per year →';
   svg.appendChild(yLabel);
 
   // === median split lines ===
@@ -441,10 +440,13 @@ fetch('data.json').then(r => r.json()).then(({ meta, cities }) => {
   const dotLayer = el('g', {});
   svg.appendChild(dotLayer);
   sorted.forEach(c => {
-    const cx = sx(c.medianHomePrice), cy = sy(c.sunshineDays);
+    const cx = sx(c.medianHomePrice), cy = sy(c.sunshineHours);
     const color = regionColor(c.region);
-    const hit = el('circle', { class: 'dot-hit', cx, cy, r: 14, tabindex: 0, role: 'img', 'aria-label': `${c.label}, ${c.region}: ${c.sunshineDays} sunny days, ${fmtDollarFull(c.medianHomePrice)}` });
-    const dot = el('circle', { class: 'dot', cx, cy, r: 6, fill: color });
+    const estNote = c.sunshineHoursEstimated ? ' (sunshine hours estimated)' : '';
+    const hit = el('circle', { class: 'dot-hit', cx, cy, r: 14, tabindex: 0, role: 'img', 'aria-label': `${c.label}, ${c.region}: ${c.sunshineHours} sunshine hours${estNote}, ${fmtDollarFull(c.medianHomePrice)}` });
+    const dotAttrs = { class: 'dot', cx, cy, r: 6, fill: color };
+    if (c.sunshineHoursEstimated) dotAttrs['stroke-dasharray'] = '5 3.3';
+    const dot = el('circle', dotAttrs);
     const showTip = () => {
       tooltip.innerHTML = '';
       const cityEl = document.createElement('div');
@@ -463,14 +465,22 @@ fetch('data.json').then(r => r.json()).then(({ meta, cities }) => {
       priceEl.className = 't-row';
       priceEl.innerHTML = 'Median home price: <strong></strong>';
       priceEl.querySelector('strong').textContent = fmtDollarFull(c.medianHomePrice);
-      const daysEl = document.createElement('div');
-      daysEl.className = 't-row';
-      daysEl.innerHTML = 'Sunny days / yr: <strong></strong>';
-      daysEl.querySelector('strong').textContent = c.sunshineDays;
+      const hoursEl = document.createElement('div');
+      hoursEl.className = 't-row';
+      hoursEl.innerHTML = 'Sunshine hours / yr: <strong></strong>';
+      hoursEl.querySelector('strong').textContent = c.sunshineHours.toLocaleString('en-US');
       tooltip.appendChild(cityEl);
       tooltip.appendChild(regionEl);
       tooltip.appendChild(priceEl);
-      tooltip.appendChild(daysEl);
+      tooltip.appendChild(hoursEl);
+      if (c.sunshineHoursEstimated) {
+        const noteEl = document.createElement('div');
+        noteEl.className = 't-row';
+        noteEl.style.fontStyle = 'italic';
+        noteEl.style.opacity = '0.7';
+        noteEl.textContent = 'Sunshine hours estimated — see footnote';
+        tooltip.appendChild(noteEl);
+      }
       const pt = svg.createSVGPoint();
       pt.x = cx; pt.y = cy;
       const screenPt = pt.matrixTransform(svg.getScreenCTM());
@@ -495,7 +505,7 @@ fetch('data.json').then(r => r.json()).then(({ meta, cities }) => {
   // dots count as obstacles too, so a neighbor's label doesn't land on top of another city's dot
   const DOT_R = 6;
   const dotBoxes = cities.map(c => {
-    const cx = sx(c.medianHomePrice), cy = sy(c.sunshineDays);
+    const cx = sx(c.medianHomePrice), cy = sy(c.sunshineHours);
     return { key: c.city, x: cx - DOT_R - 2, y: cy - DOT_R - 2, w: (DOT_R + 2) * 2, h: (DOT_R + 2) * 2 };
   });
 
@@ -505,7 +515,7 @@ fetch('data.json').then(r => r.json()).then(({ meta, cities }) => {
   svg.appendChild(labelLayer);
 
   function tryPlace(c, isBold) {
-    const cx = sx(c.medianHomePrice), cy = sy(c.sunshineDays);
+    const cx = sx(c.medianHomePrice), cy = sy(c.sunshineHours);
     const candidates = [
       { dx: 9, dy: 3.5, anchor: 'start' },
       { dx: -9, dy: 3.5, anchor: 'end' },
@@ -573,15 +583,15 @@ fetch('data.json').then(r => r.json()).then(({ meta, cities }) => {
       regionText.textContent = c.region;
       tdRegion.appendChild(dot);
       tdRegion.appendChild(regionText);
-      const tdDays = document.createElement('td');
-      tdDays.className = 'num';
-      tdDays.textContent = c.sunshineDays;
+      const tdHours = document.createElement('td');
+      tdHours.className = 'num';
+      tdHours.textContent = c.sunshineHours.toLocaleString('en-US') + (c.sunshineHoursEstimated ? ' *' : '');
       const tdPrice = document.createElement('td');
       tdPrice.className = 'num';
       tdPrice.textContent = fmtDollarFull(c.medianHomePrice);
       tr.appendChild(tdCity);
       tr.appendChild(tdRegion);
-      tr.appendChild(tdDays);
+      tr.appendChild(tdHours);
       tr.appendChild(tdPrice);
       tblBody.appendChild(tr);
     });

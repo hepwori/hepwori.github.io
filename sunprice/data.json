@@ -3,7 +3,8 @@
     "sunshineSource": "Current Results, NOAA-derived average annual clear days by city (currentresults.com/Weather/US/average-annual-sunshine-by-city.php)",
     "priceSource": "Zillow Home Value Index (ZHVI), all homes, smoothed & seasonally adjusted, July 2026 (zillow.com/research/data)",
     "asOf": "2026-07-31",
-    "regionSource": "Regions assigned by hand (Census-style groupings, adapted): Pacific, Mountain West, Southwest, Texas & South Central, Southeast, Midwest, Mid-Atlantic, New England."
+    "regionSource": "Regions assigned by hand (Census-style groupings, adapted): Pacific, Mountain West, Southwest, Texas & South Central, Southeast, Midwest, Mid-Atlantic, New England.",
+    "sunshineHoursSource": "Annual sunshine hours: mostly NOAA-derived figures via Current Results (same table as sunshineDays). 6 cities missing from that table (Fresno, Honolulu, Los Angeles, San Francisco, Tucson, Tulsa) were filled from Wikipedia's \"List of cities by sunshine duration\" (monthly NOAA/climate-normal figures summed to an annual total) \u2014 cross-checked against independently reported totals for the same cities and matched to the hour. One city, Grand Rapids, has no published hours figure anywhere found; its value is *estimated* by multiplying NOAA's average percent-of-possible-sunshine for Grand Rapids (46%, from NOAA NCEI Comparative Climatic Data) by an average annual possible-sunshine-hours constant (~4,685 hours) calibrated from nearby Great Lakes stations (Detroit, Milwaukee) with both measures available. Flagged via sunshineHoursEstimated: true."
   },
   "cities": [
     {
@@ -13,7 +14,8 @@
       "sunshineDays": 110,
       "sunshineHours": 2738,
       "medianHomePrice": 387226,
-      "region": "Southeast"
+      "region": "Southeast",
+      "sunshineHoursEstimated": false
     },
     {
       "city": "Austin",
@@ -22,7 +24,8 @@
       "sunshineDays": 115,
       "sunshineHours": 2644,
       "medianHomePrice": 504148,
-      "region": "Texas & South Central"
+      "region": "Texas & South Central",
+      "sunshineHoursEstimated": false
     },
     {
       "city": "Baltimore",
@@ -31,7 +34,8 @@
       "sunshineDays": 105,
       "sunshineHours": 2582,
       "medianHomePrice": 189754,
-      "region": "Mid-Atlantic"
+      "region": "Mid-Atlantic",
+      "sunshineHoursEstimated": false
     },
     {
       "city": "Birmingham",
@@ -40,7 +44,8 @@
       "sunshineDays": 99,
       "sunshineHours": 2641,
       "medianHomePrice": 137168,
-      "region": "Southeast"
+      "region": "Southeast",
+      "sunshineHoursEstimated": false
     },
     {
       "city": "Boston",
@@ -49,7 +54,8 @@
       "sunshineDays": 98,
       "sunshineHours": 2634,
       "medianHomePrice": 787763,
-      "region": "New England"
+      "region": "New England",
+      "sunshineHoursEstimated": false
     },
     {
       "city": "Buffalo",
@@ -58,7 +64,8 @@
       "sunshineDays": 54,
       "sunshineHours": 2207,
       "medianHomePrice": 249040,
-      "region": "Mid-Atlantic"
+      "region": "Mid-Atlantic",
+      "sunshineHoursEstimated": false
     },
     {
       "city": "Charlotte",
@@ -67,7 +74,8 @@
       "sunshineDays": 109,
       "sunshineHours": 2821,
       "medianHomePrice": 397231,
-      "region": "Southeast"
+      "region": "Southeast",
+      "sunshineHoursEstimated": false
     },
     {
       "city": "Chicago",
@@ -76,7 +84,8 @@
       "sunshineDays": 84,
       "sunshineHours": 2508,
       "medianHomePrice": 337993,
-      "region": "Midwest"
+      "region": "Midwest",
+      "sunshineHoursEstimated": false
     },
     {
       "city": "Cincinnati",
@@ -85,7 +94,8 @@
       "sunshineDays": 81,
       "sunshineHours": 2335,
       "medianHomePrice": 251326,
-      "region": "Midwest"
+      "region": "Midwest",
+      "sunshineHoursEstimated": false
     },
     {
       "city": "Cleveland",
@@ -94,7 +104,8 @@
       "sunshineDays": 66,
       "sunshineHours": 2280,
       "medianHomePrice": 116759,
-      "region": "Midwest"
+      "region": "Midwest",
+      "sunshineHoursEstimated": false
     },
     {
       "city": "Columbus",
@@ -103,7 +114,8 @@
       "sunshineDays": 72,
       "sunshineHours": 2183,
       "medianHomePrice": 248686,
-      "region": "Midwest"
+      "region": "Midwest",
+      "sunshineHoursEstimated": false
     },
     {
       "city": "Dallas",
@@ -112,7 +124,8 @@
       "sunshineDays": 135,
       "sunshineHours": 2850,
       "medianHomePrice": 309590,
-      "region": "Texas & South Central"
+      "region": "Texas & South Central",
+      "sunshineHoursEstimated": false
     },
     {
       "city": "Denver",
@@ -121,7 +134,8 @@
       "sunshineDays": 115,
       "sunshineHours": 3107,
       "medianHomePrice": 533060,
-      "region": "Mountain West"
+      "region": "Mountain West",
+      "sunshineHoursEstimated": false
     },
     {
       "city": "Detroit",
@@ -130,25 +144,28 @@
       "sunshineDays": 75,
       "sunshineHours": 2436,
       "medianHomePrice": 76084,
-      "region": "Midwest"
+      "region": "Midwest",
+      "sunshineHoursEstimated": false
     },
     {
       "city": "Fresno",
       "state": "CA",
       "label": "Fresno, CA",
       "sunshineDays": 194,
-      "sunshineHours": null,
+      "sunshineHours": 3564,
       "medianHomePrice": 390993,
-      "region": "Pacific"
+      "region": "Pacific",
+      "sunshineHoursEstimated": false
     },
     {
       "city": "Grand Rapids",
       "state": "MI",
       "label": "Grand Rapids, MI",
       "sunshineDays": 64,
-      "sunshineHours": null,
+      "sunshineHours": 2155,
       "medianHomePrice": 311699,
-      "region": "Midwest"
+      "region": "Midwest",
+      "sunshineHoursEstimated": true
     },
     {
       "city": "Hartford",
@@ -157,16 +174,18 @@
       "sunshineDays": 82,
       "sunshineHours": 2585,
       "medianHomePrice": 203328,
-      "region": "New England"
+      "region": "New England",
+      "sunshineHoursEstimated": false
     },
     {
       "city": "Honolulu",
       "state": "HI",
       "label": "Honolulu, HI",
       "sunshineDays": 90,
-      "sunshineHours": null,
+      "sunshineHours": 3036,
       "medianHomePrice": 765367,
-      "region": "Pacific"
+      "region": "Pacific",
+      "sunshineHoursEstimated": false
     },
     {
       "city": "Houston",
@@ -175,7 +194,8 @@
       "sunshineDays": 90,
       "sunshineHours": 2578,
       "medianHomePrice": 263563,
-      "region": "Texas & South Central"
+      "region": "Texas & South Central",
+      "sunshineHoursEstimated": false
     },
     {
       "city": "Indianapolis",
@@ -184,7 +204,8 @@
       "sunshineDays": 88,
       "sunshineHours": 2440,
       "medianHomePrice": 232142,
-      "region": "Midwest"
+      "region": "Midwest",
+      "sunshineHoursEstimated": false
     },
     {
       "city": "Jacksonville",
@@ -193,7 +214,8 @@
       "sunshineDays": 94,
       "sunshineHours": 2880,
       "medianHomePrice": 286646,
-      "region": "Southeast"
+      "region": "Southeast",
+      "sunshineHoursEstimated": false
     },
     {
       "city": "Kansas City",
@@ -202,7 +224,8 @@
       "sunshineDays": 120,
       "sunshineHours": 2810,
       "medianHomePrice": 255590,
-      "region": "Midwest"
+      "region": "Midwest",
+      "sunshineHoursEstimated": false
     },
     {
       "city": "Las Vegas",
@@ -211,16 +234,18 @@
       "sunshineDays": 210,
       "sunshineHours": 3825,
       "medianHomePrice": 424778,
-      "region": "Southwest"
+      "region": "Southwest",
+      "sunshineHoursEstimated": false
     },
     {
       "city": "Los Angeles",
       "state": "CA",
       "label": "Los Angeles, CA",
       "sunshineDays": 147,
-      "sunshineHours": null,
+      "sunshineHours": 3254,
       "medianHomePrice": 946268,
-      "region": "Pacific"
+      "region": "Pacific",
+      "sunshineHoursEstimated": false
     },
     {
       "city": "Louisville",
@@ -229,7 +254,8 @@
       "sunshineDays": 93,
       "sunshineHours": 2514,
       "medianHomePrice": 265579,
-      "region": "Southeast"
+      "region": "Southeast",
+      "sunshineHoursEstimated": false
     },
     {
       "city": "Memphis",
@@ -238,7 +264,8 @@
       "sunshineDays": 118,
       "sunshineHours": 2888,
       "medianHomePrice": 144877,
-      "region": "Southeast"
+      "region": "Southeast",
+      "sunshineHoursEstimated": false
     },
     {
       "city": "Miami",
@@ -247,7 +274,8 @@
       "sunshineDays": 74,
       "sunshineHours": 3154,
       "medianHomePrice": 583609,
-      "region": "Southeast"
+      "region": "Southeast",
+      "sunshineHoursEstimated": false
     },
     {
       "city": "Milwaukee",
@@ -256,7 +284,8 @@
       "sunshineDays": 90,
       "sunshineHours": 2484,
       "medianHomePrice": 230242,
-      "region": "Midwest"
+      "region": "Midwest",
+      "sunshineHoursEstimated": false
     },
     {
       "city": "Minneapolis",
@@ -265,7 +294,8 @@
       "sunshineDays": 95,
       "sunshineHours": 2711,
       "medianHomePrice": 338118,
-      "region": "Midwest"
+      "region": "Midwest",
+      "sunshineHoursEstimated": false
     },
     {
       "city": "Nashville",
@@ -274,7 +304,8 @@
       "sunshineDays": 102,
       "sunshineHours": 2510,
       "medianHomePrice": 434068,
-      "region": "Southeast"
+      "region": "Southeast",
+      "sunshineHoursEstimated": false
     },
     {
       "city": "New Orleans",
@@ -283,7 +314,8 @@
       "sunshineDays": 101,
       "sunshineHours": 2649,
       "medianHomePrice": 245144,
-      "region": "Texas & South Central"
+      "region": "Texas & South Central",
+      "sunshineHoursEstimated": false
     },
     {
       "city": "New York",
@@ -292,7 +324,8 @@
       "sunshineDays": 107,
       "sunshineHours": 2535,
       "medianHomePrice": 832934,
-      "region": "Mid-Atlantic"
+      "region": "Mid-Atlantic",
+      "sunshineHoursEstimated": false
     },
     {
       "city": "Oklahoma City",
@@ -301,7 +334,8 @@
       "sunshineDays": 139,
       "sunshineHours": 3089,
       "medianHomePrice": 207726,
-      "region": "Texas & South Central"
+      "region": "Texas & South Central",
+      "sunshineHoursEstimated": false
     },
     {
       "city": "Philadelphia",
@@ -310,7 +344,8 @@
       "sunshineDays": 93,
       "sunshineHours": 2498,
       "medianHomePrice": 234630,
-      "region": "Mid-Atlantic"
+      "region": "Mid-Atlantic",
+      "sunshineHoursEstimated": false
     },
     {
       "city": "Phoenix",
@@ -319,7 +354,8 @@
       "sunshineDays": 211,
       "sunshineHours": 3872,
       "medianHomePrice": 408770,
-      "region": "Southwest"
+      "region": "Southwest",
+      "sunshineHoursEstimated": false
     },
     {
       "city": "Pittsburgh",
@@ -328,7 +364,8 @@
       "sunshineDays": 59,
       "sunshineHours": 2021,
       "medianHomePrice": 240989,
-      "region": "Mid-Atlantic"
+      "region": "Mid-Atlantic",
+      "sunshineHoursEstimated": false
     },
     {
       "city": "Portland",
@@ -337,7 +374,8 @@
       "sunshineDays": 68,
       "sunshineHours": 2341,
       "medianHomePrice": 534270,
-      "region": "Pacific"
+      "region": "Pacific",
+      "sunshineHoursEstimated": false
     },
     {
       "city": "Providence",
@@ -346,7 +384,8 @@
       "sunshineDays": 98,
       "sunshineHours": 2606,
       "medianHomePrice": 437919,
-      "region": "New England"
+      "region": "New England",
+      "sunshineHoursEstimated": false
     },
     {
       "city": "Raleigh",
@@ -355,7 +394,8 @@
       "sunshineDays": 111,
       "sunshineHours": 2606,
       "medianHomePrice": 435237,
-      "region": "Southeast"
+      "region": "Southeast",
+      "sunshineHoursEstimated": false
     },
     {
       "city": "Richmond",
@@ -364,7 +404,8 @@
       "sunshineDays": 100,
       "sunshineHours": 2829,
       "medianHomePrice": 377321,
-      "region": "Southeast"
+      "region": "Southeast",
+      "sunshineHoursEstimated": false
     },
     {
       "city": "Rochester",
@@ -373,7 +414,8 @@
       "sunshineDays": 61,
       "sunshineHours": 2298,
       "medianHomePrice": 249152,
-      "region": "Mid-Atlantic"
+      "region": "Mid-Atlantic",
+      "sunshineHoursEstimated": false
     },
     {
       "city": "Sacramento",
@@ -382,7 +424,8 @@
       "sunshineDays": 188,
       "sunshineHours": 3608,
       "medianHomePrice": 480488,
-      "region": "Pacific"
+      "region": "Pacific",
+      "sunshineHoursEstimated": false
     },
     {
       "city": "Salt Lake City",
@@ -391,7 +434,8 @@
       "sunshineDays": 125,
       "sunshineHours": 3029,
       "medianHomePrice": 579572,
-      "region": "Mountain West"
+      "region": "Mountain West",
+      "sunshineHoursEstimated": false
     },
     {
       "city": "San Antonio",
@@ -400,7 +444,8 @@
       "sunshineDays": 105,
       "sunshineHours": 2629,
       "medianHomePrice": 249689,
-      "region": "Texas & South Central"
+      "region": "Texas & South Central",
+      "sunshineHoursEstimated": false
     },
     {
       "city": "San Diego",
@@ -409,16 +454,18 @@
       "sunshineDays": 146,
       "sunshineHours": 3055,
       "medianHomePrice": 994682,
-      "region": "Pacific"
+      "region": "Pacific",
+      "sunshineHoursEstimated": false
     },
     {
       "city": "San Francisco",
       "state": "CA",
       "label": "San Francisco, CA",
       "sunshineDays": 160,
-      "sunshineHours": null,
+      "sunshineHours": 3062,
       "medianHomePrice": 1416278,
-      "region": "Pacific"
+      "region": "Pacific",
+      "sunshineHoursEstimated": false
     },
     {
       "city": "Seattle",
@@ -427,7 +474,8 @@
       "sunshineDays": 58,
       "sunshineHours": 2170,
       "medianHomePrice": 851471,
-      "region": "Pacific"
+      "region": "Pacific",
+      "sunshineHoursEstimated": false
     },
     {
       "city": "St. Louis",
@@ -436,7 +484,8 @@
       "sunshineDays": 101,
       "sunshineHours": 2594,
       "medianHomePrice": 188569,
-      "region": "Midwest"
+      "region": "Midwest",
+      "sunshineHoursEstimated": false
     },
     {
       "city": "Tampa",
@@ -445,25 +494,28 @@
       "sunshineDays": 101,
       "sunshineHours": 2927,
       "medianHomePrice": 380300,
-      "region": "Southeast"
+      "region": "Southeast",
+      "sunshineHoursEstimated": false
     },
     {
       "city": "Tucson",
       "state": "AZ",
       "label": "Tucson, AZ",
       "sunshineDays": 193,
-      "sunshineHours": null,
+      "sunshineHours": 3806,
       "medianHomePrice": 323949,
-      "region": "Southwest"
+      "region": "Southwest",
+      "sunshineHoursEstimated": false
     },
     {
       "city": "Tulsa",
       "state": "OK",
       "label": "Tulsa, OK",
       "sunshineDays": 127,
-      "sunshineHours": null,
+      "sunshineHours": 2786,
       "medianHomePrice": 220759,
-      "region": "Texas & South Central"
+      "region": "Texas & South Central",
+      "sunshineHoursEstimated": false
     },
     {
       "city": "Virginia Beach",
@@ -472,7 +524,8 @@
       "sunshineDays": 106,
       "sunshineHours": 2695,
       "medianHomePrice": 430374,
-      "region": "Southeast"
+      "region": "Southeast",
+      "sunshineHoursEstimated": false
     },
     {
       "city": "Washington",
@@ -481,7 +534,8 @@
       "sunshineDays": 96,
       "sunshineHours": 2528,
       "medianHomePrice": 576796,
-      "region": "Mid-Atlantic"
+      "region": "Mid-Atlantic",
+      "sunshineHoursEstimated": false
     }
   ]
 }
