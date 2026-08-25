@@ -4,7 +4,7 @@
     "priceSource": "Zillow Home Value Index (ZHVI), all homes, smoothed & seasonally adjusted, July 2026 (zillow.com/research/data)",
     "asOf": "2026-07-31",
     "regionSource": "Regions assigned by hand (Census-style groupings, adapted): Pacific, Mountain West, Southwest, Texas & South Central, Southeast, Midwest, Mid-Atlantic, New England.",
-    "sunshineHoursSource": "Annual sunshine hours: mostly NOAA-derived figures via Current Results (same table as sunshineDays). 6 cities missing from that table (Fresno, Honolulu, Los Angeles, San Francisco, Tucson, Tulsa) were filled from Wikipedia's \"List of cities by sunshine duration\" (monthly NOAA/climate-normal figures summed to an annual total) \u2014 cross-checked against independently reported totals for the same cities and matched to the hour. One city, Grand Rapids, has no published hours figure anywhere found; its value is *estimated* by multiplying NOAA's average percent-of-possible-sunshine for Grand Rapids (46%, from NOAA NCEI Comparative Climatic Data) by an average annual possible-sunshine-hours constant (~4,685 hours) calibrated from nearby Great Lakes stations (Detroit, Milwaukee) with both measures available. Flagged via sunshineHoursEstimated: true."
+    "sunshineHoursSource": "Annual sunshine hours: mostly NOAA-derived figures via Current Results (same table as sunshineDays). 6 cities missing from that table (Fresno, Honolulu, Los Angeles, San Francisco, Tucson, Tulsa) were filled from Wikipedia's \"List of cities by sunshine duration\" (monthly NOAA/climate-normal figures summed to an annual total) \u2014 cross-checked against independently reported totals for the same cities and matched to the hour. One city, Grand Rapids, has no published hours figure anywhere found; its value is *estimated* by multiplying NOAA's average percent-of-possible-sunshine for Grand Rapids (46%, from NOAA NCEI Comparative Climatic Data) by an average annual possible-sunshine-hours constant (~4,685 hours) calibrated from nearby Great Lakes stations (Detroit, Milwaukee) with both measures available. Flagged via sunshineHoursEstimated: true. Boulder, CO was added later and has no independent NOAA/climate-normal sunshine-hours station of its own; its value uses Denver's figure (3,107 hrs) as a proxy \u2014 Denver is Boulder's nearest first-order climate station (~25 miles away, same semi-arid Front Range climate and elevation), and it's the same substitution at least one other public source (weather-and-climate.com) makes for Boulder. Flagged via sunshineHoursEstimated: true, same as Grand Rapids."
   },
   "cities": [
     {
@@ -56,6 +56,16 @@
       "medianHomePrice": 787763,
       "region": "New England",
       "sunshineHoursEstimated": false
+    },
+    {
+      "city": "Boulder",
+      "state": "CO",
+      "label": "Boulder, CO",
+      "sunshineDays": null,
+      "sunshineHours": 3107,
+      "medianHomePrice": 957377,
+      "region": "Mountain West",
+      "sunshineHoursEstimated": true
     },
     {
       "city": "Buffalo",
