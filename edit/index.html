@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Editor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<header id="topbar">
+  <input id="doc-title" type="text" value="Untitled" spellcheck="false" aria-label="Document title" />
+  <div id="toolbar" role="toolbar" aria-label="Formatting">
+    <button data-cmd="toggleBold" title="Bold (Ctrl/Cmd+B)"><strong>B</strong></button>
+    <button data-cmd="toggleItalic" title="Italic (Ctrl/Cmd+I)"><em>I</em></button>
+    <button data-cmd="toggleStrike" title="Strikethrough"><s>S</s></button>
+    <span class="sep"></span>
+    <button data-cmd="toggleHeading" data-attrs='{"level":1}' title="Heading 1">H1</button>
+    <button data-cmd="toggleHeading" data-attrs='{"level":2}' title="Heading 2">H2</button>
+    <button data-cmd="toggleHeading" data-attrs='{"level":3}' title="Heading 3">H3</button>
+    <span class="sep"></span>
+    <button data-cmd="toggleBulletList" title="Bullet list">&bull; list</button>
+    <button data-cmd="toggleOrderedList" title="Numbered list">1. list</button>
+    <button data-cmd="toggleBlockquote" title="Blockquote">&ldquo; &rdquo;</button>
+    <span class="sep"></span>
+    <button data-cmd="toggleCode" title="Inline code">&lt;/&gt;</button>
+    <button data-cmd="toggleCodeBlock" title="Code block">{ }</button>
+    <button id="link-btn" title="Link (Ctrl/Cmd+K)">&#128279;</button>
+    <button data-cmd="setHorizontalRule" title="Horizontal rule">&mdash;</button>
+  </div>
+  <div id="topbar-actions">
+    <span id="word-count">0 words</span>
+    <button id="import-md-btn" title="Import markdown">Import&hellip;</button>
+    <button id="copy-md-btn" title="Copy as markdown">Copy markdown</button>
+  </div>
+</header>
+
+<main id="editor-wrap">
+  <div id="editor"></div>
+</main>
+
+<div id="import-modal" class="modal" hidden>
+  <div class="modal-card">
+    <h2>Import markdown</h2>
+    <p class="hint">Pasting here replaces the current document.</p>
+    <textarea id="import-textarea" spellcheck="false" placeholder="# Paste markdown here"></textarea>
+    <div class="modal-actions">
+      <button id="import-cancel-btn" class="ghost">Cancel</button>
+      <button id="import-load-btn" class="primary">Load</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" hidden></div>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>
