@@ -4,6 +4,7 @@ import { PROVIDERS } from "./llm/provider.js";
 import { PASS_LIBRARY, runReviewPass, listFindings, resolveFinding, dismissAllFindings, focusFinding } from "./review.js";
 import { setDocFavicon } from "./favicon.js";
 import { passBg, passFg } from "./passColors.js";
+import { generateOutline, outlineToMarkdown } from "./generative.js";
 
 const STARTER_MARKDOWN = `# Untitled
 
@@ -74,12 +75,14 @@ window.addEventListener("hashchange", () => {
   syncUI();
 });
 
-function startNewDoc() {
+// markdown/title overrides let the generative-outline flow (below) reuse
+// this exact same doc-creation path instead of duplicating it.
+function startNewDoc(markdown = STARTER_MARKDOWN, title = "Untitled") {
   currentDocId = newId();
   currentCreatedAt = new Date().toISOString();
-  currentSlug = uniqueSlug("Untitled");
-  titleInput.value = "Untitled";
-  setMarkdownContent(editor, STARTER_MARKDOWN, { emitUpdate: false });
+  currentSlug = uniqueSlug(title);
+  titleInput.value = title;
+  setMarkdownContent(editor, markdown, { emitUpdate: false });
   setLastOpenId(currentDocId);
   setDocFavicon(currentDocId);
   persistNow();
@@ -177,6 +180,67 @@ document.getElementById("library-new-btn").addEventListener("click", () => {
   startNewDoc();
   libraryModal.hidden = true;
 });
+
+// ---- generative outline mode ----
+
+const generateModal = document.getElementById("generate-modal");
+const generateTextarea = document.getElementById("generate-textarea");
+const generateStatus = document.getElementById("generate-status");
+const generateGoBtn = document.getElementById("generate-go-btn");
+
+document.getElementById("library-generate-btn").addEventListener("click", () => {
+  libraryModal.hidden = true;
+  generateTextarea.value = "";
+  generateStatus.hidden = true;
+  generateModal.hidden = false;
+  generateTextarea.focus();
+});
+document.getElementById("generate-cancel-btn").addEventListener("click", () => {
+  generateModal.hidden = true;
+});
+generateModal.addEventListener("click", (e) => {
+  if (e.target === generateModal) generateModal.hidden = true;
+});
+
+generateGoBtn.addEventListener("click", async () => {
+  const description = generateTextarea.value.trim();
+  if (!description) return;
+
+  const providerId = config.activeProvider;
+  const providerConfig = config[providerId];
+  const providerLabel = PROVIDERS[providerId]?.label || providerId;
+  if (!providerConfig?.apiKey) {
+    setGenerateStatus(`No API key set for ${providerLabel} — open Settings to add one.`, true);
+    return;
+  }
+
+  setGenerateStatus(`Asking ${providerLabel}…`, false, true);
+  generateGoBtn.disabled = true;
+  try {
+    const outline = await generateOutline({
+      providerId,
+      apiKey: providerConfig.apiKey,
+      model: providerConfig.model,
+      description,
+    });
+    if (!outline.headings.length) throw new Error("Got back no headings to work with — try describing it a bit differently.");
+    persistNow(); // flush whatever doc is currently open before switching away
+    startNewDoc(outlineToMarkdown(outline), outline.title || "Untitled");
+    generateModal.hidden = true;
+    showToast("Outline generated");
+  } catch (err) {
+    setGenerateStatus(err.message || "Couldn't generate an outline", true);
+  } finally {
+    generateGoBtn.disabled = false;
+  }
+});
+
+function setGenerateStatus(text, isError, isBusy) {
+  generateStatus.textContent = text;
+  generateStatus.hidden = !text;
+  generateStatus.classList.toggle("is-error", Boolean(isError));
+  generateStatus.classList.toggle("is-busy", Boolean(isBusy));
+}
 
 function renderLibraryList() {
   const index = loadLibraryIndex();

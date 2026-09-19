@@ -24,7 +24,7 @@ findings show up as highlighted spans in the text and cards in the sidebar, colo
 
 ### generative outline mode
 
-*(coming soon)* — describe the piece you want to write in a sentence or two and get back a suggested set of headings, each with a prompt question to help you start drafting. structure only — no generated prose.
+**library → generate outline…** — describe the piece you want to write in a sentence or two and get back a title suggestion plus a set of headings, each with a starter question to help you begin drafting that section. it creates a new doc with that structure — no generated prose, ever, just something to draft into.
 
 ## philosophy
 

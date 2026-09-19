@@ -505,6 +505,10 @@ textarea.finding-suggestion:focus {
   margin-bottom: 12px;
 }
 .modal-header-row h2 { margin: 0; }
+.modal-header-actions {
+  display: flex;
+  gap: 6px;
+}
 
 /* ---- library list ---- */
 
@@ -648,6 +652,20 @@ textarea.finding-suggestion:focus {
   background: var(--paper);
   color: var(--ink);
 }
+#generate-textarea {
+  width: 100%;
+  height: 110px;
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 1.5;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  resize: vertical;
+  background: var(--paper);
+  color: var(--ink);
+}
+#generate-status { margin-top: 10px; }
 .modal-actions {
   display: flex;
   justify-content: flex-end;

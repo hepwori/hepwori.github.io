@@ -88,11 +88,27 @@
   <div class="modal-card">
     <div class="modal-header-row">
       <h2>Library</h2>
-      <button id="library-new-btn" class="ghost small">+ New</button>
+      <div class="modal-header-actions">
+        <button id="library-generate-btn" class="ghost small">Generate outline&hellip;</button>
+        <button id="library-new-btn" class="ghost small">+ New</button>
+      </div>
     </div>
     <ul id="library-list"></ul>
     <div class="modal-actions">
       <button id="library-close-btn" class="ghost">Close</button>
+    </div>
+  </div>
+</div>
+
+<div id="generate-modal" class="modal" hidden>
+  <div class="modal-card">
+    <h2>Generate an outline</h2>
+    <p class="hint">Describe the document you want to write. You'll get back suggested headings and a starter question for each section &mdash; structure to draft into, never generated prose.</p>
+    <textarea id="generate-textarea" spellcheck="false" placeholder="A few sentences about what you want to write&hellip;"></textarea>
+    <div id="generate-status" class="review-status" hidden></div>
+    <div class="modal-actions">
+      <button id="generate-cancel-btn" class="ghost">Cancel</button>
+      <button id="generate-go-btn" class="primary">Generate</button>
     </div>
   </div>
 </div>

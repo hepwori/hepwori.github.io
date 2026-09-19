@@ -29,10 +29,34 @@ const FINDINGS_TOOL = {
   },
 };
 
-// Forced tool-use is Claude's structured-output mechanism: it's obligated
-// to call report_findings, so the response is always the shape we asked
-// for rather than free text we'd have to parse hopefully.
-export async function runPass({ apiKey, model, prompt }) {
+const OUTLINE_TOOL = {
+  name: "generate_outline",
+  description: "Propose a title, headings, and a starter question per heading for a piece of writing.",
+  input_schema: {
+    type: "object",
+    properties: {
+      title: { type: "string" },
+      headings: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            text: { type: "string" },
+            prompt: { type: "string" },
+          },
+          required: ["text", "prompt"],
+        },
+      },
+    },
+    required: ["headings"],
+  },
+};
+
+// Shared by runPass and generateOutline — forced tool-use is Claude's
+// structured-output mechanism: it's obligated to call the named tool, so
+// the response is always the shape we asked for rather than free text
+// we'd have to parse hopefully.
+async function callTool({ apiKey, model, prompt, tool, maxTokens = 4096 }) {
   if (!apiKey) throw new Error("Missing API key");
   if (!model) throw new Error("Missing model id");
 
@@ -46,9 +70,9 @@ export async function runPass({ apiKey, model, prompt }) {
     },
     body: JSON.stringify({
       model,
-      max_tokens: 4096,
-      tools: [FINDINGS_TOOL],
-      tool_choice: { type: "tool", name: "report_findings" },
+      max_tokens: maxTokens,
+      tools: [tool],
+      tool_choice: { type: "tool", name: tool.name },
       messages: [{ role: "user", content: prompt }],
     }),
   });
@@ -57,9 +81,19 @@ export async function runPass({ apiKey, model, prompt }) {
 
   const data = await res.json();
   const toolUse = data?.content?.find((block) => block.type === "tool_use");
-  if (!toolUse) throw new Error("Claude responded without the expected tool call");
-  const findings = toolUse.input?.findings;
-  return { findings: Array.isArray(findings) ? findings : [] };
+  if (!toolUse) throw new Error(`Claude responded without the expected ${tool.name} tool call`);
+  return toolUse.input || {};
+}
+
+export async function runPass({ apiKey, model, prompt }) {
+  const input = await callTool({ apiKey, model, prompt, tool: FINDINGS_TOOL });
+  return { findings: Array.isArray(input.findings) ? input.findings : [] };
+}
+
+// prompt is built by generative.js — structure only, no body prose.
+export async function generateOutline({ apiKey, model, prompt }) {
+  const input = await callTool({ apiKey, model, prompt, tool: OUTLINE_TOOL, maxTokens: 2048 });
+  return { title: input.title || "", headings: Array.isArray(input.headings) ? input.headings : [] };
 }
 
 export async function testConnection({ apiKey, model }) {

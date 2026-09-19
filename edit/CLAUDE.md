@@ -30,11 +30,12 @@ edit/
 ├── favicon.js     per-doc identicon favicon (SHA-1 of doc id -> 5x5 grid + hue), no external lib
 ├── favicon.svg    static fallback shown before boot finishes
 ├── passColors.js  pass -> pale color (fixed hues for named passes, hashed for custom), used by editor.js and app.js
+├── generative.js  outline generation: prompt building + markdown-from-outline, structure only
 ```
 
-Later phases add: `generative.js` (outline mode). `README.md` alongside this file is the
-end-user-facing doc — keep both current together, they answer different questions
-(what/how to use it, vs. how it's built and why).
+All planned phases are now built. `README.md` alongside this file is the end-user-facing
+doc — keep both current together, they answer different questions (what/how to use it,
+vs. how it's built and why).
 
 ## Stack notes
 
@@ -64,6 +65,9 @@ end-user-facing doc — keep both current together, they answer different questi
 - **Review lifecycle / loading state**: a run is unambiguous now — the specific chip (or the custom Run button) that triggered it gets a `.is-running` pulse, every other chip/the custom input/Dismiss all are disabled (`setChipsDisabled(disabled, activeEl)` in `app.js`) so two runs can't race against the same editor transaction, and the status line gets a spinning `::before` (`.review-status.is-busy`) instead of being easy to miss as plain text. Every status message — "asking Gemini…", "found N", "nothing flagged", an error — is prefixed with the pass's label and, when relevant, notes the scope ("(scoped to your selection)"), since "Nothing flagged" on its own doesn't say what was checked. Re-running the same named pass still just appends to its existing group (see the "no separate accepted bookkeeping" note above) — that part of the lifecycle question is intentionally left as-is for now, most useful multi-run behavior (a numbered run history, re-running only over unresolved text) would need actual UI to expose, not just a data model change, so it's flagged here rather than built speculatively.
 - **Resizable review panel**: default width bumped 360px → 420px (`--review-panel-width` custom property, set inline so JS can override it) with a drag handle (`#review-resize-handle`, absolutely positioned on the panel's left edge) clamped to 300–720px; the dragged width persists to `localStorage['edit.reviewPanelWidth.v1']` and is restored on boot.
 - **Real CSS bug, now fixed**: buttons outside a modal (the review panel's Run/close/Dismiss-all, the topbar's Library/Review) were rendering with the browser's native beveled button chrome — every de-styling rule lived under `.modal-actions button`/`.modal-header-row button` selectors, so anything outside a modal never got a reset at all. Fixed with one global `button { ... }` base (flat border, no native `appearance`) near the top of `style.css`, plus standalone `.primary`/`.ghost`/`.small` modifier classes usable anywhere — the modal-scoped versions were deleted as redundant. Lesson: a "de-style this button" rule should almost always be a base-element rule, not something scoped to whatever container happened to need it first.
+- **Generative outline mode** (`generative.js`) is deliberately the same "structured JSON out" mechanics as `review.js`'s passes — same two provider functions' shape (`generateOutline({apiKey, model, prompt}) -> {title, headings}`), same Gemini responseSchema / Claude forced-tool-use split (`gemini.js`/`claude.js` now share a small internal helper — `generateJSON`/`callTool` respectively — between their pass and outline functions rather than duplicating the fetch boilerplate). The entry point lives in the Library modal ("Generate outline…" next to "+ New") rather than a standalone topbar button, since it's fundamentally a doc-creation flow, not something you do to a doc you're already in — `startNewDoc` was generalized to take optional `(markdown, title)` overrides so this reuses the exact same doc-creation path as "+ New" instead of a parallel one. The prompt repeats "never write body prose, not even an example sentence" twice, deliberately — the one requirement from the very first design conversation that a generative feature must not cross.
+
+All phases from the original plan are built: editor core, doc library, rich paste, LLM settings, review passes (plus the ad-hoc/selection-scoped/color-coded/editable-suggestion refinements above), favicons, doc links, and now generative outline mode. Later work from here is user-driven refinement, not a fixed roadmap — check with Isaac before assuming what's next.
 
 ## Workflow
 

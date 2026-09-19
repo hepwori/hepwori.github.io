@@ -24,10 +24,28 @@ const FINDINGS_SCHEMA = {
   required: ["findings"],
 };
 
-// prompt is a single fully-built user turn (see review.js) — Gemini's
-// generateContent is single-turn-friendly and keeps this symmetric with
-// Claude's runPass below.
-export async function runPass({ apiKey, model, prompt }) {
+const OUTLINE_SCHEMA = {
+  type: "OBJECT",
+  properties: {
+    title: { type: "STRING" },
+    headings: {
+      type: "ARRAY",
+      items: {
+        type: "OBJECT",
+        properties: {
+          text: { type: "STRING" },
+          prompt: { type: "STRING" },
+        },
+        required: ["text", "prompt"],
+      },
+    },
+  },
+  required: ["headings"],
+};
+
+// Shared by runPass and generateOutline — both just want "call the model
+// with this prompt, get JSON back matching this schema."
+async function generateJSON({ apiKey, model, prompt, schema }) {
   if (!apiKey) throw new Error("Missing API key");
   if (!model) throw new Error("Missing model id");
 
@@ -39,7 +57,7 @@ export async function runPass({ apiKey, model, prompt }) {
       contents: [{ role: "user", parts: [{ text: prompt }] }],
       generationConfig: {
         responseMimeType: "application/json",
-        responseSchema: FINDINGS_SCHEMA,
+        responseSchema: schema,
       },
     }),
   });
@@ -49,8 +67,22 @@ export async function runPass({ apiKey, model, prompt }) {
   const data = await res.json();
   const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
   if (!text) throw new Error("Gemini responded with no content");
-  const parsed = JSON.parse(text);
+  return JSON.parse(text);
+}
+
+// prompt is a single fully-built user turn (see review.js) — Gemini's
+// generateContent is single-turn-friendly and keeps this symmetric with
+// Claude's runPass below.
+export async function runPass({ apiKey, model, prompt }) {
+  const parsed = await generateJSON({ apiKey, model, prompt, schema: FINDINGS_SCHEMA });
   return { findings: Array.isArray(parsed.findings) ? parsed.findings : [] };
+}
+
+// prompt is built by generative.js — structure only, no body prose (see
+// its buildPrompt for the constraint spelled out to the model).
+export async function generateOutline({ apiKey, model, prompt }) {
+  const parsed = await generateJSON({ apiKey, model, prompt, schema: OUTLINE_SCHEMA });
+  return { title: parsed.title || "", headings: Array.isArray(parsed.headings) ? parsed.headings : [] };
 }
 
 export async function testConnection({ apiKey, model }) {
