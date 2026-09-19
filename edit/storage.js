@@ -116,11 +116,31 @@ export function setLastOpenId(id) {
 
 const CONFIG_KEY = "edit.config.v1";
 
+// Seed set for `passes` — shown as chips in the Review panel, each one
+// fully editable (label + instruction) from Settings, plus add/remove.
+// This is only the *default* a fresh config starts with; a saved config's
+// own `passes` array (even a heavily edited one) always wins wholesale —
+// see loadConfig's merge below.
+function defaultPasses() {
+  return [
+    { id: "grammar", label: "Grammar", instruction: "Find grammar, spelling, and punctuation errors. Flag each one with a brief note and, where the fix is unambiguous, a corrected replacement." },
+    { id: "flow", label: "Flow", instruction: "Look for sentences or transitions that are awkward, hard to follow, or disrupt the piece's rhythm. Explain what's off and, where you can, suggest a smoother replacement." },
+    { id: "filler", label: "Filler words", instruction: `Find filler words, hedges, and throat-clearing phrases (e.g. "in order to", "it's worth noting that", "I think that") that could be cut or tightened without losing meaning.` },
+    { id: "passive", label: "Passive voice", instruction: "Find sentences that are genuinely in passive voice (the subject receives the action, e.g. \"the ball was thrown by him\" not \"he threw the ball\") AND where switching to active would clearly read better. Suggest the active rewrite. Do not flag sentences that are already active voice." },
+    { id: "structure", label: "Structure", instruction: "Look at the piece's overall structure and organization — ordering, section balance, whether ideas build logically. Flag structural issues; a quote can be a section's opening line standing in for the whole section." },
+  ];
+}
+
 function defaultConfig() {
   return {
     activeProvider: "gemini",
     gemini: { apiKey: "", model: "gemini-2.5-flash" },
     claude: { apiKey: "", model: "claude-sonnet-5" },
+    // Free-text context given to the LLM for every review pass and the
+    // generative outline mode alike — "write like X", a house style, tone
+    // notes, whatever. Empty means no style context is injected.
+    styleGuide: "",
+    passes: defaultPasses(),
   };
 }
 
@@ -129,7 +149,11 @@ export function loadConfig() {
     const raw = localStorage.getItem(CONFIG_KEY);
     if (!raw) return defaultConfig();
     // Merge over defaults so a config saved before a new field existed
-    // (or before a provider was added) still comes back complete.
+    // (or before a provider was added) still comes back complete. `passes`
+    // and `styleGuide` are plain top-level fields, so the spread already
+    // does the right thing for them: the stored value (even an edited-down
+    // passes array) wins wholesale when present, the default seed applies
+    // only when the field is missing entirely (an older saved config).
     const stored = JSON.parse(raw);
     const base = defaultConfig();
     return {

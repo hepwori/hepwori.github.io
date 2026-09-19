@@ -18,7 +18,9 @@ open the page and start writing. it's a normal WYSIWYG editor — **bold**, *ita
 
 **settings** — plug in an API key for Gemini or Claude (whichever you have access to), pick a model, test the connection. keys are stored only in this browser and go straight to the provider, nowhere else.
 
-**review** (top right) — run a copyediting pass over your doc. pick one of the built-in passes (grammar, flow, filler words, passive voice, structure), or type something specific — *"this feels jargon-heavy"*, *"why doesn't this land?"* — and it'll review against that instead. select a passage first and the review focuses on just that selection (with the full doc still there for context).
+also in settings: a **writing style** field — free text describing the voice you're going for (*"write like Matt Levine: dry, precise, digressive"*, or your own house style) — given as context to every review pass and the generative outline mode. and the **review passes** themselves are fully editable there: rename any of the built-in presets, rewrite what they ask for, add your own, remove ones you don't use.
+
+**review** (top right) — run a copyediting pass over your doc. pick one of your presets (grammar, flow, filler words, passive voice, structure by default), or type something specific — *"this feels jargon-heavy"*, *"why doesn't this land?"* — and it'll review against that instead. select a passage first and the review focuses on just that selection (with the full doc still there for context).
 
 findings show up as highlighted spans in the text and cards in the sidebar, color-coded by which pass raised them. for each one: **accept** (applies the suggested fix — editable first, if you want to tweak the wording), **dismiss** (clears it, no change), or **dismiss all** to clear everything from a pass at once. the AI only ever flags and suggests — it never rewrites your document for you.
 

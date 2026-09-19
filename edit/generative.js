@@ -4,8 +4,12 @@
 // (Gemini responseSchema / Claude forced tool-use), different schema.
 import { PROVIDERS } from "./llm/provider.js";
 
-function buildPrompt(description) {
-  return `You are helping an author plan the structure of a piece of writing, before they draft a single word of it. You suggest an outline — you never write any of the actual prose yourself, not even a sentence as an example.
+function buildPrompt(description, styleGuide) {
+  const styleNote = styleGuide?.trim()
+    ? `\n\nThe author's target voice and style:\n"""\n${styleGuide.trim()}\n"""\nKeep this in mind when choosing headings and questions — they should suit this voice, not a generic one.`
+    : "";
+
+  return `You are helping an author plan the structure of a piece of writing, before they draft a single word of it. You suggest an outline — you never write any of the actual prose yourself, not even a sentence as an example.${styleNote}
 
 The author describes what they want to write:
 """
@@ -20,10 +24,10 @@ Suggest:
 Do not write any body content, example sentences, or filler text for the sections themselves. Title, headings, and prompt questions only.`;
 }
 
-export async function generateOutline({ providerId, apiKey, model, description }) {
+export async function generateOutline({ providerId, apiKey, model, description, styleGuide }) {
   const provider = PROVIDERS[providerId];
   if (!provider) throw new Error(`Unknown provider: ${providerId}`);
-  const prompt = buildPrompt(description);
+  const prompt = buildPrompt(description, styleGuide);
   return provider.generateOutline({ apiKey, model, prompt });
 }
 

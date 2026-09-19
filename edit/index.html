@@ -114,43 +114,60 @@
 </div>
 
 <div id="settings-modal" class="modal" hidden>
-  <div class="modal-card">
-    <h2>LLM connection</h2>
-    <p class="hint">Used for review passes and the generative outline mode. Keys live only in this browser's local storage and are sent straight to the provider &mdash; nowhere else.</p>
+  <div class="modal-card settings-card">
+    <h2>Settings</h2>
 
-    <fieldset class="provider-picker">
-      <legend>Active provider</legend>
-      <label><input type="radio" name="active-provider" value="gemini" /> Gemini</label>
-      <label><input type="radio" name="active-provider" value="claude" /> Claude</label>
-    </fieldset>
+    <section class="settings-section">
+      <h3>Writing style</h3>
+      <p class="hint">Context given to the LLM for every review pass and the generative outline mode &mdash; a general style guide, not a one-off instruction. e.g. &ldquo;concise, dry humor, short paragraphs &mdash; like Matt Levine&rsquo;s Money Stuff.&rdquo;</p>
+      <textarea id="style-guide-textarea" spellcheck="false" placeholder="Describe the voice/style you're going for&hellip; (optional)"></textarea>
+    </section>
 
-    <div class="provider-config" data-provider="gemini">
-      <h3>Gemini</h3>
-      <label>API key
-        <input type="password" class="api-key-input" spellcheck="false" autocomplete="off" />
-      </label>
-      <label>Model
-        <input type="text" class="model-input" spellcheck="false" autocomplete="off" />
-      </label>
-      <div class="provider-test-row">
-        <button class="test-btn ghost small" type="button">Test connection</button>
-        <span class="test-status"></span>
+    <section class="settings-section">
+      <h3>LLM connection</h3>
+      <p class="hint">Keys live only in this browser's local storage and are sent straight to the provider &mdash; nowhere else.</p>
+
+      <fieldset class="provider-picker">
+        <legend>Active provider</legend>
+        <label><input type="radio" name="active-provider" value="gemini" /> Gemini</label>
+        <label><input type="radio" name="active-provider" value="claude" /> Claude</label>
+      </fieldset>
+
+      <div class="provider-config" data-provider="gemini">
+        <h4>Gemini</h4>
+        <label>API key
+          <input type="password" class="api-key-input" spellcheck="false" autocomplete="off" />
+        </label>
+        <label>Model
+          <input type="text" class="model-input" spellcheck="false" autocomplete="off" />
+        </label>
+        <div class="provider-test-row">
+          <button class="test-btn ghost small" type="button">Test connection</button>
+          <span class="test-status"></span>
+        </div>
       </div>
-    </div>
 
-    <div class="provider-config" data-provider="claude">
-      <h3>Claude</h3>
-      <label>API key
-        <input type="password" class="api-key-input" spellcheck="false" autocomplete="off" />
-      </label>
-      <label>Model
-        <input type="text" class="model-input" spellcheck="false" autocomplete="off" />
-      </label>
-      <div class="provider-test-row">
-        <button class="test-btn ghost small" type="button">Test connection</button>
-        <span class="test-status"></span>
+      <div class="provider-config" data-provider="claude">
+        <h4>Claude</h4>
+        <label>API key
+          <input type="password" class="api-key-input" spellcheck="false" autocomplete="off" />
+        </label>
+        <label>Model
+          <input type="text" class="model-input" spellcheck="false" autocomplete="off" />
+        </label>
+        <div class="provider-test-row">
+          <button class="test-btn ghost small" type="button">Test connection</button>
+          <span class="test-status"></span>
+        </div>
       </div>
-    </div>
+    </section>
+
+    <section class="settings-section">
+      <h3>Review passes</h3>
+      <p class="hint">Quick-review presets shown as chips in the Review panel. Edit what each one asks for, add new ones, or remove ones you don't use.</p>
+      <div id="passes-list"></div>
+      <button id="add-pass-btn" class="ghost small" type="button">+ Add preset</button>
+    </section>
 
     <div class="modal-actions">
       <button id="settings-close-btn" class="primary">Done</button>

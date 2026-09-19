@@ -4,24 +4,21 @@
 // listing what's currently flagged, and accepting/dismissing a finding.
 import { PROVIDERS } from "./llm/provider.js";
 
-// Seeded, fixed for now — not yet editable in the UI (a fast-follow if
-// wanted). The open-ended case ("this feels jargon-heavy", "why doesn't
-// this land") is covered by the free-form custom-instruction box instead
-// of a saved pass; see runReviewPass's `instruction` param.
-export const PASS_LIBRARY = [
-  { id: "grammar", label: "Grammar", instruction: "Find grammar, spelling, and punctuation errors. Flag each one with a brief note and, where the fix is unambiguous, a corrected replacement." },
-  { id: "flow", label: "Flow", instruction: "Look for sentences or transitions that are awkward, hard to follow, or disrupt the piece's rhythm. Explain what's off and, where you can, suggest a smoother replacement." },
-  { id: "filler", label: "Filler words", instruction: `Find filler words, hedges, and throat-clearing phrases (e.g. "in order to", "it's worth noting that", "I think that") that could be cut or tightened without losing meaning.` },
-  { id: "passive", label: "Passive voice", instruction: "Find sentences that are genuinely in passive voice (the subject receives the action, e.g. \"the ball was thrown by him\" not \"he threw the ball\") AND where switching to active would clearly read better. Suggest the active rewrite. Do not flag sentences that are already active voice." },
-  { id: "structure", label: "Structure", instruction: "Look at the piece's overall structure and organization — ordering, section balance, whether ideas build logically. Flag structural issues; a quote can be a section's opening line standing in for the whole section." },
-];
+// The pass library itself now lives in storage.js's config (edit.config.v1
+// .passes) — fully user-editable from Settings. This module just runs
+// whatever instruction it's handed, named preset or ad-hoc custom text
+// alike; it doesn't need to know where the instruction came from.
 
-function buildPrompt({ instruction, docMarkdown, selectionText }) {
+function buildPrompt({ instruction, docMarkdown, selectionText, styleGuide }) {
   const scopeNote = selectionText
     ? `The author has selected this specific passage and wants your review focused on it:\n\n"""\n${selectionText}\n"""\n\nThe full document is included below for context, but only raise findings elsewhere if directly relevant to the selected passage — otherwise stay focused on it.`
     : `Review the whole document below.`;
 
-  return `You are a careful, tactful copyeditor reviewing a piece of writing for its author. You flag things worth the author's attention — you never rewrite wholesale or add your own content. The author decides what to do with each note.
+  const styleNote = styleGuide?.trim()
+    ? `\n\nThe author's target voice and style:\n"""\n${styleGuide.trim()}\n"""\nUse this as context for what "good" looks like for this piece. Flag departures from it where relevant, and don't suggest a fix that would fight against it.`
+    : "";
+
+  return `You are a careful, tactful copyeditor reviewing a piece of writing for its author. You flag things worth the author's attention — you never rewrite wholesale or add your own content. The author decides what to do with each note.${styleNote}
 
 Task: ${instruction}
 
@@ -45,7 +42,7 @@ ${docMarkdown}
 // as ReviewFlag marks in the live document. Scope (whole doc vs. the
 // current selection) is implicit: if there's a selection when this is
 // called, the pass is scoped to it.
-export async function runReviewPass({ editor, providerId, apiKey, model, instruction, passId, passLabel }) {
+export async function runReviewPass({ editor, providerId, apiKey, model, instruction, passId, passLabel, styleGuide }) {
   const provider = PROVIDERS[providerId];
   if (!provider) throw new Error(`Unknown provider: ${providerId}`);
 
@@ -53,7 +50,7 @@ export async function runReviewPass({ editor, providerId, apiKey, model, instruc
   const { from, to, empty } = editor.state.selection;
   const selectionText = empty ? null : editor.state.doc.textBetween(from, to, " ", " ").trim() || null;
 
-  const prompt = buildPrompt({ instruction, docMarkdown, selectionText });
+  const prompt = buildPrompt({ instruction, docMarkdown, selectionText, styleGuide });
   const { findings } = await provider.runPass({ apiKey, model, prompt });
 
   const markType = editor.schema.marks.reviewFlag;

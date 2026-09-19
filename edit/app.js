@@ -1,7 +1,7 @@
 import { createEditor, getMarkdown, setMarkdownContent, getJSON, setJSONContent, wordCount } from "./editor.js";
 import { newId, loadLibraryIndex, loadDoc, saveDoc, deleteDoc, getLastOpenId, setLastOpenId, loadConfig, saveConfig, uniqueSlug, findIdBySlug } from "./storage.js";
 import { PROVIDERS } from "./llm/provider.js";
-import { PASS_LIBRARY, runReviewPass, listFindings, resolveFinding, dismissAllFindings, focusFinding } from "./review.js";
+import { runReviewPass, listFindings, resolveFinding, dismissAllFindings, focusFinding } from "./review.js";
 import { setDocFavicon } from "./favicon.js";
 import { passBg, passFg } from "./passColors.js";
 import { generateOutline, outlineToMarkdown } from "./generative.js";
@@ -222,6 +222,7 @@ generateGoBtn.addEventListener("click", async () => {
       apiKey: providerConfig.apiKey,
       model: providerConfig.model,
       description,
+      styleGuide: config.styleGuide,
     });
     if (!outline.headings.length) throw new Error("Got back no headings to work with — try describing it a bit differently.");
     persistNow(); // flush whatever doc is currently open before switching away
@@ -337,6 +338,77 @@ function renderSettings() {
     status.textContent = "";
     status.className = "test-status";
   }
+  styleGuideTextarea.value = config.styleGuide || "";
+  renderPassesEditor();
+}
+
+// ---- writing style ----
+
+const styleGuideTextarea = document.getElementById("style-guide-textarea");
+styleGuideTextarea.addEventListener("input", () => {
+  config.styleGuide = styleGuideTextarea.value;
+  saveConfig(config);
+});
+
+// ---- review pass presets ----
+
+const passesListEl = document.getElementById("passes-list");
+
+document.getElementById("add-pass-btn").addEventListener("click", () => {
+  config.passes = [...(config.passes || []), { id: newId(), label: "", instruction: "" }];
+  saveConfig(config);
+  renderPassesEditor();
+  renderPassChips();
+});
+
+function renderPassesEditor() {
+  passesListEl.innerHTML = "";
+  for (const pass of config.passes || []) {
+    passesListEl.appendChild(buildPassEditorRow(pass));
+  }
+}
+
+function buildPassEditorRow(pass) {
+  const row = document.createElement("div");
+  row.className = "pass-editor-row";
+
+  const labelInput = document.createElement("input");
+  labelInput.className = "pass-label-input";
+  labelInput.type = "text";
+  labelInput.placeholder = "Preset name";
+  labelInput.value = pass.label || "";
+
+  const instructionInput = document.createElement("textarea");
+  instructionInput.className = "pass-instruction-input";
+  instructionInput.placeholder = "What should this pass look for?";
+  instructionInput.value = pass.instruction || "";
+  instructionInput.spellcheck = false;
+
+  const persistRow = () => {
+    pass.label = labelInput.value;
+    pass.instruction = instructionInput.value;
+    saveConfig(config);
+    renderPassChips();
+  };
+  labelInput.addEventListener("input", persistRow);
+  instructionInput.addEventListener("input", persistRow);
+
+  const actions = document.createElement("div");
+  actions.className = "pass-editor-row-actions";
+  const removeBtn = document.createElement("button");
+  removeBtn.className = "ghost small";
+  removeBtn.type = "button";
+  removeBtn.textContent = "Remove";
+  removeBtn.addEventListener("click", () => {
+    config.passes = (config.passes || []).filter((p) => p.id !== pass.id);
+    saveConfig(config);
+    renderPassesEditor();
+    renderPassChips();
+  });
+  actions.appendChild(removeBtn);
+
+  row.append(labelInput, instructionInput, actions);
+  return row;
 }
 
 settingsModal.querySelectorAll('input[name="active-provider"]').forEach((radio) => {
@@ -399,14 +471,23 @@ dismissAllBtn.addEventListener("click", () => {
   }
 });
 
-for (const pass of PASS_LIBRARY) {
-  const chip = document.createElement("button");
-  chip.className = "pass-chip";
-  chip.type = "button";
-  chip.textContent = pass.label;
-  chip.addEventListener("click", () => runPass({ passId: pass.id, passLabel: pass.label, instruction: pass.instruction, triggerEl: chip }));
-  passChipsEl.appendChild(chip);
+// Rebuilt (not just built once) since passes are now user-editable from
+// Settings — called at boot and again whenever the passes list changes.
+function renderPassChips() {
+  passChipsEl.innerHTML = "";
+  for (const pass of config.passes || []) {
+    const chip = document.createElement("button");
+    chip.className = "pass-chip";
+    chip.type = "button";
+    chip.textContent = pass.label || "(untitled)";
+    const hasInstruction = Boolean(pass.instruction?.trim());
+    chip.disabled = !hasInstruction;
+    if (!hasInstruction) chip.title = "This preset has no prompt yet — edit it in Settings.";
+    chip.addEventListener("click", () => runPass({ passId: pass.id, passLabel: pass.label || "(untitled)", instruction: pass.instruction, triggerEl: chip }));
+    passChipsEl.appendChild(chip);
+  }
 }
+renderPassChips();
 
 // ---- review panel resize (dragged width persists) ----
 
@@ -492,6 +573,7 @@ async function runPass({ passId, passLabel, instruction, triggerEl }) {
       instruction,
       passId,
       passLabel,
+      styleGuide: config.styleGuide,
     });
     persistNow();
     renderFindings();
