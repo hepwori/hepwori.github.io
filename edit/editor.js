@@ -33,8 +33,19 @@ export function getMarkdown(editor) {
   return editor.getMarkdown();
 }
 
-export function setMarkdownContent(editor, markdown) {
-  editor.commands.setContent(markdown || "", { contentType: "markdown" });
+// opts.emitUpdate: false suppresses onUpdate — use it for programmatic loads
+// (boot, switching docs in the library) that shouldn't trigger an autosave
+// cycle of content that's already what's on disk.
+export function setMarkdownContent(editor, markdown, opts = {}) {
+  editor.commands.setContent(markdown || "", { contentType: "markdown", ...opts });
+}
+
+export function getJSON(editor) {
+  return editor.getJSON();
+}
+
+export function setJSONContent(editor, json, opts = {}) {
+  editor.commands.setContent(json || "", opts);
 }
 
 export function wordCount(editor) {

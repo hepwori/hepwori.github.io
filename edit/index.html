@@ -12,6 +12,7 @@
 <body>
 
 <header id="topbar">
+  <button id="library-btn" title="Library">Library</button>
   <input id="doc-title" type="text" value="Untitled" spellcheck="false" aria-label="Document title" />
   <div id="toolbar" role="toolbar" aria-label="Formatting">
     <button data-cmd="toggleBold" title="Bold (Ctrl/Cmd+B)"><strong>B</strong></button>
@@ -32,6 +33,7 @@
     <button data-cmd="setHorizontalRule" title="Horizontal rule">&mdash;</button>
   </div>
   <div id="topbar-actions">
+    <span id="save-status">Saved</span>
     <span id="word-count">0 words</span>
     <button id="import-md-btn" title="Import markdown">Import&hellip;</button>
     <button id="copy-md-btn" title="Copy as markdown">Copy markdown</button>
@@ -50,6 +52,19 @@
     <div class="modal-actions">
       <button id="import-cancel-btn" class="ghost">Cancel</button>
       <button id="import-load-btn" class="primary">Load</button>
+    </div>
+  </div>
+</div>
+
+<div id="library-modal" class="modal" hidden>
+  <div class="modal-card">
+    <div class="modal-header-row">
+      <h2>Library</h2>
+      <button id="library-new-btn" class="ghost small">+ New</button>
+    </div>
+    <ul id="library-list"></ul>
+    <div class="modal-actions">
+      <button id="library-close-btn" class="ghost">Close</button>
     </div>
   </div>
 </div>

@@ -1,4 +1,5 @@
-import { createEditor, getMarkdown, setMarkdownContent, wordCount } from "./editor.js";
+import { createEditor, getMarkdown, setMarkdownContent, getJSON, setJSONContent, wordCount } from "./editor.js";
+import { newId, loadLibraryIndex, loadDoc, saveDoc, deleteDoc, getLastOpenId, setLastOpenId } from "./storage.js";
 
 const STARTER_MARKDOWN = `# Untitled
 
@@ -9,21 +10,183 @@ Start writing here, or hit **Import…** to paste in a markdown draft.
 // synchronously during construction, so anything that callback touches
 // must already be initialized.
 const toolbar = document.getElementById("toolbar");
+const titleInput = document.getElementById("doc-title");
+const saveStatusEl = document.getElementById("save-status");
+
+let currentDocId = null;
+let currentCreatedAt = null;
+let saveTimer = null;
 
 const editor = createEditor({
   element: document.getElementById("editor"),
   // A mark toggle (bold, etc.) is a doc-changing transaction but not
   // necessarily a selection change, so the toolbar's active-state needs
-  // refreshing on both, not just onSelectionUpdate.
-  onUpdate: syncUI,
+  // refreshing on both, not just onSelectionUpdate. Only onUpdate should
+  // trigger an autosave — a selection move alone isn't a change to save.
+  onUpdate: () => { syncUI(); scheduleSave(); },
   onSelectionUpdate: syncUI,
 });
-setMarkdownContent(editor, STARTER_MARKDOWN);
-syncUI();
+
+bootDoc();
 
 function syncUI() {
   updateWordCount();
   updateToolbarState();
+}
+
+// ---- doc lifecycle (boot / new / open / delete) ----
+
+function bootDoc() {
+  const lastId = getLastOpenId();
+  const existing = lastId && loadDoc(lastId);
+  if (existing) {
+    loadIntoEditor(existing);
+  } else {
+    startNewDoc();
+  }
+  syncUI();
+}
+
+function startNewDoc() {
+  currentDocId = newId();
+  currentCreatedAt = new Date().toISOString();
+  titleInput.value = "Untitled";
+  setMarkdownContent(editor, STARTER_MARKDOWN, { emitUpdate: false });
+  setLastOpenId(currentDocId);
+  persistNow();
+  syncUI();
+}
+
+function loadIntoEditor(record) {
+  currentDocId = record.id;
+  currentCreatedAt = record.createdAt;
+  titleInput.value = record.title || "Untitled";
+  setJSONContent(editor, record.content, { emitUpdate: false });
+  setLastOpenId(currentDocId);
+  setSaveStatus("saved");
+}
+
+function scheduleSave() {
+  setSaveStatus("saving");
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(persistNow, 600);
+}
+
+function persistNow() {
+  clearTimeout(saveTimer);
+  saveDoc({
+    id: currentDocId,
+    title: titleInput.value.trim() || "Untitled",
+    content: getJSON(editor),
+    createdAt: currentCreatedAt,
+  });
+  setSaveStatus("saved");
+}
+
+function setSaveStatus(state) {
+  saveStatusEl.textContent = state === "saving" ? "Saving…" : "Saved";
+  saveStatusEl.classList.toggle("is-saving", state === "saving");
+}
+
+// Flush a pending debounced save before the tab actually goes away, so a
+// close/switch within the 600ms window doesn't drop the last edit.
+window.addEventListener("beforeunload", () => { if (saveTimer) persistNow(); });
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "hidden" && saveTimer) persistNow();
+});
+
+// ---- title ----
+
+titleInput.addEventListener("input", scheduleSave);
+titleInput.addEventListener("blur", () => {
+  if (!titleInput.value.trim()) titleInput.value = "Untitled";
+  persistNow();
+});
+
+// ---- library ----
+
+const libraryModal = document.getElementById("library-modal");
+const libraryList = document.getElementById("library-list");
+
+document.getElementById("library-btn").addEventListener("click", () => {
+  renderLibraryList();
+  libraryModal.hidden = false;
+});
+document.getElementById("library-close-btn").addEventListener("click", () => {
+  libraryModal.hidden = true;
+});
+libraryModal.addEventListener("click", (e) => {
+  if (e.target === libraryModal) libraryModal.hidden = true;
+});
+document.getElementById("library-new-btn").addEventListener("click", () => {
+  persistNow();
+  startNewDoc();
+  libraryModal.hidden = true;
+});
+
+function renderLibraryList() {
+  const index = loadLibraryIndex();
+  const docs = [...index.docs].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+  libraryList.innerHTML = "";
+  if (docs.length === 0) {
+    const li = document.createElement("li");
+    li.className = "empty";
+    li.textContent = "No saved docs yet.";
+    libraryList.appendChild(li);
+    return;
+  }
+  for (const d of docs) {
+    const li = document.createElement("li");
+    li.className = "library-row" + (d.id === currentDocId ? " is-current" : "");
+
+    const openBtn = document.createElement("button");
+    openBtn.className = "library-open";
+    const titleSpan = document.createElement("span");
+    titleSpan.className = "library-title";
+    titleSpan.textContent = d.title || "Untitled";
+    const timeSpan = document.createElement("span");
+    timeSpan.className = "library-time";
+    timeSpan.textContent = relativeTime(d.updatedAt);
+    openBtn.append(titleSpan, timeSpan);
+    openBtn.addEventListener("click", () => openDoc(d.id));
+
+    const delBtn = document.createElement("button");
+    delBtn.className = "library-delete";
+    delBtn.title = "Delete";
+    delBtn.textContent = "×";
+    delBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (!window.confirm(`Delete "${d.title || "Untitled"}"? This can't be undone.`)) return;
+      deleteDoc(d.id);
+      if (d.id === currentDocId) startNewDoc();
+      renderLibraryList();
+    });
+
+    li.append(openBtn, delBtn);
+    libraryList.appendChild(li);
+  }
+}
+
+function openDoc(id) {
+  if (id !== currentDocId) {
+    persistNow();
+    const record = loadDoc(id);
+    if (record) loadIntoEditor(record);
+    syncUI();
+  }
+  libraryModal.hidden = true;
+}
+
+function relativeTime(iso) {
+  const diffMs = Date.now() - new Date(iso).getTime();
+  const mins = Math.round(diffMs / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.round(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.round(hours / 24);
+  if (days < 7) return `${days}d ago`;
+  return new Date(iso).toLocaleDateString();
 }
 
 // ---- toolbar ----
@@ -98,7 +261,8 @@ document.getElementById("import-cancel-btn").addEventListener("click", () => {
 });
 document.getElementById("import-load-btn").addEventListener("click", () => {
   setMarkdownContent(editor, importTextarea.value);
-  updateWordCount();
+  syncUI();
+  scheduleSave();
   importModal.hidden = true;
   showToast("Markdown imported");
 });
@@ -106,17 +270,11 @@ importModal.addEventListener("click", (e) => {
   if (e.target === importModal) importModal.hidden = true;
 });
 
-// ---- title ----
-
-document.getElementById("doc-title").addEventListener("blur", (e) => {
-  if (!e.target.value.trim()) e.target.value = "Untitled";
-});
-
 // ---- keyboard shortcuts ----
 
 window.addEventListener("keydown", (e) => {
   if (e.key === "Escape") {
-    // Generic: closes whichever .modal (import, settings, ...) is open.
+    // Generic: closes whichever .modal (import, library, ...) is open.
     for (const modal of document.querySelectorAll(".modal:not([hidden])")) {
       modal.hidden = true;
     }
