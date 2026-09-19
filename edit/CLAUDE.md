@@ -13,13 +13,23 @@ A browser-based, WYSIWYG markdown editor with an AI copyediting layer, for Isaac
 
 ## Deployment & serving
 
-Like `pmp/`, this directory is served two ways from the same unmodified files:
+Served two ways, same unmodified files, no dedicated worker needed for either:
 
 - **`hepwori.github.io/edit/`** — plain GitHub Pages. No build step.
-- **`isaa.ch/edit/`** *(not yet deployed — worker source is written, deploying and binding the route is Isaac's to do)* — a Cloudflare Worker (`isaa-ch-edit`, source in `cloudflare-worker.js`) bound to a Workers Route `isaa.ch/edit*`. Unlike `pmp`'s worker, this one needs **no** HTML rewriting or SPA-shell fallback: `/edit` isn't a pretty-URL router (no `document.baseURI` reading, nothing like `pmp/app.js`'s mount-point detection needed) — it uses only document-relative asset paths and a client-side-only `#/<slug>` hash for doc links, which never reaches the server. So it's a plain 1:1 path passthrough, closer in spirit to `toys-proxy/cloudflare-worker.js` than to `pmp`'s — verified directly against the live GH Pages site (bare `/edit` 301s to `/edit/`, nested asset paths like `/edit/llm/gemini.js` proxy correctly, `Content-Type` preserved).
-- **localStorage is per-origin** — `hepwori.github.io/edit/` and `isaa.ch/edit/` would be two *separate* doc libraries, settings, and API keys, not a synced one. Whichever becomes the daily-driver URL is the one that matters; the other stays a working but independent copy.
-- Same zone-scoping caution as the other isaa.ch workers: `isaa.ch`'s apex is also a short.io branded-links domain, and the zone's full DNS/routing history lives in the separate `domain-audit` project's tracker (`~/Documents/projects/domain-audit/tracker.md`) — check there before adding the route or touching isaa.ch DNS.
-- To deploy: `cd edit && npx wrangler deploy` (needs `wrangler login` once — opens a Cloudflare OAuth flow), then bind the Workers Route on the `isaa.ch` zone.
+- **`isaa.ch/toys/edit/`** — already covered by the existing `toys-proxy/cloudflare-worker.js` (`isaa.ch/toys/<path>` → `hepwori.github.io/<path>`, 1:1), no changes needed. This directory uses only document-relative asset paths and a client-side-only `#/<slug>` hash for doc links, so it doesn't care what path prefix it's served under — confirmed working. (A dedicated `isaa.ch/edit*` worker was written and then deleted once this was noticed — `toys-proxy` already did the job.)
+- **localStorage is per-origin** — `hepwori.github.io/edit/` and `isaa.ch/toys/edit/` are two *separate* doc libraries, settings, and API keys, not a synced one. Whichever becomes the daily-driver URL is the one that matters; the other stays a working but independent copy. See the "cross-origin library transfer" options below if this becomes a real need.
+
+### Cross-origin library transfer — options, not yet built
+
+Isaac asked how we'd move a doc library between origins if it came to that, without building it now. In rough order of effort:
+
+1. **Manual export/import (JSON file)** — an "Export library" action serializes `edit.library.v1` + every `edit.doc.*` into one JSON file (`Blob` + `<a download>`), "Import" reads an uploaded file back into `localStorage` on whatever origin you're on. No live sync, fully user-driven, stays entirely within the "no server" philosophy. Cheapest option and the natural first move if this is ever actually needed.
+2. **Single-doc share via URL** — encode one doc's content into the link itself (e.g. a compressed/base64 hash fragment) instead of referencing local storage, so opening the link on *any* origin/device reconstructs that doc without needing the source origin's storage at all. Solves "share one doc," not "migrate my whole library" — practical URL-length limits make it unsuitable for more than a single modest doc.
+3. **Cross-origin storage bridge** (hidden iframe + `postMessage`) — designate one origin as the canonical storage owner, embed a tiny bridge page from it in an invisible iframe on every other origin, talk to it via `postMessage` to read/write "shared" storage that actually lives on the bridge's own origin. Gets genuinely live shared storage with no real backend, but it's a real protocol to get right (targetOrigin allowlisting, load-order races) and increasingly fragile — browsers (Safari ITP, Chrome's third-party storage phase-out) are actively closing this kind of cross-site storage access, so it's a shrinking option, not a growing one.
+4. **File System Access API** — instead of `localStorage`, sync doc files to a real folder on disk (e.g. inside Dropbox/iCloud Drive), letting the OS's own file sync carry docs between origins and devices for free. Solves cross-origin *and* cross-device at once, but Chrome/Edge only (not Safari/Firefox) and a bigger architectural change — would need to become the primary storage layer, or a parallel optional one.
+5. **An actual backend** — Cloudflare KV/D1 (already using Workers for isaa.ch) or Firestore, with the client pushing/pulling by doc id. The real fix, most work, and the direction the pmp/CMS conversation was already pointing — the storage model (id/list-shaped from day one, see `storage.js`) was deliberately kept compatible with this if it ever comes to it.
+
+For "I want my library to show up in both places," (1) is the pragmatic near-term answer; (4) or (5) are the ones worth it if this becomes a recurring need rather than a one-off.
 
 ## Project structure
 
