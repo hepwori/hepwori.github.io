@@ -11,6 +11,16 @@ A browser-based, WYSIWYG markdown editor with an AI copyediting layer, for Isaac
 - LLM connection is swappable — Gemini (AI Studio key, direct browser `fetch`, no proxy needed) at work, Claude (`anthropic-dangerous-direct-browser-access` header) at home. Both confirmed to support direct-from-browser CORS.
 - No accounts, no sync — a local doc library in `localStorage`. Accepted compromise: different browsers/machines have separate libraries.
 
+## Deployment & serving
+
+Like `pmp/`, this directory is served two ways from the same unmodified files:
+
+- **`hepwori.github.io/edit/`** — plain GitHub Pages. No build step.
+- **`isaa.ch/edit/`** *(not yet deployed — worker source is written, deploying and binding the route is Isaac's to do)* — a Cloudflare Worker (`isaa-ch-edit`, source in `cloudflare-worker.js`) bound to a Workers Route `isaa.ch/edit*`. Unlike `pmp`'s worker, this one needs **no** HTML rewriting or SPA-shell fallback: `/edit` isn't a pretty-URL router (no `document.baseURI` reading, nothing like `pmp/app.js`'s mount-point detection needed) — it uses only document-relative asset paths and a client-side-only `#/<slug>` hash for doc links, which never reaches the server. So it's a plain 1:1 path passthrough, closer in spirit to `toys-proxy/cloudflare-worker.js` than to `pmp`'s — verified directly against the live GH Pages site (bare `/edit` 301s to `/edit/`, nested asset paths like `/edit/llm/gemini.js` proxy correctly, `Content-Type` preserved).
+- **localStorage is per-origin** — `hepwori.github.io/edit/` and `isaa.ch/edit/` would be two *separate* doc libraries, settings, and API keys, not a synced one. Whichever becomes the daily-driver URL is the one that matters; the other stays a working but independent copy.
+- Same zone-scoping caution as the other isaa.ch workers: `isaa.ch`'s apex is also a short.io branded-links domain, and the zone's full DNS/routing history lives in the separate `domain-audit` project's tracker (`~/Documents/projects/domain-audit/tracker.md`) — check there before adding the route or touching isaa.ch DNS.
+- To deploy: `cd edit && npx wrangler deploy` (needs `wrangler login` once — opens a Cloudflare OAuth flow), then bind the Workers Route on the `isaa.ch` zone.
+
 ## Project structure
 
 ```
