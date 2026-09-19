@@ -10,8 +10,13 @@ import StarterKit from "https://esm.sh/@tiptap/starter-kit@3.31.3?deps=@tiptap/p
 import Link from "https://esm.sh/@tiptap/extension-link@3.31.3?deps=@tiptap/pm@3.31.3";
 import Placeholder from "https://esm.sh/@tiptap/extension-placeholder@3.31.3?deps=@tiptap/pm@3.31.3";
 import { Markdown } from "https://esm.sh/@tiptap/markdown@3.31.3?deps=@tiptap/pm@3.31.3";
+import { createPasteHandler } from "./paste.js";
 
 export function createEditor({ element, content, onUpdate, onSelectionUpdate }) {
+  // The paste handler needs the editor instance, which doesn't exist until
+  // after `new Editor(...)` returns — so it's handed a thunk and the real
+  // reference is filled in right after construction.
+  let editorRef;
   const editor = new Editor({
     element,
     extensions: [
@@ -23,9 +28,13 @@ export function createEditor({ element, content, onUpdate, onSelectionUpdate }) 
       Markdown,
     ],
     content: content || "",
+    editorProps: {
+      handlePaste: createPasteHandler(() => editorRef),
+    },
     onUpdate: onUpdate ? ({ editor }) => onUpdate(editor) : undefined,
     onSelectionUpdate: onSelectionUpdate ? ({ editor }) => onSelectionUpdate(editor) : undefined,
   });
+  editorRef = editor;
   return editor;
 }
 
