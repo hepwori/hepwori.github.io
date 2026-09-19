@@ -1,7 +1,8 @@
 import { createEditor, getMarkdown, setMarkdownContent, getJSON, setJSONContent, wordCount } from "./editor.js";
-import { newId, loadLibraryIndex, loadDoc, saveDoc, deleteDoc, getLastOpenId, setLastOpenId, loadConfig, saveConfig } from "./storage.js";
+import { newId, loadLibraryIndex, loadDoc, saveDoc, deleteDoc, getLastOpenId, setLastOpenId, loadConfig, saveConfig, uniqueSlug, findIdBySlug } from "./storage.js";
 import { PROVIDERS } from "./llm/provider.js";
-import { PASS_LIBRARY, runReviewPass, listFindings, resolveFinding, focusFinding } from "./review.js";
+import { PASS_LIBRARY, runReviewPass, listFindings, resolveFinding, dismissAllFindings, focusFinding } from "./review.js";
+import { setDocFavicon } from "./favicon.js";
 
 const STARTER_MARKDOWN = `# Untitled
 
@@ -21,6 +22,7 @@ const reviewScopeNote = document.getElementById("review-scope-note");
 
 let currentDocId = null;
 let currentCreatedAt = null;
+let currentSlug = null;
 let saveTimer = null;
 
 const editor = createEditor({
@@ -44,8 +46,11 @@ function syncUI() {
 // ---- doc lifecycle (boot / new / open / delete) ----
 
 function bootDoc() {
-  const lastId = getLastOpenId();
-  const existing = lastId && loadDoc(lastId);
+  // A doc link (edit/#/<slug>) wins over "resume where I left off" — that's
+  // the whole point of following one.
+  const hashSlug = getSlugFromHash();
+  const targetId = (hashSlug && findIdBySlug(hashSlug)) || getLastOpenId();
+  const existing = targetId && loadDoc(targetId);
   if (existing) {
     loadIntoEditor(existing);
   } else {
@@ -54,12 +59,28 @@ function bootDoc() {
   syncUI();
 }
 
+// Following a doc link while this tab already has a different doc open
+// (pasted into the address bar, or clicked from elsewhere) navigates live
+// instead of doing nothing until the next reload.
+window.addEventListener("hashchange", () => {
+  const hashSlug = getSlugFromHash();
+  const targetId = hashSlug && findIdBySlug(hashSlug);
+  if (!targetId || targetId === currentDocId) return;
+  const record = loadDoc(targetId);
+  if (!record) return;
+  persistNow();
+  loadIntoEditor(record);
+  syncUI();
+});
+
 function startNewDoc() {
   currentDocId = newId();
   currentCreatedAt = new Date().toISOString();
+  currentSlug = uniqueSlug("Untitled");
   titleInput.value = "Untitled";
   setMarkdownContent(editor, STARTER_MARKDOWN, { emitUpdate: false });
   setLastOpenId(currentDocId);
+  setDocFavicon(currentDocId);
   persistNow();
   syncUI();
 }
@@ -67,9 +88,14 @@ function startNewDoc() {
 function loadIntoEditor(record) {
   currentDocId = record.id;
   currentCreatedAt = record.createdAt;
+  // Backfills a slug for docs saved before this feature existed.
+  currentSlug = record.slug || uniqueSlug(record.title || "Untitled", record.id);
   titleInput.value = record.title || "Untitled";
   setJSONContent(editor, record.content, { emitUpdate: false });
   setLastOpenId(currentDocId);
+  setDocFavicon(currentDocId);
+  updateLocationHash();
+  if (!record.slug) saveDoc({ ...record, slug: currentSlug });
   setSaveStatus("saved");
 }
 
@@ -81,13 +107,33 @@ function scheduleSave() {
 
 function persistNow() {
   clearTimeout(saveTimer);
+  const title = titleInput.value.trim() || "Untitled";
+  // The slug locks in once the doc gets a real title, so a link to it
+  // keeps working through later renames. Until then (still "Untitled"),
+  // it stays a placeholder like "untitled-2" and is free to upgrade.
+  if (title !== "Untitled" && (!currentSlug || /^untitled(-\d+)?$/.test(currentSlug))) {
+    currentSlug = uniqueSlug(title, currentDocId);
+  }
   saveDoc({
     id: currentDocId,
-    title: titleInput.value.trim() || "Untitled",
+    title,
+    slug: currentSlug,
     content: getJSON(editor),
     createdAt: currentCreatedAt,
   });
   setSaveStatus("saved");
+  updateLocationHash();
+}
+
+function getSlugFromHash() {
+  const m = location.hash.match(/^#\/(.+)$/);
+  return m ? decodeURIComponent(m[1]) : null;
+}
+
+function updateLocationHash() {
+  if (!currentSlug) return;
+  const newHash = "#/" + encodeURIComponent(currentSlug);
+  if (location.hash !== newHash) history.replaceState(null, "", newHash);
 }
 
 function setSaveStatus(state) {
@@ -277,6 +323,16 @@ const customInstructionInput = document.getElementById("custom-instruction-input
 const reviewStatus = document.getElementById("review-status");
 const findingsListEl = document.getElementById("findings-list");
 const reviewBtn = document.getElementById("review-btn");
+const dismissAllBtn = document.getElementById("dismiss-all-btn");
+
+dismissAllBtn.addEventListener("click", () => {
+  const n = dismissAllFindings(editor);
+  if (n > 0) {
+    persistNow();
+    renderFindings();
+    setReviewStatus(`Dismissed ${n}.`, false);
+  }
+});
 
 for (const pass of PASS_LIBRARY) {
   const chip = document.createElement("button");
@@ -388,6 +444,7 @@ function updateReviewScopeNote() {
 
 function renderFindings() {
   const findings = listFindings(editor);
+  dismissAllBtn.hidden = findings.length === 0;
   findingsListEl.innerHTML = "";
   if (findings.length === 0) {
     const empty = document.createElement("div");

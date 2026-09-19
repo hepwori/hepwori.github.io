@@ -304,11 +304,20 @@ body {
 .review-scope-note, .review-status {
   font-size: 12px;
   color: var(--ink-soft);
-  margin-bottom: 8px;
   line-height: 1.4;
 }
+.review-scope-note { margin-bottom: 8px; }
 .review-scope-note strong { color: var(--ink); font-weight: 600; }
 .review-status.is-error { color: var(--accent); }
+
+.review-status-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+#dismiss-all-btn { flex: 0 0 auto; }
 
 .findings-list {
   border-top: 1px solid var(--line);

@@ -12,7 +12,7 @@ export const PASS_LIBRARY = [
   { id: "grammar", label: "Grammar", instruction: "Find grammar, spelling, and punctuation errors. Flag each one with a brief note and, where the fix is unambiguous, a corrected replacement." },
   { id: "flow", label: "Flow", instruction: "Look for sentences or transitions that are awkward, hard to follow, or disrupt the piece's rhythm. Explain what's off and, where you can, suggest a smoother replacement." },
   { id: "filler", label: "Filler words", instruction: `Find filler words, hedges, and throat-clearing phrases (e.g. "in order to", "it's worth noting that", "I think that") that could be cut or tightened without losing meaning.` },
-  { id: "passive", label: "Passive voice", instruction: "Find sentences in passive voice where an active construction would be clearer or more direct. Suggest the active rewrite." },
+  { id: "passive", label: "Passive voice", instruction: "Find sentences that are genuinely in passive voice (the subject receives the action, e.g. \"the ball was thrown by him\" not \"he threw the ball\") AND where switching to active would clearly read better. Suggest the active rewrite. Do not flag sentences that are already active voice." },
   { id: "structure", label: "Structure", instruction: "Look at the piece's overall structure and organization — ordering, section balance, whether ideas build logically. Flag structural issues; a quote can be a section's opening line standing in for the whole section." },
 ];
 
@@ -28,11 +28,12 @@ Task: ${instruction}
 ${scopeNote}
 
 Rules for each finding:
+- Every finding must represent something the author should actually reconsider or fix. NEVER report that a passage is already fine, already does the thing well, or needs no change — if you catch yourself about to write a note like "this is fine, leave it," that means you should not report it at all. Findings are for things worth changing, not a checklist of everything you looked at.
 - "quote" must be copied VERBATIM, character-for-character, from the document text below — not paraphrased or summarized. It's used to locate the passage automatically; if it doesn't match exactly, the finding is silently dropped.
 - Keep "note" short and specific: what you noticed and why it matters, not a lecture.
 - Only include "suggestion" when you have a concrete replacement in mind. Omit it for observations that need the author's own judgment (structural or tonal notes, "why doesn't this land" style questions, etc.).
 - Report at most 15 findings, prioritizing the most useful ones.
-- If there's nothing worth flagging, return an empty findings array — don't invent minor nitpicks just to have something to say.
+- It is normal and expected to return an empty findings array if a pass genuinely finds nothing worth the author's attention — that's a good outcome, not a failure to try harder.
 
 Document (markdown):
 """
@@ -174,6 +175,18 @@ export function resolveFinding(editor, id, { applySuggestion = false } = {}) {
   }
   editor.view.dispatch(tr);
   return true;
+}
+
+// Plain dismiss for every open finding at once — no suggestions applied,
+// just clears the highlights. For "run a check, skim it, clear it out."
+export function dismissAllFindings(editor) {
+  const findings = listFindings(editor);
+  if (findings.length === 0) return 0;
+  const tr = editor.state.tr;
+  const markType = editor.schema.marks.reviewFlag;
+  for (const f of findings) tr.removeMark(f.from, f.to, markType);
+  editor.view.dispatch(tr);
+  return findings.length;
 }
 
 export function focusFinding(editor, id) {

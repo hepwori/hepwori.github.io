@@ -4,9 +4,13 @@
 // reloads. Markdown is always a derived export view.
 //
 // Keys:
-//   edit.library.v1        -> { docs: [{id, title, updatedAt}] }   (index, for listing)
-//   edit.doc.<id>           -> { id, title, content, createdAt, updatedAt }  (body)
+//   edit.library.v1        -> { docs: [{id, title, slug, updatedAt}] }   (index, for listing)
+//   edit.doc.<id>           -> { id, title, slug, content, createdAt, updatedAt }  (body)
 //   edit.lastOpen.v1        -> doc id, so reloading the page resumes where you left off
+//
+// slug locks in once a doc gets a real (non-"Untitled") title — see
+// app.js's persistNow — so a link to a doc (edit/#/<slug>) keeps working
+// even after later renames.
 
 const LIBRARY_KEY = "edit.library.v1";
 const LAST_OPEN_KEY = "edit.lastOpen.v1";
@@ -38,12 +42,13 @@ export function loadDoc(id) {
   }
 }
 
-export function saveDoc({ id, title, content, createdAt }) {
+export function saveDoc({ id, title, slug, content, createdAt }) {
   const now = new Date().toISOString();
   const existing = loadDoc(id);
   const record = {
     id,
     title: title || "Untitled",
+    slug: slug || existing?.slug || null,
     content,
     createdAt: existing?.createdAt || createdAt || now,
     updatedAt: now,
@@ -51,7 +56,7 @@ export function saveDoc({ id, title, content, createdAt }) {
   localStorage.setItem(DOC_KEY_PREFIX + id, JSON.stringify(record));
 
   const index = loadLibraryIndex();
-  const entry = { id, title: record.title, updatedAt: record.updatedAt };
+  const entry = { id, title: record.title, slug: record.slug, updatedAt: record.updatedAt };
   const i = index.docs.findIndex((d) => d.id === id);
   if (i === -1) index.docs.push(entry);
   else index.docs[i] = entry;
@@ -65,6 +70,34 @@ export function deleteDoc(id) {
   const index = loadLibraryIndex();
   index.docs = index.docs.filter((d) => d.id !== id);
   saveLibraryIndex(index);
+}
+
+// ---- slugs ----
+
+export function slugify(title) {
+  const base = (title || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 60);
+  return base || "untitled";
+}
+
+// Appends -2, -3, ... until the slug doesn't collide with another doc's.
+export function uniqueSlug(title, excludeId) {
+  const base = slugify(title);
+  const taken = new Set(
+    loadLibraryIndex().docs.filter((d) => d.id !== excludeId && d.slug).map((d) => d.slug)
+  );
+  if (!taken.has(base)) return base;
+  let n = 2;
+  while (taken.has(`${base}-${n}`)) n++;
+  return `${base}-${n}`;
+}
+
+export function findIdBySlug(slug) {
+  const entry = loadLibraryIndex().docs.find((d) => d.slug === slug);
+  return entry ? entry.id : null;
 }
 
 export function getLastOpenId() {
