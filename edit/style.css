@@ -20,12 +20,16 @@ html, body {
   font-family: var(--sans);
 }
 
+body {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
 /* ---- topbar ---- */
 
 #topbar {
-  position: sticky;
-  top: 0;
-  z-index: 10;
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
   gap: 16px;
@@ -34,7 +38,7 @@ html, body {
   border-bottom: 1px solid var(--line);
 }
 
-#library-btn {
+#library-btn, #review-btn {
   font-family: var(--sans);
   font-size: 13px;
   font-weight: 600;
@@ -46,7 +50,20 @@ html, body {
   cursor: pointer;
   flex: 0 0 auto;
 }
-#library-btn:hover { background: var(--paper); }
+#library-btn:hover, #review-btn:hover { background: var(--paper); }
+#review-btn.is-active {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: var(--accent-soft);
+}
+
+/* ---- layout (editor + review panel) ---- */
+
+#layout {
+  flex: 1 1 auto;
+  display: flex;
+  min-height: 0;
+}
 
 #doc-title {
   font-family: var(--sans);
@@ -124,6 +141,9 @@ html, body {
 /* ---- editor ---- */
 
 #editor-wrap {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-y: auto;
   display: flex;
   justify-content: center;
   padding: 48px 24px 200px;
@@ -205,13 +225,173 @@ html, body {
   text-underline-offset: 2px;
 }
 
-/* ---- review flag mark (phase 5 will style further) ---- */
+/* ---- review flag mark ---- */
 .tiptap mark.review-flag {
   background: var(--accent-soft);
   color: inherit;
   border-radius: 3px;
   padding: 0 1px;
   cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+.tiptap mark.review-flag:hover,
+.tiptap mark.review-flag.is-focused {
+  background: #e8bd9e;
+}
+
+/* ---- review panel ---- */
+
+#review-panel {
+  flex: 0 0 360px;
+  overflow-y: auto;
+  border-left: 1px solid var(--line);
+  background: var(--panel);
+  padding: 18px;
+}
+.review-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.review-panel-header h2 {
+  font-family: var(--sans);
+  font-size: 15px;
+  margin: 0;
+}
+.review-panel-header button {
+  font-size: 16px;
+  line-height: 1;
+  padding: 4px 8px;
+}
+
+.pass-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.pass-chip {
+  font-family: var(--sans);
+  font-size: 12px;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  color: var(--ink);
+  padding: 5px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.pass-chip:hover { border-color: var(--accent); color: var(--accent); }
+.pass-chip:disabled { opacity: 0.5; cursor: default; }
+
+.custom-instruction-row {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.custom-instruction-row input {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-family: var(--sans);
+  font-size: 13px;
+  padding: 7px 9px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.review-scope-note, .review-status {
+  font-size: 12px;
+  color: var(--ink-soft);
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+.review-scope-note strong { color: var(--ink); font-weight: 600; }
+.review-status.is-error { color: var(--accent); }
+
+.findings-list {
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+}
+.findings-empty {
+  font-size: 13px;
+  color: var(--ink-soft);
+  padding: 16px 0;
+  text-align: center;
+}
+.findings-group + .findings-group { margin-top: 16px; }
+.findings-group-header {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-bottom: 8px;
+}
+.findings-group-count {
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.finding-card {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  cursor: pointer;
+}
+.finding-card:hover, .finding-card.is-focused {
+  border-color: var(--accent);
+}
+.finding-card .finding-category {
+  display: inline-block;
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  margin-bottom: 4px;
+}
+.finding-card .finding-note {
+  font-family: var(--sans);
+  font-size: 13px;
+  line-height: 1.45;
+  margin-bottom: 6px;
+}
+.finding-card .finding-suggestion {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  background: var(--paper);
+  border-radius: 6px;
+  padding: 6px 8px;
+  margin-bottom: 8px;
+  color: var(--ink);
+}
+.finding-actions {
+  display: flex;
+  gap: 6px;
+}
+.finding-actions button {
+  font-family: var(--sans);
+  font-size: 12px;
+  padding: 5px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--ink);
+}
+.finding-actions button.accept-btn {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
 }
 
 /* ---- modal ---- */

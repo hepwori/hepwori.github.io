@@ -5,12 +5,62 @@
 
 // Pinned version, shared @tiptap/pm dep (?deps=...) keeps every package on
 // one ProseMirror instance instead of esm.sh resolving duplicates.
-import { Editor } from "https://esm.sh/@tiptap/core@3.31.3?deps=@tiptap/pm@3.31.3";
+import { Editor, Mark, mergeAttributes } from "https://esm.sh/@tiptap/core@3.31.3?deps=@tiptap/pm@3.31.3";
 import StarterKit from "https://esm.sh/@tiptap/starter-kit@3.31.3?deps=@tiptap/pm@3.31.3";
 import Link from "https://esm.sh/@tiptap/extension-link@3.31.3?deps=@tiptap/pm@3.31.3";
 import Placeholder from "https://esm.sh/@tiptap/extension-placeholder@3.31.3?deps=@tiptap/pm@3.31.3";
 import { Markdown } from "https://esm.sh/@tiptap/markdown@3.31.3?deps=@tiptap/pm@3.31.3";
 import { createPasteHandler } from "./paste.js";
+
+// A review finding, applied as a real mark so ProseMirror's position
+// mapping keeps it attached to the right text as the doc is edited —
+// for free, no bookkeeping needed on our end. Deliberately *not*
+// registered with the Markdown extension (no parseMarkdown/renderMarkdown),
+// so it's silently invisible to markdown export/copy — exported markdown
+// is always clean, never carries `<mark data-review-id=...>` cruft.
+export const ReviewFlag = Mark.create({
+  name: "reviewFlag",
+  addAttributes() {
+    return {
+      id: {
+        default: null,
+        parseHTML: (el) => el.getAttribute("data-review-id"),
+        renderHTML: (attrs) => ({ "data-review-id": attrs.id }),
+      },
+      passId: {
+        default: null,
+        parseHTML: (el) => el.getAttribute("data-pass-id"),
+        renderHTML: (attrs) => ({ "data-pass-id": attrs.passId }),
+      },
+      passLabel: {
+        default: null,
+        parseHTML: (el) => el.getAttribute("data-pass-label"),
+        renderHTML: (attrs) => ({ "data-pass-label": attrs.passLabel }),
+      },
+      category: {
+        default: null,
+        parseHTML: (el) => el.getAttribute("data-category"),
+        renderHTML: (attrs) => (attrs.category ? { "data-category": attrs.category } : {}),
+      },
+      note: {
+        default: null,
+        parseHTML: (el) => el.getAttribute("data-note"),
+        renderHTML: (attrs) => ({ "data-note": attrs.note }),
+      },
+      suggestion: {
+        default: null,
+        parseHTML: (el) => el.getAttribute("data-suggestion"),
+        renderHTML: (attrs) => (attrs.suggestion ? { "data-suggestion": attrs.suggestion } : {}),
+      },
+    };
+  },
+  parseHTML() {
+    return [{ tag: "mark.review-flag" }];
+  },
+  renderHTML({ HTMLAttributes }) {
+    return ["mark", mergeAttributes(HTMLAttributes, { class: "review-flag" }), 0];
+  },
+});
 
 export function createEditor({ element, content, onUpdate, onSelectionUpdate }) {
   // The paste handler needs the editor instance, which doesn't exist until
@@ -26,6 +76,7 @@ export function createEditor({ element, content, onUpdate, onSelectionUpdate }) 
       Link.configure({ openOnClick: false, autolink: true }),
       Placeholder.configure({ placeholder: "Start writing…" }),
       Markdown,
+      ReviewFlag,
     ],
     content: content || "",
     editorProps: {

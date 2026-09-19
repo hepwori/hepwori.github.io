@@ -4,6 +4,55 @@
 // (confirmed during planning — this is Google's own supported "client
 // app" usage pattern, same as AI Studio's own "Get code" snippets).
 
+const FINDINGS_SCHEMA = {
+  type: "OBJECT",
+  properties: {
+    findings: {
+      type: "ARRAY",
+      items: {
+        type: "OBJECT",
+        properties: {
+          quote: { type: "STRING" },
+          note: { type: "STRING" },
+          suggestion: { type: "STRING" },
+          category: { type: "STRING" },
+        },
+        required: ["quote", "note"],
+      },
+    },
+  },
+  required: ["findings"],
+};
+
+// prompt is a single fully-built user turn (see review.js) — Gemini's
+// generateContent is single-turn-friendly and keeps this symmetric with
+// Claude's runPass below.
+export async function runPass({ apiKey, model, prompt }) {
+  if (!apiKey) throw new Error("Missing API key");
+  if (!model) throw new Error("Missing model id");
+
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
+    body: JSON.stringify({
+      contents: [{ role: "user", parts: [{ text: prompt }] }],
+      generationConfig: {
+        responseMimeType: "application/json",
+        responseSchema: FINDINGS_SCHEMA,
+      },
+    }),
+  });
+
+  if (!res.ok) throw new Error(await describeError(res));
+
+  const data = await res.json();
+  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!text) throw new Error("Gemini responded with no content");
+  const parsed = JSON.parse(text);
+  return { findings: Array.isArray(parsed.findings) ? parsed.findings : [] };
+}
+
 export async function testConnection({ apiKey, model }) {
   if (!apiKey) throw new Error("Missing API key");
   if (!model) throw new Error("Missing model id");
