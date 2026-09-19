@@ -115,6 +115,13 @@ document.getElementById("doc-title").addEventListener("blur", (e) => {
 // ---- keyboard shortcuts ----
 
 window.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") {
+    // Generic: closes whichever .modal (import, settings, ...) is open.
+    for (const modal of document.querySelectorAll(".modal:not([hidden])")) {
+      modal.hidden = true;
+    }
+    return;
+  }
   const mod = e.metaKey || e.ctrlKey;
   if (!mod) return;
   if (e.key.toLowerCase() === "k") {
