@@ -1,5 +1,6 @@
 import { createEditor, getMarkdown, setMarkdownContent, getJSON, setJSONContent, wordCount } from "./editor.js";
-import { newId, loadLibraryIndex, loadDoc, saveDoc, deleteDoc, getLastOpenId, setLastOpenId } from "./storage.js";
+import { newId, loadLibraryIndex, loadDoc, saveDoc, deleteDoc, getLastOpenId, setLastOpenId, loadConfig, saveConfig } from "./storage.js";
+import { PROVIDERS } from "./llm/provider.js";
 
 const STARTER_MARKDOWN = `# Untitled
 
@@ -188,6 +189,80 @@ function relativeTime(iso) {
   if (days < 7) return `${days}d ago`;
   return new Date(iso).toLocaleDateString();
 }
+
+// ---- settings (LLM connection) ----
+
+const settingsModal = document.getElementById("settings-modal");
+let config = loadConfig();
+
+document.getElementById("settings-btn").addEventListener("click", () => {
+  renderSettings();
+  settingsModal.hidden = false;
+});
+document.getElementById("settings-close-btn").addEventListener("click", () => {
+  settingsModal.hidden = true;
+});
+settingsModal.addEventListener("click", (e) => {
+  if (e.target === settingsModal) settingsModal.hidden = true;
+});
+
+function renderSettings() {
+  for (const radio of settingsModal.querySelectorAll('input[name="active-provider"]')) {
+    radio.checked = radio.value === config.activeProvider;
+  }
+  for (const section of settingsModal.querySelectorAll(".provider-config")) {
+    const id = section.dataset.provider;
+    section.querySelector(".api-key-input").value = config[id].apiKey || "";
+    section.querySelector(".model-input").value = config[id].model || PROVIDERS[id].defaultModel || "";
+    section.querySelector(".model-input").placeholder = PROVIDERS[id].defaultModel || "";
+    section.querySelector(".api-key-input").placeholder = PROVIDERS[id].keyPlaceholder || "";
+    const status = section.querySelector(".test-status");
+    status.textContent = "";
+    status.className = "test-status";
+  }
+}
+
+settingsModal.querySelectorAll('input[name="active-provider"]').forEach((radio) => {
+  radio.addEventListener("change", () => {
+    config.activeProvider = radio.value;
+    saveConfig(config);
+  });
+});
+
+settingsModal.querySelectorAll(".provider-config").forEach((section) => {
+  const id = section.dataset.provider;
+  const keyInput = section.querySelector(".api-key-input");
+  const modelInput = section.querySelector(".model-input");
+  const testBtn = section.querySelector(".test-btn");
+  const status = section.querySelector(".test-status");
+
+  const persist = () => {
+    config[id] = { apiKey: keyInput.value, model: modelInput.value };
+    saveConfig(config);
+  };
+  keyInput.addEventListener("input", persist);
+  modelInput.addEventListener("input", persist);
+
+  testBtn.addEventListener("click", async () => {
+    persist();
+    testBtn.disabled = true;
+    status.className = "test-status";
+    status.textContent = "Testing…";
+    try {
+      const result = await PROVIDERS[id].testConnection({
+        apiKey: keyInput.value,
+        model: modelInput.value || PROVIDERS[id].defaultModel,
+      });
+      status.className = "test-status ok";
+      status.textContent = `Connected — replied "${result.reply}"`;
+    } catch (err) {
+      status.className = "test-status error";
+      status.textContent = err.message || "Connection failed";
+    } finally {
+      testBtn.disabled = false;
+    }
+  });
+});
 
 // ---- toolbar ----
 

@@ -37,6 +37,7 @@
     <span id="word-count">0 words</span>
     <button id="import-md-btn" title="Import markdown">Import&hellip;</button>
     <button id="copy-md-btn" title="Copy as markdown">Copy markdown</button>
+    <button id="settings-btn" title="LLM connection settings">Settings</button>
   </div>
 </header>
 
@@ -65,6 +66,51 @@
     <ul id="library-list"></ul>
     <div class="modal-actions">
       <button id="library-close-btn" class="ghost">Close</button>
+    </div>
+  </div>
+</div>
+
+<div id="settings-modal" class="modal" hidden>
+  <div class="modal-card">
+    <h2>LLM connection</h2>
+    <p class="hint">Used for review passes and the generative outline mode. Keys live only in this browser's local storage and are sent straight to the provider &mdash; nowhere else.</p>
+
+    <fieldset class="provider-picker">
+      <legend>Active provider</legend>
+      <label><input type="radio" name="active-provider" value="gemini" /> Gemini</label>
+      <label><input type="radio" name="active-provider" value="claude" /> Claude</label>
+    </fieldset>
+
+    <div class="provider-config" data-provider="gemini">
+      <h3>Gemini</h3>
+      <label>API key
+        <input type="password" class="api-key-input" spellcheck="false" autocomplete="off" />
+      </label>
+      <label>Model
+        <input type="text" class="model-input" spellcheck="false" autocomplete="off" />
+      </label>
+      <div class="provider-test-row">
+        <button class="test-btn ghost small" type="button">Test connection</button>
+        <span class="test-status"></span>
+      </div>
+    </div>
+
+    <div class="provider-config" data-provider="claude">
+      <h3>Claude</h3>
+      <label>API key
+        <input type="password" class="api-key-input" spellcheck="false" autocomplete="off" />
+      </label>
+      <label>Model
+        <input type="text" class="model-input" spellcheck="false" autocomplete="off" />
+      </label>
+      <div class="provider-test-row">
+        <button class="test-btn ghost small" type="button">Test connection</button>
+        <span class="test-status"></span>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button id="settings-close-btn" class="primary">Done</button>
     </div>
   </div>
 </div>

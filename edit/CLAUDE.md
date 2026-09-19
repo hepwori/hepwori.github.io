@@ -22,9 +22,13 @@ edit/
 ├── editor.js      Tiptap setup (StarterKit, Link, Placeholder, Markdown extension), markdown + JSON helpers
 ├── storage.js     doc library (localStorage): index + per-doc records, last-open tracking
 ├── paste.js       rich paste: turndown (HTML→md) + a ProseMirror handlePaste hook
+├── llm/
+│   ├── provider.js   registry: provider id -> {label, defaultModel, testConnection, ...}
+│   ├── gemini.js      Gemini AI Studio REST client, called directly from the browser
+│   └── claude.js       Anthropic Messages API client, direct-browser-access header
 ```
 
-Later phases add: `review.js` + `llm/{provider,gemini,claude}.js` (review passes),
+Later phases add: `review.js` (the pass engine, using `llm/provider.js`),
 `generative.js` (outline mode).
 
 ## Stack notes
@@ -38,6 +42,7 @@ Later phases add: `review.js` + `llm/{provider,gemini,claude}.js` (review passes
 - Rich paste (`paste.js`) hooks ProseMirror's `handlePaste` editorProp, not a DOM `paste` listener — returning `true` from it tells ProseMirror "don't also insert your own parsed slice." It needs the live `Editor` instance to call `insertContent`, which doesn't exist yet at the point `editorProps` is passed into `new Editor(...)` — worked around with a thunk (`createPasteHandler(() => editorRef)`) that's satisfied right after construction; see `editor.js`.
 - Tiptap's `insertContent`/`insertContentAt` accept the same `{ contentType: "markdown" }` option as `setContent` (all three delegate to `editor.markdown.parse()` under the hood) — that's the whole trick behind rich paste: turndown flattens HTML to markdown text, then `insertContent(md, { contentType: "markdown" })` parses and inserts it as real nodes at the cursor.
 - Internal copy/paste (dragging or copying a selection within the doc itself) is deliberately left alone — ProseMirror tags its own clipboard HTML with `data-pm-slice`, and the paste handler checks for that and bails out to native handling, so an internal copy never round-trips through markdown and silently drops something markdown can't represent (a mark with no markdown syntax, e.g. phase 5's review flags).
+- Both LLM providers are called with a plain `fetch` straight from the browser, no proxy — confirmed working (real CORS preflight, not just docs): Gemini's `generativelanguage.googleapis.com` sends `Access-Control-Allow-Origin: *`; Claude's Messages API needs the `anthropic-dangerous-direct-browser-access: true` header. `edit.config.v1` (in `storage.js`) holds both providers' key + model plus which one is "active"; both stay configured simultaneously (matches the actual use case — Gemini at work, Claude at home, switched via the radio, not re-entered).
 
 ## Workflow
 

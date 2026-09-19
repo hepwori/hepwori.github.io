@@ -74,3 +74,42 @@ export function getLastOpenId() {
 export function setLastOpenId(id) {
   localStorage.setItem(LAST_OPEN_KEY, id);
 }
+
+// ---- LLM connection settings ----
+//
+// Plain-text in localStorage — an accepted compromise for a single-user
+// (or trusted-friend, bring-your-own-key) tool. Never sent anywhere but
+// the provider's own API, straight from the browser.
+
+const CONFIG_KEY = "edit.config.v1";
+
+function defaultConfig() {
+  return {
+    activeProvider: "gemini",
+    gemini: { apiKey: "", model: "gemini-2.5-flash" },
+    claude: { apiKey: "", model: "claude-sonnet-5" },
+  };
+}
+
+export function loadConfig() {
+  try {
+    const raw = localStorage.getItem(CONFIG_KEY);
+    if (!raw) return defaultConfig();
+    // Merge over defaults so a config saved before a new field existed
+    // (or before a provider was added) still comes back complete.
+    const stored = JSON.parse(raw);
+    const base = defaultConfig();
+    return {
+      ...base,
+      ...stored,
+      gemini: { ...base.gemini, ...stored.gemini },
+      claude: { ...base.claude, ...stored.claude },
+    };
+  } catch {
+    return defaultConfig();
+  }
+}
+
+export function saveConfig(config) {
+  localStorage.setItem(CONFIG_KEY, JSON.stringify(config));
+}
