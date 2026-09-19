@@ -158,18 +158,22 @@ export function listFindings(editor) {
 }
 
 // Resolving a finding always removes its highlight. `applySuggestion: true`
-// additionally replaces the flagged text with `finding.suggestion` first.
-export function resolveFinding(editor, id, { applySuggestion = false } = {}) {
+// additionally replaces the flagged text with the suggestion first —
+// `suggestionText` overrides `finding.suggestion` itself, so a tweak made
+// in the sidebar's editable suggestion box before hitting Accept is what
+// actually lands, not the model's original wording.
+export function resolveFinding(editor, id, { applySuggestion = false, suggestionText } = {}) {
   const finding = listFindings(editor).find((f) => f.id === id);
   if (!finding) return false;
+  const text = suggestionText != null ? suggestionText : finding.suggestion;
   const tr = editor.state.tr;
   const markType = editor.schema.marks.reviewFlag;
-  if (applySuggestion && finding.suggestion) {
+  if (applySuggestion && text) {
     // insertText deliberately carries over the marks active across the
     // replaced range (so bold/italic survive the edit) — which includes
     // our own reviewFlag mark. Strip just that one back off afterwards.
-    tr.insertText(finding.suggestion, finding.from, finding.to);
-    tr.removeMark(finding.from, finding.from + finding.suggestion.length, markType);
+    tr.insertText(text, finding.from, finding.to);
+    tr.removeMark(finding.from, finding.from + text.length, markType);
   } else {
     tr.removeMark(finding.from, finding.to, markType);
   }

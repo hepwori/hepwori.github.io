@@ -3,6 +3,7 @@ import { newId, loadLibraryIndex, loadDoc, saveDoc, deleteDoc, getLastOpenId, se
 import { PROVIDERS } from "./llm/provider.js";
 import { PASS_LIBRARY, runReviewPass, listFindings, resolveFinding, dismissAllFindings, focusFinding } from "./review.js";
 import { setDocFavicon } from "./favicon.js";
+import { passBg, passFg } from "./passColors.js";
 
 const STARTER_MARKDOWN = `# Untitled
 
@@ -339,9 +340,39 @@ for (const pass of PASS_LIBRARY) {
   chip.className = "pass-chip";
   chip.type = "button";
   chip.textContent = pass.label;
-  chip.addEventListener("click", () => runPass({ passId: pass.id, passLabel: pass.label, instruction: pass.instruction }));
+  chip.addEventListener("click", () => runPass({ passId: pass.id, passLabel: pass.label, instruction: pass.instruction, triggerEl: chip }));
   passChipsEl.appendChild(chip);
 }
+
+// ---- review panel resize (dragged width persists) ----
+
+const REVIEW_WIDTH_KEY = "edit.reviewPanelWidth.v1";
+const storedReviewWidth = parseInt(localStorage.getItem(REVIEW_WIDTH_KEY), 10);
+if (storedReviewWidth) reviewPanel.style.setProperty("--review-panel-width", storedReviewWidth + "px");
+
+const reviewResizeHandle = document.getElementById("review-resize-handle");
+reviewResizeHandle.addEventListener("mousedown", (e) => {
+  e.preventDefault();
+  const startX = e.clientX;
+  const startWidth = reviewPanel.getBoundingClientRect().width;
+  reviewResizeHandle.classList.add("is-dragging");
+  document.body.style.userSelect = "none";
+
+  const onMove = (moveEvent) => {
+    const delta = startX - moveEvent.clientX; // handle is on the left edge
+    const newWidth = Math.min(720, Math.max(300, Math.round(startWidth + delta)));
+    reviewPanel.style.setProperty("--review-panel-width", newWidth + "px");
+  };
+  const onUp = () => {
+    window.removeEventListener("mousemove", onMove);
+    window.removeEventListener("mouseup", onUp);
+    reviewResizeHandle.classList.remove("is-dragging");
+    document.body.style.userSelect = "";
+    localStorage.setItem(REVIEW_WIDTH_KEY, Math.round(reviewPanel.getBoundingClientRect().width));
+  };
+  window.addEventListener("mousemove", onMove);
+  window.addEventListener("mouseup", onUp);
+});
 
 reviewBtn.addEventListener("click", () => {
   const willShow = reviewPanel.hidden;
@@ -367,22 +398,27 @@ function runCustomInstruction() {
   if (!instruction) return;
   const passId = `custom-${Date.now().toString(36)}`;
   const passLabel = instruction.length > 44 ? instruction.slice(0, 43) + "…" : instruction;
-  runPass({ passId, passLabel, instruction }).then((ok) => {
+  const runBtn = document.getElementById("run-custom-btn");
+  runPass({ passId, passLabel, instruction, triggerEl: runBtn }).then((ok) => {
     if (ok) customInstructionInput.value = "";
   });
 }
 
-async function runPass({ passId, passLabel, instruction }) {
+// Every status line names the pass and, when relevant, the scope it ran
+// against — "Nothing flagged" on its own doesn't say nothing flagged
+// *about what*.
+async function runPass({ passId, passLabel, instruction, triggerEl }) {
   const providerId = config.activeProvider;
   const providerConfig = config[providerId];
   const providerLabel = PROVIDERS[providerId]?.label || providerId;
   if (!providerConfig?.apiKey) {
-    setReviewStatus(`No API key set for ${providerLabel} — open Settings to add one.`, true);
+    setReviewStatus(`${passLabel}: no API key set for ${providerLabel} — open Settings to add one.`, true);
     return false;
   }
 
-  setReviewStatus(`Asking ${providerLabel}…`, false);
-  setChipsDisabled(true);
+  const scopedAtStart = !editor.state.selection.empty;
+  setReviewStatus(`${passLabel}: asking ${providerLabel}${scopedAtStart ? " about your selection" : ""}…`, false, true);
+  setChipsDisabled(true, triggerEl);
   try {
     const result = await runReviewPass({
       editor,
@@ -395,31 +431,44 @@ async function runPass({ passId, passLabel, instruction }) {
     });
     persistNow();
     renderFindings();
+    const scopeNote = result.scoped ? " (scoped to your selection)" : "";
     if (result.total === 0) {
-      setReviewStatus("Nothing flagged — looks clean.", false);
+      setReviewStatus(`${passLabel}: nothing flagged${scopeNote} — looks clean.`, false);
     } else if (result.skipped > 0) {
-      setReviewStatus(`Found ${result.applied} of ${result.total} — ${result.skipped} couldn't be matched back to exact text and were skipped.`, false);
+      setReviewStatus(`${passLabel}: found ${result.applied} of ${result.total}${scopeNote} — ${result.skipped} couldn't be matched back to exact text and were skipped.`, false);
     } else {
-      setReviewStatus(`Found ${result.applied}.`, false);
+      setReviewStatus(`${passLabel}: found ${result.applied}${scopeNote}.`, false);
     }
     return true;
   } catch (err) {
-    setReviewStatus(err.message || "Review pass failed", true);
+    setReviewStatus(`${passLabel}: ${err.message || "review pass failed"}`, true);
     return false;
   } finally {
     setChipsDisabled(false);
   }
 }
 
-function setChipsDisabled(disabled) {
-  for (const chip of passChipsEl.querySelectorAll(".pass-chip")) chip.disabled = disabled;
-  document.getElementById("run-custom-btn").disabled = disabled;
+// While a pass is in flight: the chip (or Run button) that triggered it
+// pulses so it's obvious *which* review is running, everything else that
+// could start another one is disabled so two runs can't race against the
+// same editor state.
+function setChipsDisabled(disabled, activeEl) {
+  for (const chip of passChipsEl.querySelectorAll(".pass-chip")) {
+    chip.disabled = disabled;
+    chip.classList.toggle("is-running", disabled && chip === activeEl);
+  }
+  const runBtn = document.getElementById("run-custom-btn");
+  runBtn.disabled = disabled;
+  runBtn.classList.toggle("is-running", disabled && runBtn === activeEl);
+  customInstructionInput.disabled = disabled;
+  dismissAllBtn.disabled = disabled;
 }
 
-function setReviewStatus(text, isError) {
+function setReviewStatus(text, isError, isBusy) {
   reviewStatus.textContent = text;
   reviewStatus.hidden = !text;
   reviewStatus.classList.toggle("is-error", Boolean(isError));
+  reviewStatus.classList.toggle("is-busy", Boolean(isBusy));
 }
 
 function updateReviewScopeNote() {
@@ -460,13 +509,16 @@ function renderFindings() {
     groups.get(f.passId).items.push(f);
   }
 
-  for (const { label, items } of groups.values()) {
+  for (const [passId, { label, items }] of groups) {
     const group = document.createElement("div");
     group.className = "findings-group";
 
     const header = document.createElement("div");
     header.className = "findings-group-header";
-    header.textContent = label;
+    const dot = document.createElement("span");
+    dot.className = "pass-color-dot";
+    dot.style.background = passFg(passId, label);
+    header.append(dot, document.createTextNode(label));
     const count = document.createElement("span");
     count.className = "findings-group-count";
     count.textContent = `· ${items.length} open`;
@@ -484,10 +536,13 @@ function buildFindingCard(finding) {
   const card = document.createElement("div");
   card.className = "finding-card";
   card.dataset.findingId = finding.id;
+  card.style.background = passBg(finding.passId, finding.passLabel);
+  card.style.borderLeftColor = passFg(finding.passId, finding.passLabel);
 
   if (finding.category) {
     const cat = document.createElement("div");
     cat.className = "finding-category";
+    cat.style.color = passFg(finding.passId, finding.passLabel);
     cat.textContent = finding.category;
     card.appendChild(cat);
   }
@@ -497,27 +552,39 @@ function buildFindingCard(finding) {
   note.textContent = finding.note || "";
   card.appendChild(note);
 
+  // Editable in place — a tweak here before hitting Accept is what
+  // actually lands (see resolveFinding's suggestionText override).
+  let sugInput = null;
   if (finding.suggestion) {
-    const sug = document.createElement("div");
-    sug.className = "finding-suggestion";
-    sug.textContent = finding.suggestion;
-    card.appendChild(sug);
+    sugInput = document.createElement("textarea");
+    sugInput.className = "finding-suggestion";
+    sugInput.value = finding.suggestion;
+    sugInput.rows = 1;
+    sugInput.spellcheck = false;
+    sugInput.addEventListener("click", (e) => e.stopPropagation());
+    sugInput.addEventListener("input", () => autosizeTextarea(sugInput));
+    card.appendChild(sugInput);
+    requestAnimationFrame(() => autosizeTextarea(sugInput));
   }
 
   const actions = document.createElement("div");
   actions.className = "finding-actions";
 
   const acceptBtn = document.createElement("button");
-  acceptBtn.className = "accept-btn";
+  acceptBtn.className = "primary small";
   acceptBtn.textContent = finding.suggestion ? "Accept" : "Resolve";
   acceptBtn.addEventListener("click", (e) => {
     e.stopPropagation();
-    resolveFinding(editor, finding.id, { applySuggestion: Boolean(finding.suggestion) });
+    resolveFinding(editor, finding.id, {
+      applySuggestion: Boolean(finding.suggestion),
+      suggestionText: sugInput?.value,
+    });
     persistNow();
     renderFindings();
   });
 
   const dismissBtn = document.createElement("button");
+  dismissBtn.className = "small";
   dismissBtn.textContent = "Dismiss";
   dismissBtn.addEventListener("click", (e) => {
     e.stopPropagation();
@@ -535,6 +602,11 @@ function buildFindingCard(finding) {
   });
 
   return card;
+}
+
+function autosizeTextarea(el) {
+  el.style.height = "auto";
+  el.style.height = el.scrollHeight + "px";
 }
 
 function highlightCard(id) {

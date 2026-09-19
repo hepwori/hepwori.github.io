@@ -11,6 +11,7 @@ import Link from "https://esm.sh/@tiptap/extension-link@3.31.3?deps=@tiptap/pm@3
 import Placeholder from "https://esm.sh/@tiptap/extension-placeholder@3.31.3?deps=@tiptap/pm@3.31.3";
 import { Markdown } from "https://esm.sh/@tiptap/markdown@3.31.3?deps=@tiptap/pm@3.31.3";
 import { createPasteHandler } from "./paste.js";
+import { passBg } from "./passColors.js";
 
 // A review finding, applied as a real mark so ProseMirror's position
 // mapping keeps it attached to the right text as the doc is edited —
@@ -58,7 +59,8 @@ export const ReviewFlag = Mark.create({
     return [{ tag: "mark.review-flag" }];
   },
   renderHTML({ HTMLAttributes }) {
-    return ["mark", mergeAttributes(HTMLAttributes, { class: "review-flag" }), 0];
+    const bg = passBg(HTMLAttributes["data-pass-id"], HTMLAttributes["data-pass-label"]);
+    return ["mark", mergeAttributes(HTMLAttributes, { class: "review-flag", style: `background:${bg}` }), 0];
   },
 });
 
