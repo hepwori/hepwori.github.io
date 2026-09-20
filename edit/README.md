@@ -24,6 +24,8 @@ also in settings: a **writing style** field — free text describing the voice y
 
 findings show up as highlighted spans in the text and cards in the sidebar, color-coded by which pass raised them, newest batch on top. click a card to jump the editor to that spot, or click into the card list and use **up/down arrow** to step through findings one at a time. for each one: **accept** (applies the suggested fix — editable first, if you want to tweak the wording), **dismiss** (clears it, no change), or **dismiss all** to clear everything from a pass at once. the AI only ever flags and suggests — it never rewrites your document for you.
 
+**debug** (top right) — the last 20 raw requests/responses sent to your LLM provider, if you want to see exactly what was asked and what came back. nothing's saved; it clears on reload, and your API key never appears in it (it's sent as a header, not part of the logged request body).
+
 ### generative outline mode
 
 **library → generate outline…** — describe the piece you want to write in a sentence or two and get back a title suggestion plus a set of headings, each with a starter question to help you begin drafting that section. it creates a new doc with that structure — no generated prose, ever, just something to draft into.

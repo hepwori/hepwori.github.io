@@ -3,6 +3,7 @@
 // so a plain fetch with the key in x-goog-api-key works, no proxy needed
 // (confirmed during planning — this is Google's own supported "client
 // app" usage pattern, same as AI Studio's own "Get code" snippets).
+import { loggedFetch } from "./debugLog.js";
 
 const FINDINGS_SCHEMA = {
   type: "OBJECT",
@@ -53,12 +54,12 @@ const OUTLINE_SCHEMA = {
 
 // Shared by runPass and generateOutline — both just want "call the model
 // with this prompt, get JSON back matching this schema."
-async function generateJSON({ apiKey, model, prompt, schema }) {
+async function generateJSON({ apiKey, model, prompt, schema, kind }) {
   if (!apiKey) throw new Error("Missing API key");
   if (!model) throw new Error("Missing model id");
 
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
-  const res = await fetch(url, {
+  const res = await loggedFetch("Gemini", kind, url, {
     method: "POST",
     headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
     body: JSON.stringify({
@@ -82,14 +83,14 @@ async function generateJSON({ apiKey, model, prompt, schema }) {
 // generateContent is single-turn-friendly and keeps this symmetric with
 // Claude's runPass below.
 export async function runPass({ apiKey, model, prompt }) {
-  const parsed = await generateJSON({ apiKey, model, prompt, schema: FINDINGS_SCHEMA });
+  const parsed = await generateJSON({ apiKey, model, prompt, schema: FINDINGS_SCHEMA, kind: "runPass" });
   return { findings: Array.isArray(parsed.findings) ? parsed.findings : [] };
 }
 
 // prompt is built by generative.js — structure only, no body prose (see
 // its buildPrompt for the constraint spelled out to the model).
 export async function generateOutline({ apiKey, model, prompt }) {
-  const parsed = await generateJSON({ apiKey, model, prompt, schema: OUTLINE_SCHEMA });
+  const parsed = await generateJSON({ apiKey, model, prompt, schema: OUTLINE_SCHEMA, kind: "generateOutline" });
   return { title: parsed.title || "", headings: Array.isArray(parsed.headings) ? parsed.headings : [] };
 }
 
@@ -98,7 +99,7 @@ export async function testConnection({ apiKey, model }) {
   if (!model) throw new Error("Missing model id");
 
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
-  const res = await fetch(url, {
+  const res = await loggedFetch("Gemini", "testConnection", url, {
     method: "POST",
     headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
     body: JSON.stringify({

@@ -4,6 +4,7 @@
 // (confirmed during planning). The "dangerous" naming is about embedding a
 // key you don't own in a page others load — not applicable here, since
 // each user supplies and stores only their own key, locally.
+import { loggedFetch } from "./debugLog.js";
 
 const FINDINGS_TOOL = {
   name: "report_findings",
@@ -64,11 +65,11 @@ const OUTLINE_TOOL = {
 // structured-output mechanism: it's obligated to call the named tool, so
 // the response is always the shape we asked for rather than free text
 // we'd have to parse hopefully.
-async function callTool({ apiKey, model, prompt, tool, maxTokens = 4096 }) {
+async function callTool({ apiKey, model, prompt, tool, maxTokens = 4096, kind }) {
   if (!apiKey) throw new Error("Missing API key");
   if (!model) throw new Error("Missing model id");
 
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
+  const res = await loggedFetch("Claude", kind, "https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -94,13 +95,13 @@ async function callTool({ apiKey, model, prompt, tool, maxTokens = 4096 }) {
 }
 
 export async function runPass({ apiKey, model, prompt }) {
-  const input = await callTool({ apiKey, model, prompt, tool: FINDINGS_TOOL });
+  const input = await callTool({ apiKey, model, prompt, tool: FINDINGS_TOOL, kind: "runPass" });
   return { findings: Array.isArray(input.findings) ? input.findings : [] };
 }
 
 // prompt is built by generative.js — structure only, no body prose.
 export async function generateOutline({ apiKey, model, prompt }) {
-  const input = await callTool({ apiKey, model, prompt, tool: OUTLINE_TOOL, maxTokens: 2048 });
+  const input = await callTool({ apiKey, model, prompt, tool: OUTLINE_TOOL, maxTokens: 2048, kind: "generateOutline" });
   return { title: input.title || "", headings: Array.isArray(input.headings) ? input.headings : [] };
 }
 
@@ -108,7 +109,7 @@ export async function testConnection({ apiKey, model }) {
   if (!apiKey) throw new Error("Missing API key");
   if (!model) throw new Error("Missing model id");
 
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
+  const res = await loggedFetch("Claude", "testConnection", "https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

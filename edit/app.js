@@ -4,6 +4,7 @@ import { PROVIDERS } from "./llm/provider.js";
 import { runReviewPass, listFindings, resolveFinding, dismissAllFindings, focusFinding } from "./review.js";
 import { passBg, passFg } from "./passColors.js";
 import { generateOutline, outlineToMarkdown } from "./generative.js";
+import { getCallLog, clearCallLog, onCallLogChange } from "./llm/debugLog.js";
 
 const STARTER_MARKDOWN = `# Untitled
 
@@ -340,6 +341,85 @@ function relativeTime(iso) {
 const settingsModal = document.getElementById("settings-modal");
 let config = loadConfig();
 reviewPanel.dataset.activeCardStyle = config.experimental.activeCardStyle;
+
+// ---- debug panel ----
+
+const debugModal = document.getElementById("debug-modal");
+const debugLogList = document.getElementById("debug-log-list");
+
+document.getElementById("debug-btn").addEventListener("click", () => {
+  debugModal.hidden = false;
+  renderDebugLog();
+});
+document.getElementById("debug-close-btn").addEventListener("click", () => {
+  debugModal.hidden = true;
+});
+debugModal.addEventListener("click", (e) => {
+  if (e.target === debugModal) debugModal.hidden = true;
+});
+document.getElementById("debug-clear-btn").addEventListener("click", () => {
+  clearCallLog();
+});
+// Keeps the panel live while it's open (e.g. running a pass with Debug
+// already up) — the gate means the log's own listener never does
+// pointless work while the panel is closed.
+onCallLogChange(() => {
+  if (!debugModal.hidden) renderDebugLog();
+});
+
+function renderDebugLog() {
+  const entries = getCallLog();
+  debugLogList.innerHTML = "";
+  if (entries.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "debug-log-empty";
+    empty.textContent = "No LLM calls yet this session.";
+    debugLogList.appendChild(empty);
+    return;
+  }
+  entries.forEach((entry, i) => debugLogList.appendChild(buildDebugEntry(entry, i === 0)));
+}
+
+// Every value here (request/response bodies) came back from the LLM
+// provider — untrusted, per CLAUDE.md's "LLM output is untrusted" note.
+// textContent/createElement throughout, same as findings rendering,
+// never innerHTML with any of it.
+function buildDebugEntry(entry, openByDefault) {
+  const details = document.createElement("details");
+  details.className = "debug-entry";
+  details.open = openByDefault;
+
+  const summary = document.createElement("summary");
+  const badge = document.createElement("span");
+  badge.className = "debug-entry-badge";
+  badge.textContent = `${entry.provider} · ${entry.kind}`;
+  const status = document.createElement("span");
+  status.className = "debug-entry-status" + (entry.ok ? " is-ok" : "");
+  status.textContent = entry.error ? "network error" : String(entry.status);
+  const meta = document.createElement("span");
+  meta.className = "debug-entry-meta";
+  meta.textContent = `${entry.durationMs}ms · ${new Date(entry.at).toLocaleTimeString()}`;
+  summary.append(badge, status, meta);
+  details.appendChild(summary);
+
+  const body = document.createElement("div");
+  body.className = "debug-entry-body";
+  const reqHeading = document.createElement("h4");
+  reqHeading.textContent = "Request";
+  body.append(reqHeading, buildDebugPre(entry.requestBody));
+  const resHeading = document.createElement("h4");
+  resHeading.textContent = entry.error ? "Error" : "Response";
+  body.append(resHeading, buildDebugPre(entry.error || entry.responseBody));
+  details.appendChild(body);
+
+  return details;
+}
+
+function buildDebugPre(value) {
+  const pre = document.createElement("pre");
+  pre.textContent = typeof value === "string" ? value : JSON.stringify(value, null, 2);
+  return pre;
+}
 
 document.getElementById("settings-btn").addEventListener("click", () => {
   renderSettings();

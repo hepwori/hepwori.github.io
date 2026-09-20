@@ -38,6 +38,7 @@
     <span id="word-count">0 words</span>
     <button id="import-md-btn" title="Import markdown">Import&hellip;</button>
     <button id="copy-md-btn" title="Copy as markdown">Copy markdown</button>
+    <button id="debug-btn" title="Recent raw LLM calls">Debug</button>
     <button id="settings-btn" title="LLM connection settings">Settings</button>
   </div>
 </header>
@@ -107,6 +108,22 @@
     <div class="modal-actions">
       <button id="generate-cancel-btn" class="ghost">Cancel</button>
       <button id="generate-go-btn" class="primary">Generate</button>
+    </div>
+  </div>
+</div>
+
+<div id="debug-modal" class="modal" hidden>
+  <div class="modal-card debug-card">
+    <div class="modal-header-row">
+      <h2>Debug: recent LLM calls</h2>
+      <div class="modal-header-actions">
+        <button id="debug-clear-btn" class="ghost small">Clear</button>
+      </div>
+    </div>
+    <p class="hint">The last 20 raw requests/responses sent to your provider, newest first &mdash; not saved anywhere, cleared on reload. API keys are sent as headers, not request bodies, so they never show up here.</p>
+    <div id="debug-log-list" class="debug-log-list"></div>
+    <div class="modal-actions">
+      <button id="debug-close-btn" class="primary">Close</button>
     </div>
   </div>
 </div>
