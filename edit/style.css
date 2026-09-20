@@ -668,6 +668,28 @@ textarea.finding-suggestion:focus {
   background: var(--paper);
   color: var(--ink);
 }
+/* API key fields are plain text inputs, not type="password" — Chrome
+   ignores autocomplete="off" on real password fields (deliberately, so
+   sites can't disable the password manager) and will offer to save
+   *any* Enter-submitted text elsewhere on the page as a "password" once
+   one exists anywhere in the DOM, visible or not. -webkit-text-security
+   gets the same dot-masked look without tripping that heuristic at all. */
+.key-input-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+}
+.key-input-row .api-key-input {
+  flex: 1 1 auto;
+  margin-top: 0;
+}
+.api-key-input.is-masked {
+  -webkit-text-security: disc;
+}
+.key-toggle-btn {
+  flex: 0 0 auto;
+}
 .provider-test-row {
   display: flex;
   align-items: center;

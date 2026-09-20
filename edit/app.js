@@ -436,6 +436,7 @@ settingsModal.querySelectorAll('input[name="active-provider"]').forEach((radio) 
 settingsModal.querySelectorAll(".provider-config").forEach((section) => {
   const id = section.dataset.provider;
   const keyInput = section.querySelector(".api-key-input");
+  const keyToggleBtn = section.querySelector(".key-toggle-btn");
   const modelInput = section.querySelector(".model-input");
   const testBtn = section.querySelector(".test-btn");
   const status = section.querySelector(".test-status");
@@ -446,6 +447,11 @@ settingsModal.querySelectorAll(".provider-config").forEach((section) => {
   };
   keyInput.addEventListener("input", persist);
   modelInput.addEventListener("input", persist);
+
+  keyToggleBtn.addEventListener("click", () => {
+    const masked = keyInput.classList.toggle("is-masked");
+    keyToggleBtn.textContent = masked ? "Show" : "Hide";
+  });
 
   testBtn.addEventListener("click", async () => {
     persist();

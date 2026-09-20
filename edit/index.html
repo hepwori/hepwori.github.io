@@ -134,7 +134,10 @@
       <div class="provider-config" data-provider="gemini">
         <h4>Gemini</h4>
         <label>API key
-          <input type="password" class="api-key-input" spellcheck="false" autocomplete="off" />
+          <div class="key-input-row">
+            <input type="text" class="api-key-input is-masked" spellcheck="false" autocomplete="off" />
+            <button type="button" class="key-toggle-btn ghost small">Show</button>
+          </div>
         </label>
         <label>Model
           <input type="text" class="model-input" spellcheck="false" autocomplete="off" />
@@ -148,7 +151,10 @@
       <div class="provider-config" data-provider="claude">
         <h4>Claude</h4>
         <label>API key
-          <input type="password" class="api-key-input" spellcheck="false" autocomplete="off" />
+          <div class="key-input-row">
+            <input type="text" class="api-key-input is-masked" spellcheck="false" autocomplete="off" />
+            <button type="button" class="key-toggle-btn ghost small">Show</button>
+          </div>
         </label>
         <label>Model
           <input type="text" class="model-input" spellcheck="false" autocomplete="off" />
