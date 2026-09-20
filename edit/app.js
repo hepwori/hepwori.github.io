@@ -897,30 +897,36 @@ function buildFindingCard(finding) {
   const actions = document.createElement("div");
   actions.className = "finding-actions";
 
-  const acceptBtn = document.createElement("button");
-  acceptBtn.className = "primary small";
-  acceptBtn.textContent = finding.suggestion ? "Accept" : "Resolve";
-  acceptBtn.addEventListener("click", (e) => {
-    e.stopPropagation();
-    // resolveFinding dispatches its own transaction, which re-triggers
-    // syncUI -> renderFindings synchronously before this call returns.
-    resolveFinding(editor, finding.id, {
-      applySuggestion: Boolean(finding.suggestion),
-      suggestionText: sugInput?.value,
+  // Without a suggestion, "Accept" has nothing to apply — resolveFinding's
+  // applySuggestion:true path requires *both* the flag and actual text
+  // (`if (applySuggestion && text)`), so it silently falls through to the
+  // exact same removeMark-only branch Dismiss already takes. Two buttons
+  // with identical behavior just asks the author to pick a label for the
+  // same action — show one.
+  if (finding.suggestion) {
+    const acceptBtn = document.createElement("button");
+    acceptBtn.className = "primary small";
+    acceptBtn.textContent = "Accept";
+    acceptBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      // resolveFinding dispatches its own transaction, which re-triggers
+      // syncUI -> renderFindings synchronously before this call returns.
+      resolveFinding(editor, finding.id, { applySuggestion: true, suggestionText: sugInput?.value });
+      persistNow();
     });
-    persistNow();
-  });
+    actions.appendChild(acceptBtn);
+  }
 
   const dismissBtn = document.createElement("button");
-  dismissBtn.className = "small";
+  dismissBtn.className = finding.suggestion ? "small" : "primary small";
   dismissBtn.textContent = "Dismiss";
   dismissBtn.addEventListener("click", (e) => {
     e.stopPropagation();
     resolveFinding(editor, finding.id);
     persistNow();
   });
+  actions.appendChild(dismissBtn);
 
-  actions.append(acceptBtn, dismissBtn);
   card.appendChild(actions);
 
   card.addEventListener("click", () => {
