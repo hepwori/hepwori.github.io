@@ -15,7 +15,7 @@ function buildPrompt({ instruction, docMarkdown, selectionText, styleGuide }) {
     : `Review the whole document below.`;
 
   const styleNote = styleGuide?.trim()
-    ? `\n\nThe author's target voice and style:\n"""\n${styleGuide.trim()}\n"""\nUse this as context for what "good" looks like for this piece. Flag departures from it where relevant, and don't suggest a fix that would fight against it.`
+    ? `\n\nThe user adds this detail to help you understand the target style:\n"""\n${styleGuide.trim()}\n"""\nUse this as context for what "good" looks like for this piece. Flag departures from it where relevant, and don't suggest a fix that would fight against it.`
     : "";
 
   return `You are a careful, tactful copyeditor reviewing a piece of writing for its author. You flag things worth the author's attention — you never rewrite wholesale or add your own content. The author decides what to do with each note.${styleNote}
@@ -55,6 +55,7 @@ export async function runReviewPass({ editor, providerId, apiKey, model, instruc
 
   const markType = editor.schema.marks.reviewFlag;
   const tr = editor.state.tr;
+  const batchAt = new Date().toISOString();
   let applied = 0;
   let skipped = 0;
   for (const finding of findings) {
@@ -75,6 +76,7 @@ export async function runReviewPass({ editor, providerId, apiKey, model, instruc
       category: finding.category || null,
       note: finding.note || "",
       suggestion: finding.suggestion || null,
+      createdAt: batchAt,
     }));
     applied++;
   }
@@ -190,9 +192,17 @@ export function dismissAllFindings(editor) {
   return findings.length;
 }
 
-export function focusFinding(editor, id) {
+// focusEditor: false updates the real ProseMirror selection and scrolls it
+// into view (so the flagged span is visibly selected) without moving DOM
+// focus into the editor's contenteditable. Card clicks use this — real
+// editor focus() is scheduled by Tiptap on a later animation frame, which
+// would otherwise silently steal focus back from the card a moment after
+// it was set, breaking the up/down arrow-key navigation between cards.
+export function focusFinding(editor, id, { focusEditor = true } = {}) {
   const finding = listFindings(editor).find((f) => f.id === id);
   if (!finding) return false;
-  editor.chain().focus().setTextSelection({ from: finding.from, to: finding.to }).scrollIntoView().run();
+  let chain = editor.chain();
+  if (focusEditor) chain = chain.focus();
+  chain.setTextSelection({ from: finding.from, to: finding.to }).scrollIntoView().run();
   return true;
 }

@@ -6,7 +6,7 @@ import { PROVIDERS } from "./llm/provider.js";
 
 function buildPrompt(description, styleGuide) {
   const styleNote = styleGuide?.trim()
-    ? `\n\nThe author's target voice and style:\n"""\n${styleGuide.trim()}\n"""\nKeep this in mind when choosing headings and questions — they should suit this voice, not a generic one.`
+    ? `\n\nThe user adds this detail to help you understand the target style:\n"""\n${styleGuide.trim()}\n"""\nKeep this in mind when choosing headings and questions — they should suit this voice, not a generic one.`
     : "";
 
   return `You are helping an author plan the structure of a piece of writing, before they draft a single word of it. You suggest an outline — you never write any of the actual prose yourself, not even a sentence as an example.${styleNote}

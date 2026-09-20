@@ -45,11 +45,11 @@ function syncUI() {
   updateWordCount();
   updateToolbarState();
   updateReviewScopeNote();
-  // Keeps the sidebar honest whenever findings change for *any* reason —
-  // accept/dismiss, a fresh pass, or a mark silently auto-clearing because
-  // its text got edited (see editor.js's reviewFlagAutoDismiss plugin).
-  // Only does the work while the panel's actually visible.
-  if (!reviewPanel.hidden) renderFindings();
+  // The panel is permanently visible, so this always keeps the sidebar
+  // honest whenever findings change for any reason — accept/dismiss, a
+  // fresh pass, or a mark silently auto-clearing because its text got
+  // edited (see editor.js's reviewFlagAutoDismiss plugin).
+  renderFindings();
 }
 
 // ---- doc lifecycle (boot / new / open / delete) ----
@@ -465,7 +465,6 @@ settingsModal.querySelectorAll(".provider-config").forEach((section) => {
 const passChipsEl = document.getElementById("pass-chips");
 const customInstructionInput = document.getElementById("custom-instruction-input");
 const reviewStatus = document.getElementById("review-status");
-const reviewBtn = document.getElementById("review-btn");
 
 dismissAllBtn.addEventListener("click", () => {
   const n = dismissAllFindings(editor);
@@ -521,20 +520,6 @@ reviewResizeHandle.addEventListener("mousedown", (e) => {
   };
   window.addEventListener("mousemove", onMove);
   window.addEventListener("mouseup", onUp);
-});
-
-reviewBtn.addEventListener("click", () => {
-  const willShow = reviewPanel.hidden;
-  reviewPanel.hidden = !willShow;
-  reviewBtn.classList.toggle("is-active", willShow);
-  if (willShow) {
-    updateReviewScopeNote();
-    renderFindings();
-  }
-});
-document.getElementById("review-close-btn").addEventListener("click", () => {
-  reviewPanel.hidden = true;
-  reviewBtn.classList.remove("is-active");
 });
 
 document.getElementById("run-custom-btn").addEventListener("click", runCustomInstruction);
@@ -623,7 +608,6 @@ function setReviewStatus(text, isError, isBusy) {
 }
 
 function updateReviewScopeNote() {
-  if (reviewPanel.hidden) return;
   const { empty, from, to } = editor.state.selection;
   if (empty) {
     reviewScopeNote.hidden = true;
@@ -649,7 +633,7 @@ function renderFindings() {
   if (findings.length === 0) {
     const empty = document.createElement("div");
     empty.className = "findings-empty";
-    empty.textContent = "No findings yet — run a pass above.";
+    empty.textContent = "Nothing flagged yet. Pick a pass above, or ask something specific about your selection.";
     findingsListEl.appendChild(empty);
     return;
   }
@@ -660,7 +644,17 @@ function renderFindings() {
     groups.get(f.passId).items.push(f);
   }
 
-  for (const [passId, { label, items }] of groups) {
+  // Newest batch on top: each group's rank is its most recent finding's
+  // createdAt (a run's findings all share one timestamp, set once per
+  // call in runReviewPass), so re-running a named pass bumps its whole
+  // group back to the top. Findings from before this field existed have
+  // no createdAt — they sort as oldest, which is the sensible fallback.
+  const timeOf = (f) => (f.createdAt ? Date.parse(f.createdAt) : 0) || 0;
+  const orderedGroups = [...groups.entries()].sort(
+    (a, b) => Math.max(...b[1].items.map(timeOf)) - Math.max(...a[1].items.map(timeOf))
+  );
+
+  for (const [passId, { label, items }] of orderedGroups) {
     const group = document.createElement("div");
     group.className = "findings-group";
 
@@ -676,7 +670,10 @@ function renderFindings() {
     header.appendChild(count);
     group.appendChild(header);
 
-    for (const finding of items) {
+    // Newest-first within the group too; ties (same batch) fall back to
+    // document order, which is the sensible reading order for one run.
+    const orderedItems = [...items].sort((a, b) => timeOf(b) - timeOf(a) || a.from - b.from);
+    for (const finding of orderedItems) {
       group.appendChild(buildFindingCard(finding));
     }
     findingsListEl.appendChild(group);
@@ -687,6 +684,7 @@ function buildFindingCard(finding) {
   const card = document.createElement("div");
   card.className = "finding-card";
   card.dataset.findingId = finding.id;
+  card.tabIndex = 0; // focusable, so Up/Down can walk the list (see the review-panel keydown handler)
   card.style.background = passBg(finding.passId, finding.passLabel);
   card.style.borderLeftColor = passFg(finding.passId, finding.passLabel);
 
@@ -748,8 +746,19 @@ function buildFindingCard(finding) {
   card.appendChild(actions);
 
   card.addEventListener("click", () => {
-    focusFinding(editor, finding.id);
+    // focusEditor: false — see the comment on focusFinding() in review.js.
+    // Keeping DOM focus on the card (rather than the editor) is what lets
+    // up/down arrow keep walking the card list right after a click.
+    focusFinding(editor, finding.id, { focusEditor: false });
     highlightCard(finding.id);
+    // The selection change above fires onSelectionUpdate -> syncUI() ->
+    // renderFindings(), rebuilding the whole card list (innerHTML = "")
+    // synchronously before we get here. The `card` this closure captured
+    // is now a detached node — focusing it would be a no-op — so
+    // re-look-up the freshly rendered card by id.
+    document
+      .querySelector(`.finding-card[data-finding-id="${CSS.escape(finding.id)}"]`)
+      ?.focus({ preventScroll: true });
   });
 
   return card;
@@ -766,23 +775,19 @@ function highlightCard(id) {
   }
 }
 
-// Clicking a highlighted span in the editor opens the panel (if closed)
-// and jumps the sidebar to that finding, mirroring the reverse direction.
+// Clicking a highlighted span in the editor jumps the (always-visible)
+// sidebar to that finding, mirroring the reverse direction.
 document.getElementById("editor").addEventListener("click", (e) => {
   const mark = e.target.closest("mark.review-flag");
   if (!mark) return;
   const id = mark.dataset.reviewId;
   if (!id) return;
-  if (reviewPanel.hidden) {
-    reviewPanel.hidden = false;
-    reviewBtn.classList.add("is-active");
-    renderFindings();
-  }
   highlightCard(id);
   document.querySelector(`.finding-card[data-finding-id="${CSS.escape(id)}"]`)?.scrollIntoView({ block: "nearest" });
 });
 
-// Step through open findings in document order with Alt+Down / Alt+Up.
+// Step through open findings in document order with Alt+Down / Alt+Up —
+// works from anywhere (typically while writing, cursor in the editor).
 function stepFinding(direction) {
   const findings = listFindings(editor);
   if (findings.length === 0) return;
@@ -793,10 +798,41 @@ function stepFinding(direction) {
   else if (direction < 0) idx = (idx - 1 + findings.length) % findings.length;
   const target = findings[idx];
   focusFinding(editor, target.id);
-  if (!reviewPanel.hidden) {
-    highlightCard(target.id);
-    document.querySelector(`.finding-card[data-finding-id="${CSS.escape(target.id)}"]`)?.scrollIntoView({ block: "nearest" });
+  highlightCard(target.id);
+  document.querySelector(`.finding-card[data-finding-id="${CSS.escape(target.id)}"]`)?.scrollIntoView({ block: "nearest" });
+}
+
+// Plain Up/Down walks card-to-card — but only when a card itself has
+// focus (clicked, or reached via this same navigation), so it never
+// hijacks arrow keys in the custom-instruction input, a chip button, or
+// anywhere else within the panel where they have their normal meaning.
+// Deliberately does NOT call focusFinding here: that moves real DOM focus
+// into the editor (it's `editor.chain().focus()...`), which would steal
+// focus off the card list after a single step. Instead it just previews
+// — scrolls the flagged text into view and highlights the mark itself —
+// while focus (and continued arrow-key navigation) stays on the cards.
+reviewPanel.addEventListener("keydown", (e) => {
+  if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
+  const activeCard = document.activeElement?.closest(".finding-card");
+  if (!activeCard) return;
+  e.preventDefault();
+  const cards = [...findingsListEl.querySelectorAll(".finding-card")];
+  const idx = cards.indexOf(activeCard);
+  const nextIdx = e.key === "ArrowDown" ? Math.min(idx + 1, cards.length - 1) : Math.max(idx - 1, 0);
+  const nextCard = cards[nextIdx];
+  if (nextCard === activeCard) return;
+  nextCard.focus({ preventScroll: true });
+  nextCard.scrollIntoView({ block: "nearest" });
+  const id = nextCard.dataset.findingId;
+  highlightCard(id);
+  previewFindingInEditor(id);
+});
+
+function previewFindingInEditor(id) {
+  for (const mark of document.querySelectorAll("mark.review-flag")) {
+    mark.classList.toggle("is-focused", mark.dataset.reviewId === id);
   }
+  document.querySelector(`mark.review-flag[data-review-id="${CSS.escape(id)}"]`)?.scrollIntoView({ block: "center" });
 }
 
 // ---- toolbar ----
@@ -887,10 +923,6 @@ window.addEventListener("keydown", (e) => {
     // Generic: closes whichever .modal (import, library, ...) is open.
     for (const modal of document.querySelectorAll(".modal:not([hidden])")) {
       modal.hidden = true;
-    }
-    if (!reviewPanel.hidden) {
-      reviewPanel.hidden = true;
-      reviewBtn.classList.remove("is-active");
     }
     return;
   }

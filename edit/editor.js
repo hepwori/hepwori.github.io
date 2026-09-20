@@ -55,6 +55,11 @@ export const ReviewFlag = Mark.create({
         parseHTML: (el) => el.getAttribute("data-suggestion"),
         renderHTML: (attrs) => (attrs.suggestion ? { "data-suggestion": attrs.suggestion } : {}),
       },
+      createdAt: {
+        default: null,
+        parseHTML: (el) => el.getAttribute("data-created-at"),
+        renderHTML: (attrs) => (attrs.createdAt ? { "data-created-at": attrs.createdAt } : {}),
+      },
     };
   },
   parseHTML() {

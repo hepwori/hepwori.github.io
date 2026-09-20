@@ -66,15 +66,10 @@ body {
   border-bottom: 1px solid var(--line);
 }
 
-#library-btn, #review-btn {
+#library-btn {
   font-weight: 600;
   padding: 6px 12px;
   flex: 0 0 auto;
-}
-#review-btn.is-active {
-  background: var(--accent-soft);
-  color: var(--accent);
-  border-color: var(--accent-soft);
 }
 
 /* ---- layout (editor + review panel) ---- */
@@ -265,7 +260,7 @@ body {
 
 #review-panel {
   position: relative;
-  flex: 0 0 var(--review-panel-width, 420px);
+  flex: 0 0 var(--review-panel-width, 460px);
   overflow-y: auto;
   border-left: 1px solid var(--line);
   background: var(--panel);
@@ -385,9 +380,11 @@ body {
   padding-top: 12px;
 }
 .findings-empty {
+  font-family: var(--sans);
   font-size: 13px;
+  line-height: 1.6;
   color: var(--ink-soft);
-  padding: 16px 0;
+  padding: 40px 12px;
   text-align: center;
 }
 .findings-group + .findings-group { margin-top: 16px; }
@@ -425,8 +422,17 @@ body {
   margin-bottom: 8px;
   cursor: pointer;
 }
-.finding-card:hover, .finding-card.is-focused {
+.finding-card:hover {
   border-color: var(--ink-soft);
+}
+.finding-card:focus,
+.finding-card.is-focused {
+  outline: none;
+  border-color: var(--ink);
+  /* A double ring (panel-colored gap + dark outer line) reads clearly
+     against any of the pass's pastel backgrounds, unlike a plain
+     border-color bump which was too subtle to spot at a glance. */
+  box-shadow: 0 0 0 2px var(--panel), 0 0 0 4px var(--ink);
 }
 .finding-card .finding-category {
   display: inline-block;
