@@ -40,6 +40,7 @@ const ENTRY_POINTS = [
   { name: "tiptap-markdown", url: "https://esm.sh/@tiptap/markdown@3.31.3?deps=@tiptap/pm@3.31.3" },
   { name: "tiptap-pm-state", url: "https://esm.sh/@tiptap/pm@3.31.3/state?deps=@tiptap/pm@3.31.3" },
   { name: "tiptap-pm-transform", url: "https://esm.sh/@tiptap/pm@3.31.3/transform?deps=@tiptap/pm@3.31.3" },
+  { name: "tiptap-pm-view", url: "https://esm.sh/@tiptap/pm@3.31.3/view?deps=@tiptap/pm@3.31.3" },
   { name: "turndown", url: "https://esm.sh/turndown@7.2.0" },
 ];
 

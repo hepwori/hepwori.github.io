@@ -10,8 +10,27 @@ import Placeholder from "./vendor/@tiptap/extension-placeholder@3.31.3.q-b43df6e
 import { Markdown } from "./vendor/@tiptap/markdown@3.31.3.q-b43df6e3.mjs";
 import { Plugin, PluginKey } from "./vendor/@tiptap/pm@3.31.3/state.q-b43df6e3.mjs";
 import { Mapping } from "./vendor/@tiptap/pm@3.31.3/transform.q-b43df6e3.mjs";
+import { Decoration, DecorationSet } from "./vendor/@tiptap/pm@3.31.3/view.q-b43df6e3.mjs";
 import { createPasteHandler } from "./paste.js";
 import { passBg } from "./passColors.js";
+
+// Which finding is "active" — its card and its in-editor highlight both
+// get the darker treatment (see app.js's highlightCard). This is plugin
+// state driven through a transaction meta, not a raw classList.toggle on
+// a queried DOM node — an earlier version did that directly, and it lost
+// races against ProseMirror's own DOM reconciliation: any redraw of the
+// affected region (which a selection change can trigger even without a
+// doc change) rebuilds the mark's DOM node from the schema, silently
+// wiping a class ProseMirror doesn't know about. A Decoration is exactly
+// the mechanism ProseMirror provides for ephemeral, position-tracked UI
+// state that survives its own re-renders — confirmed via Playwright that
+// the classList approach really did fail intermittently, the Decoration
+// one doesn't.
+export const activeFindingKey = new PluginKey("activeFindingHighlight");
+
+export function setActiveFinding(editor, id) {
+  editor.view.dispatch(editor.state.tr.setMeta(activeFindingKey, id || null));
+}
 
 // A review finding, applied as a real mark so ProseMirror's position
 // mapping keeps it attached to the right text as the doc is edited —
@@ -127,6 +146,41 @@ export const ReviewFlag = Mark.create({
             }
           }
           return tr;
+        },
+      }),
+      // See activeFindingKey/setActiveFinding above for why this is a
+      // Decoration-backed plugin rather than direct DOM manipulation.
+      // Decorations are recomputed fresh from the current document on
+      // every relevant transaction (not mapped forward from a stashed
+      // position), which also means the highlight is naturally correct
+      // even if the active finding's mark moved because of an edit.
+      new Plugin({
+        key: activeFindingKey,
+        state: {
+          init() {
+            return { activeId: null, decorations: DecorationSet.empty };
+          },
+          apply(tr, prev, _oldState, newState) {
+            const meta = tr.getMeta(activeFindingKey);
+            const activeId = meta !== undefined ? meta : prev.activeId;
+            if (meta === undefined && !tr.docChanged) return prev;
+            if (!activeId) return { activeId: null, decorations: DecorationSet.empty };
+            const decos = [];
+            newState.doc.descendants((node, pos) => {
+              if (!node.isText) return;
+              for (const mark of node.marks) {
+                if (mark.type.name === "reviewFlag" && mark.attrs.id === activeId) {
+                  decos.push(Decoration.inline(pos, pos + node.nodeSize, { class: "is-focused" }));
+                }
+              }
+            });
+            return { activeId, decorations: DecorationSet.create(newState.doc, decos) };
+          },
+        },
+        props: {
+          decorations(state) {
+            return activeFindingKey.getState(state).decorations;
+          },
         },
       }),
     ];

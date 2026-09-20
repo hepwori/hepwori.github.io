@@ -1,4 +1,4 @@
-import { createEditor, getMarkdown, setMarkdownContent, getJSON, setJSONContent, wordCount } from "./editor.js";
+import { createEditor, getMarkdown, setMarkdownContent, getJSON, setJSONContent, wordCount, setActiveFinding } from "./editor.js";
 import { newId, loadLibraryIndex, loadDoc, saveDoc, deleteDoc, getLastOpenId, setLastOpenId, loadConfig, saveConfig, uniqueSlug, findIdBySlug } from "./storage.js";
 import { PROVIDERS } from "./llm/provider.js";
 import { runReviewPass, listFindings, resolveFinding, dismissAllFindings, focusFinding } from "./review.js";
@@ -22,6 +22,15 @@ const reviewPanel = document.getElementById("review-panel");
 const reviewScopeNote = document.getElementById("review-scope-note");
 const findingsListEl = document.getElementById("findings-list");
 const dismissAllBtn = document.getElementById("dismiss-all-btn");
+// Which finding is "active" (card + in-editor highlight both get the
+// darker treatment). Persisted here rather than only toggled imperatively
+// on the current DOM, because renderFindings() rebuilds the entire card
+// list (innerHTML = "") on every doc-affecting selection change — an
+// imperative toggle applied just before or after that rebuild raced with
+// it and silently lost, depending on timing (confirmed via Playwright).
+// buildFindingCard() reads this to set the class correctly at creation
+// time instead, so it's right regardless of render order.
+let activeFindingId = null;
 
 let currentDocId = null;
 let currentCreatedAt = null;
@@ -697,6 +706,7 @@ function renderFindings() {
 function buildFindingCard(finding) {
   const card = document.createElement("div");
   card.className = "finding-card";
+  card.classList.toggle("is-focused", finding.id === activeFindingId);
   card.dataset.findingId = finding.id;
   card.tabIndex = 0; // focusable, so Up/Down can walk the list (see the review-panel keydown handler)
   card.style.background = passBg(finding.passId, finding.passLabel);
@@ -783,10 +793,24 @@ function autosizeTextarea(el) {
   el.style.height = el.scrollHeight + "px";
 }
 
+// Keeps the sidebar card *and* its in-editor highlight in visual sync —
+// deliberately one function, not two independently-called ones, after a
+// card-click/mark-click/Alt+Up-Down bug where only the card ever got the
+// active treatment: the in-text highlight looked identical to every other
+// open finding, giving no visual cue which passage a selected card
+// referred to. A single call site for both can't drift out of sync again.
 function highlightCard(id) {
+  activeFindingId = id;
+  // Also toggle the current DOM directly (cheap, and correct for the
+  // common case where no rebuild races it) — buildFindingCard's read of
+  // activeFindingId is the fallback that makes this correct even when a
+  // renderFindings() rebuild happens right before or after this runs.
   for (const card of findingsListEl.querySelectorAll(".finding-card")) {
     card.classList.toggle("is-focused", card.dataset.findingId === id);
   }
+  // The mark's own highlight is a ProseMirror Decoration (editor.js),
+  // not DOM manipulation here — see setActiveFinding's comment for why.
+  setActiveFinding(editor, id);
 }
 
 // Clicking a highlighted span in the editor jumps the (always-visible)
@@ -823,8 +847,9 @@ function stepFinding(direction) {
 // Deliberately does NOT call focusFinding here: that moves real DOM focus
 // into the editor (it's `editor.chain().focus()...`), which would steal
 // focus off the card list after a single step. Instead it just previews
-// — scrolls the flagged text into view and highlights the mark itself —
-// while focus (and continued arrow-key navigation) stays on the cards.
+// — scrolls the flagged text into view, while highlightCard (below)
+// covers marking both the card and the mark as active — while focus (and
+// continued arrow-key navigation) stays on the cards.
 reviewPanel.addEventListener("keydown", (e) => {
   if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
   const activeCard = document.activeElement?.closest(".finding-card");
@@ -839,13 +864,14 @@ reviewPanel.addEventListener("keydown", (e) => {
   nextCard.scrollIntoView({ block: "nearest" });
   const id = nextCard.dataset.findingId;
   highlightCard(id);
-  previewFindingInEditor(id);
+  scrollMarkIntoView(id);
 });
 
-function previewFindingInEditor(id) {
-  for (const mark of document.querySelectorAll("mark.review-flag")) {
-    mark.classList.toggle("is-focused", mark.dataset.reviewId === id);
-  }
+// The click/step paths that call focusFinding() already scroll the mark
+// into view themselves (see review.js) — this is only for arrow-key
+// card-nav, which deliberately doesn't call focusFinding (see above) and
+// so needs its own scroll.
+function scrollMarkIntoView(id) {
   document.querySelector(`mark.review-flag[data-review-id="${CSS.escape(id)}"]`)?.scrollIntoView({ block: "center" });
 }
 

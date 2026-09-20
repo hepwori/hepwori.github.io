@@ -251,9 +251,19 @@ body {
   cursor: pointer;
   transition: filter 0.15s ease;
 }
-.tiptap mark.review-flag:hover,
-.tiptap mark.review-flag.is-focused {
+.tiptap mark.review-flag:hover {
   filter: saturate(1.4) brightness(0.94);
+}
+/* The "active" state is a ProseMirror Decoration (editor.js), which
+   wraps the flagged text in a <span class="is-focused"> *inside* the
+   mark rather than putting the class on the mark itself — so filter
+   (which only affects an element's own painted output, not an
+   ancestor's background showing through a transparent child) can't
+   reach the mark's background from here. An inset box-shadow filling
+   the span's own box works regardless of nesting. */
+.tiptap mark.review-flag .is-focused {
+  box-shadow: inset 0 0 0 999px rgba(0, 0, 0, 0.14);
+  border-radius: 2px;
 }
 
 /* ---- review panel ---- */
