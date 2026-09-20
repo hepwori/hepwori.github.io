@@ -12,9 +12,13 @@ const FINDINGS_SCHEMA = {
       items: {
         type: "OBJECT",
         properties: {
-          quote: { type: "STRING" },
-          note: { type: "STRING" },
-          suggestion: { type: "STRING" },
+          quote: { type: "STRING", description: "The exact, character-for-character substring from the document this finding is about." },
+          note: { type: "STRING", description: "A short explanation of what you noticed and why it matters. Any reasoning or description of a fix goes here, never in suggestion." },
+          suggestion: {
+            type: "STRING",
+            description:
+              "ONLY the exact replacement text for quote, suitable for a direct drop-in swap when the author clicks Accept. No commentary, no explanation, no prefacing like \"Consider...\" or \"Fix X; simplify to...\", no surrounding quotation marks. Omit this field entirely if there's no single concrete replacement.",
+          },
           category: { type: "STRING" },
         },
         required: ["quote", "note"],

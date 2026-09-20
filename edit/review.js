@@ -27,8 +27,8 @@ ${scopeNote}
 Rules for each finding:
 - Every finding must represent something the author should actually reconsider or fix. NEVER report that a passage is already fine, already does the thing well, or needs no change — if you catch yourself about to write a note like "this is fine, leave it," that means you should not report it at all. Findings are for things worth changing, not a checklist of everything you looked at.
 - "quote" must be copied VERBATIM, character-for-character, from the document text below — not paraphrased or summarized. It's used to locate the passage automatically; if it doesn't match exactly, the finding is silently dropped.
-- Keep "note" short and specific: what you noticed and why it matters, not a lecture.
-- Only include "suggestion" when you have a concrete replacement in mind. Omit it for observations that need the author's own judgment (structural or tonal notes, "why doesn't this land" style questions, etc.).
+- Keep "note" short and specific: what you noticed and why it matters, not a lecture. Any reasoning, description of the fix, or commentary belongs here — never in "suggestion".
+- "suggestion" is inserted verbatim in place of "quote" the moment the author clicks Accept, so it must be ONLY the exact replacement text: no commentary, no prefacing like "Consider..." or "Fix X; simplify to...", no explanation of what changed, no surrounding quotation marks. If you catch yourself writing anything other than drop-in prose into "suggestion", that content belongs in "note" instead. Only include "suggestion" when you have one concrete replacement in mind — omit it entirely for observations that need the author's own judgment (structural or tonal notes, "why doesn't this land" style questions, etc.).
 - Report at most 15 findings, prioritizing the most useful ones.
 - It is normal and expected to return an empty findings array if a pass genuinely finds nothing worth the author's attention — that's a good outcome, not a failure to try harder.
 
