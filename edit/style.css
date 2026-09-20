@@ -429,9 +429,30 @@ body {
 .finding-card.is-focused {
   outline: none;
   border-color: var(--ink);
-  /* A double ring (panel-colored gap + dark outer line) reads clearly
-     against any of the pass's pastel backgrounds, unlike a plain
-     border-color bump which was too subtle to spot at a glance. */
+}
+/* Active-card indicator: which of these actually applies is picked live
+   in Settings > Experimental (`#review-panel`'s data-active-card-style,
+   see app.js) rather than fixed here — the "ring" double box-shadow this
+   replaced read as too heavy against the pass's own pastel background.
+   "tint" is the current default (see storage.js's defaultConfig). */
+#review-panel[data-active-card-style="bar"] .finding-card:focus,
+#review-panel[data-active-card-style="bar"] .finding-card.is-focused {
+  border-left-width: 9px;
+}
+#review-panel[data-active-card-style="tint"] .finding-card:focus,
+#review-panel[data-active-card-style="tint"] .finding-card.is-focused {
+  /* Same hue-agnostic saturate+darken trick as the inline mark's own
+     :hover/.is-focused state (see mark.review-flag below) — keeps the
+     card and its highlighted text visually consistent. */
+  filter: saturate(1.5) brightness(0.92);
+}
+#review-panel[data-active-card-style="lift"] .finding-card:focus,
+#review-panel[data-active-card-style="lift"] .finding-card.is-focused {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+}
+#review-panel[data-active-card-style="ring"] .finding-card:focus,
+#review-panel[data-active-card-style="ring"] .finding-card.is-focused {
   box-shadow: 0 0 0 2px var(--panel), 0 0 0 4px var(--ink);
 }
 .finding-card .finding-category {
@@ -658,6 +679,31 @@ textarea.finding-suggestion:focus {
 }
 .test-status.ok { color: #3a7a4e; }
 .test-status.error { color: var(--accent); }
+
+/* ---- experimental settings ---- */
+/* Deliberately visually distinct (dashed divider, monospace label) to read
+   as "scratch space, not a real setting" — see storage.js's defaultConfig
+   comment on the same section. */
+.settings-section-experimental {
+  border-top-style: dashed !important;
+}
+.settings-section-experimental label {
+  display: block;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+.settings-section-experimental select {
+  display: block;
+  margin-top: 4px;
+  font-family: var(--sans);
+  font-size: 13px;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--paper);
+  color: var(--ink);
+}
 
 #style-guide-textarea {
   width: 100%;

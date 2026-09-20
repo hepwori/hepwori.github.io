@@ -4,7 +4,9 @@
 // formatting becomes real nodes instead of literal `**`/`#` characters.
 // Plain-text paste that's clearly markdown source (copied from another .md
 // file) gets the same treatment.
-import TurndownService from "https://esm.sh/turndown@7.2.0";
+// Vendored locally (./vendor/) rather than pulled live from esm.sh — see
+// CLAUDE.md's "vendored dependencies" note.
+import TurndownService from "./vendor/turndown@7.2.0.mjs";
 
 const turndown = new TurndownService({
   headingStyle: "atx",

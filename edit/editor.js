@@ -1,17 +1,15 @@
-// Tiptap editor setup. Loaded straight from esm.sh, no build step, matching
-// every other project in this repo. All @tiptap/* imports are pinned to the
-// same version so esm.sh resolves a single shared @tiptap/pm (ProseMirror)
-// instance across them instead of duplicates.
-
-// Pinned version, shared @tiptap/pm dep (?deps=...) keeps every package on
-// one ProseMirror instance instead of esm.sh resolving duplicates.
-import { Editor, Mark, mergeAttributes } from "https://esm.sh/@tiptap/core@3.31.3?deps=@tiptap/pm@3.31.3";
-import StarterKit from "https://esm.sh/@tiptap/starter-kit@3.31.3?deps=@tiptap/pm@3.31.3";
-import Link from "https://esm.sh/@tiptap/extension-link@3.31.3?deps=@tiptap/pm@3.31.3";
-import Placeholder from "https://esm.sh/@tiptap/extension-placeholder@3.31.3?deps=@tiptap/pm@3.31.3";
-import { Markdown } from "https://esm.sh/@tiptap/markdown@3.31.3?deps=@tiptap/pm@3.31.3";
-import { Plugin, PluginKey } from "https://esm.sh/@tiptap/pm@3.31.3/state?deps=@tiptap/pm@3.31.3";
-import { Mapping } from "https://esm.sh/@tiptap/pm@3.31.3/transform?deps=@tiptap/pm@3.31.3";
+// Tiptap editor setup. No build step, matching every other project in this
+// repo — but unlike them, these imports resolve to files vendored in
+// ./vendor/ rather than pulled live from esm.sh at runtime, so nothing
+// executes from a third-party origin. See CLAUDE.md's "vendored
+// dependencies" note and vendor/update-vendor.mjs for how/why.
+import { Editor, Mark, mergeAttributes } from "./vendor/@tiptap/core@3.31.3.q-b43df6e3.mjs";
+import StarterKit from "./vendor/@tiptap/starter-kit@3.31.3.q-b43df6e3.mjs";
+import Link from "./vendor/@tiptap/extension-link@3.31.3.q-b43df6e3.mjs";
+import Placeholder from "./vendor/@tiptap/extension-placeholder@3.31.3.q-b43df6e3.mjs";
+import { Markdown } from "./vendor/@tiptap/markdown@3.31.3.q-b43df6e3.mjs";
+import { Plugin, PluginKey } from "./vendor/@tiptap/pm@3.31.3/state.q-b43df6e3.mjs";
+import { Mapping } from "./vendor/@tiptap/pm@3.31.3/transform.q-b43df6e3.mjs";
 import { createPasteHandler } from "./paste.js";
 import { passBg } from "./passColors.js";
 

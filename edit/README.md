@@ -20,7 +20,7 @@ open the page and start writing. it's a normal WYSIWYG editor — **bold**, *ita
 
 also in settings: a **writing style** field — free text describing the voice you're going for (*"write like Matt Levine: dry, precise, digressive"*, or your own house style) — given as context to every review pass and the generative outline mode. and the **review passes** themselves are fully editable there: rename any of the built-in presets, rewrite what they ask for, add your own, remove ones you don't use.
 
-**review panel** (right side, always visible) — run a copyediting pass over your doc. pick one of your presets (grammar, flow, filler words, passive voice, structure by default), or type something specific — *"this feels jargon-heavy"*, *"why doesn't this land?"* — and it'll review against that instead. select a passage first and the review focuses on just that selection (with the full doc still there for context).
+**review panel** (right side, always visible) — run a copyediting pass over your doc. pick one of your presets (grammar, flow, filler words, passive voice, structure by default), or type something specific — *"this feels jargon-heavy"*, *"why doesn't this land?"* — and it'll review against that instead. select a passage first and the review focuses on just that selection (with the full doc still there for context). hit **Cmd/Ctrl+/** from anywhere (including while you're typing) to jump straight to the "ask something specific" box, then **Enter** (or Cmd/Ctrl+Enter) to run it.
 
 findings show up as highlighted spans in the text and cards in the sidebar, color-coded by which pass raised them, newest batch on top. click a card to jump the editor to that spot, or click into the card list and use **up/down arrow** to step through findings one at a time. for each one: **accept** (applies the suggested fix — editable first, if you want to tweak the wording), **dismiss** (clears it, no change), or **dismiss all** to clear everything from a pass at once. the AI only ever flags and suggests — it never rewrites your document for you.
 
@@ -33,6 +33,7 @@ findings show up as highlighted spans in the text and cards in the sidebar, colo
 - **local-first** — no accounts, no cloud sync. your docs live in this browser's storage; a different browser or machine has its own separate library.
 - **bring your own key** — no shared backend, no usage limits set by us. you supply your own Gemini or Claude API access.
 - **the AI edits, it doesn't write** — review passes flag and suggest; the generative mode outlines structure. actual prose is always yours.
-- **no build step** — plain HTML/CSS/JS, same as every other project in this repo. dependencies load from a CDN at runtime.
+- **no build step** — plain HTML/CSS/JS, same as every other project in this repo.
+- **no third-party code at runtime** — the editor's dependencies (Tiptap/ProseMirror, Turndown) are vendored into `edit/vendor/` rather than pulled live from a CDN, so nothing but this repo's own code ever runs in the page.
 
 See `CLAUDE.md` in this folder for how it's built, the phased build order, and implementation notes.

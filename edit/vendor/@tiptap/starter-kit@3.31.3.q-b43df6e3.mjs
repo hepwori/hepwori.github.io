@@ -1,0 +1,20 @@
+/* esm.sh - @tiptap/starter-kit@3.31.3 */
+import "./core@3.31.3/X-ZEB0aXB0YXAvcG1AMy4zMS4z/es2022/core.mjs";
+import "./extension-blockquote@3.31.3/X-ZEB0aXB0YXAvcG1AMy4zMS4z/es2022/extension-blockquote.mjs";
+import "./extension-bold@3.31.3/X-ZEB0aXB0YXAvcG1AMy4zMS4z/es2022/extension-bold.mjs";
+import "./extension-code-block@3.31.3/X-ZEB0aXB0YXAvcG1AMy4zMS4z/es2022/extension-code-block.mjs";
+import "./extension-code@3.31.3/X-ZEB0aXB0YXAvcG1AMy4zMS4z/es2022/extension-code.mjs";
+import "./extension-document@3.31.3/X-ZEB0aXB0YXAvcG1AMy4zMS4z/es2022/extension-document.mjs";
+import "./extension-hard-break@3.31.3/X-ZEB0aXB0YXAvcG1AMy4zMS4z/es2022/extension-hard-break.mjs";
+import "./extension-heading@3.31.3/X-ZEB0aXB0YXAvcG1AMy4zMS4z/es2022/extension-heading.mjs";
+import "./extension-horizontal-rule@3.31.3/X-ZEB0aXB0YXAvcG1AMy4zMS4z/es2022/extension-horizontal-rule.mjs";
+import "./extension-italic@3.31.3/X-ZEB0aXB0YXAvcG1AMy4zMS4z/es2022/extension-italic.mjs";
+import "./extension-link@3.31.3/X-ZEB0aXB0YXAvcG1AMy4zMS4z/es2022/extension-link.mjs";
+import "./extension-list@3.31.3/X-ZEB0aXB0YXAvcG1AMy4zMS4z/es2022/extension-list.mjs";
+import "./extension-paragraph@3.31.3/X-ZEB0aXB0YXAvcG1AMy4zMS4z/es2022/extension-paragraph.mjs";
+import "./extension-strike@3.31.3/X-ZEB0aXB0YXAvcG1AMy4zMS4z/es2022/extension-strike.mjs";
+import "./extension-text@3.31.3/X-ZEB0aXB0YXAvcG1AMy4zMS4z/es2022/extension-text.mjs";
+import "./extension-underline@3.31.3/X-ZEB0aXB0YXAvcG1AMy4zMS4z/es2022/extension-underline.mjs";
+import "./extensions@3.31.3/X-ZEB0aXB0YXAvcG1AMy4zMS4z/es2022/extensions.mjs";
+export * from "./starter-kit@3.31.3/X-ZEB0aXB0YXAvcG1AMy4zMS4z/es2022/starter-kit.mjs";
+export { default } from "./starter-kit@3.31.3/X-ZEB0aXB0YXAvcG1AMy4zMS4z/es2022/starter-kit.mjs";

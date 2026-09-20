@@ -141,6 +141,11 @@ function defaultConfig() {
     // notes, whatever. Empty means no style context is injected.
     styleGuide: "",
     passes: defaultPasses(),
+    // Scratch space for trying out UI treatments live against real content,
+    // instead of guessing from screenshots — see the Settings modal's
+    // "Experimental" section. Not meant to accumulate forever: once a
+    // choice sticks, fold it into the real default and drop the toggle.
+    experimental: { activeCardStyle: "tint" },
   };
 }
 
@@ -161,6 +166,7 @@ export function loadConfig() {
       ...stored,
       gemini: { ...base.gemini, ...stored.gemini },
       claude: { ...base.claude, ...stored.claude },
+      experimental: { ...base.experimental, ...stored.experimental },
     };
   } catch {
     return defaultConfig();

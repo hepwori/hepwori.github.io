@@ -319,6 +319,7 @@ function relativeTime(iso) {
 
 const settingsModal = document.getElementById("settings-modal");
 let config = loadConfig();
+reviewPanel.dataset.activeCardStyle = config.experimental.activeCardStyle;
 
 document.getElementById("settings-btn").addEventListener("click", () => {
   renderSettings();
@@ -346,6 +347,7 @@ function renderSettings() {
     status.className = "test-status";
   }
   styleGuideTextarea.value = config.styleGuide || "";
+  activeCardStyleSelect.value = config.experimental.activeCardStyle;
   renderPassesEditor();
 }
 
@@ -354,6 +356,15 @@ function renderSettings() {
 const styleGuideTextarea = document.getElementById("style-guide-textarea");
 styleGuideTextarea.addEventListener("input", () => {
   config.styleGuide = styleGuideTextarea.value;
+  saveConfig(config);
+});
+
+// ---- experimental settings ----
+
+const activeCardStyleSelect = document.getElementById("active-card-style-select");
+activeCardStyleSelect.addEventListener("change", () => {
+  config.experimental.activeCardStyle = activeCardStyleSelect.value;
+  reviewPanel.dataset.activeCardStyle = activeCardStyleSelect.value;
   saveConfig(config);
 });
 
@@ -933,7 +944,16 @@ window.addEventListener("keydown", (e) => {
   }
   const mod = e.metaKey || e.ctrlKey;
   if (!mod) return;
-  if (e.key.toLowerCase() === "k") {
+  if (e.key === "/") {
+    // Global "summon a review" shortcut — works from anywhere, including
+    // while the editor has focus, so asking about something is always a
+    // couple of keystrokes away. Plain Enter (or Cmd/Ctrl+Enter, since
+    // e.key is "Enter" either way) already runs it — see the
+    // custom-instruction-input keydown handler below.
+    e.preventDefault();
+    customInstructionInput.focus();
+    customInstructionInput.select();
+  } else if (e.key.toLowerCase() === "k") {
     e.preventDefault();
     document.getElementById("link-btn").click();
   } else if (e.shiftKey && e.key.toLowerCase() === "c") {
