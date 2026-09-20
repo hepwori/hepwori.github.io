@@ -21,6 +21,8 @@ const titleInput = document.getElementById("doc-title");
 const saveStatusEl = document.getElementById("save-status");
 const reviewPanel = document.getElementById("review-panel");
 const reviewScopeNote = document.getElementById("review-scope-note");
+const findingsListEl = document.getElementById("findings-list");
+const dismissAllBtn = document.getElementById("dismiss-all-btn");
 
 let currentDocId = null;
 let currentCreatedAt = null;
@@ -43,6 +45,11 @@ function syncUI() {
   updateWordCount();
   updateToolbarState();
   updateReviewScopeNote();
+  // Keeps the sidebar honest whenever findings change for *any* reason —
+  // accept/dismiss, a fresh pass, or a mark silently auto-clearing because
+  // its text got edited (see editor.js's reviewFlagAutoDismiss plugin).
+  // Only does the work while the panel's actually visible.
+  if (!reviewPanel.hidden) renderFindings();
 }
 
 // ---- doc lifecycle (boot / new / open / delete) ----
@@ -458,15 +465,12 @@ settingsModal.querySelectorAll(".provider-config").forEach((section) => {
 const passChipsEl = document.getElementById("pass-chips");
 const customInstructionInput = document.getElementById("custom-instruction-input");
 const reviewStatus = document.getElementById("review-status");
-const findingsListEl = document.getElementById("findings-list");
 const reviewBtn = document.getElementById("review-btn");
-const dismissAllBtn = document.getElementById("dismiss-all-btn");
 
 dismissAllBtn.addEventListener("click", () => {
   const n = dismissAllFindings(editor);
   if (n > 0) {
     persistNow();
-    renderFindings();
     setReviewStatus(`Dismissed ${n}.`, false);
   }
 });
@@ -575,8 +579,9 @@ async function runPass({ passId, passLabel, instruction, triggerEl }) {
       passLabel,
       styleGuide: config.styleGuide,
     });
+    // runReviewPass already dispatched its own transaction above, which
+    // synchronously re-ran syncUI -> renderFindings by the time we get here.
     persistNow();
-    renderFindings();
     const scopeNote = result.scoped ? " (scoped to your selection)" : "";
     if (result.total === 0) {
       setReviewStatus(`${passLabel}: nothing flagged${scopeNote} — looks clean.`, false);
@@ -721,12 +726,13 @@ function buildFindingCard(finding) {
   acceptBtn.textContent = finding.suggestion ? "Accept" : "Resolve";
   acceptBtn.addEventListener("click", (e) => {
     e.stopPropagation();
+    // resolveFinding dispatches its own transaction, which re-triggers
+    // syncUI -> renderFindings synchronously before this call returns.
     resolveFinding(editor, finding.id, {
       applySuggestion: Boolean(finding.suggestion),
       suggestionText: sugInput?.value,
     });
     persistNow();
-    renderFindings();
   });
 
   const dismissBtn = document.createElement("button");
@@ -736,7 +742,6 @@ function buildFindingCard(finding) {
     e.stopPropagation();
     resolveFinding(editor, finding.id);
     persistNow();
-    renderFindings();
   });
 
   actions.append(acceptBtn, dismissBtn);
