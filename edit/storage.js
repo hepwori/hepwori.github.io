@@ -5,7 +5,10 @@
 //
 // Keys:
 //   edit.library.v1        -> { docs: [{id, title, slug, updatedAt}] }   (index, for listing)
-//   edit.doc.<id>           -> { id, title, slug, content, createdAt, updatedAt }  (body)
+//   edit.doc.<id>           -> { id, title, slug, content, createdAt, updatedAt, docFindings }  (body)
+//     docFindings is unanchored (document-level) findings — see review.js's
+//     `unanchored` results. Optional/defaults to [] for docs saved before
+//     this field existed; no migration needed.
 //   edit.lastOpen.v1        -> doc id, so reloading the page resumes where you left off
 //
 // slug locks in once a doc gets a real (non-"Untitled") title — see
@@ -42,7 +45,7 @@ export function loadDoc(id) {
   }
 }
 
-export function saveDoc({ id, title, slug, content, createdAt }) {
+export function saveDoc({ id, title, slug, content, createdAt, docFindings }) {
   const now = new Date().toISOString();
   const existing = loadDoc(id);
   const record = {
@@ -52,6 +55,7 @@ export function saveDoc({ id, title, slug, content, createdAt }) {
     content,
     createdAt: existing?.createdAt || createdAt || now,
     updatedAt: now,
+    docFindings: docFindings || [],
   };
   localStorage.setItem(DOC_KEY_PREFIX + id, JSON.stringify(record));
 
@@ -127,7 +131,7 @@ function defaultPasses() {
     { id: "flow", label: "Flow", instruction: "Look for sentences or transitions that are awkward, hard to follow, or disrupt the piece's rhythm. Explain what's off and, where you can, suggest a smoother replacement." },
     { id: "filler", label: "Filler words", instruction: `Find filler words, hedges, and throat-clearing phrases (e.g. "in order to", "it's worth noting that", "I think that") that could be cut or tightened without losing meaning.` },
     { id: "passive", label: "Passive voice", instruction: "Find sentences that are genuinely in passive voice (the subject receives the action, e.g. \"the ball was thrown by him\" not \"he threw the ball\") AND where switching to active would clearly read better. Suggest the active rewrite. Do not flag sentences that are already active voice." },
-    { id: "structure", label: "Structure", instruction: "Look at the piece's overall structure and organization — ordering, section balance, whether ideas build logically. Flag structural issues; a quote can be a section's opening line standing in for the whole section." },
+    { id: "structure", label: "Structure", instruction: "Look at the piece's overall structure and organization — ordering, section balance, whether ideas build logically. Flag structural issues. A finding about the piece as a whole doesn't need a quote — say so directly rather than forcing an anchor onto one span." },
   ];
 }
 

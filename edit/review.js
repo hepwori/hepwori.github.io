@@ -26,7 +26,7 @@ ${scopeNote}
 
 Rules for each finding:
 - Every finding must represent something the author should actually reconsider or fix. NEVER report that a passage is already fine, already does the thing well, or needs no change — if you catch yourself about to write a note like "this is fine, leave it," that means you should not report it at all. Findings are for things worth changing, not a checklist of everything you looked at.
-- "quote" must be copied VERBATIM, character-for-character, from the document text below — not paraphrased or summarized. It's used to locate the passage automatically; if it doesn't match exactly, the finding is silently dropped. Keep it as SHORT and PRECISE as the issue allows: just the exact span that actually needs to change, never a whole sentence or two of surrounding context included merely for readability — extra context belongs in "note", not padded into "quote".
+- "quote" must be copied VERBATIM, character-for-character, from the document text below — not paraphrased or summarized. It's used to locate the passage automatically. Keep it as SHORT and PRECISE as the issue allows: just the exact span that actually needs to change, never a whole sentence or two of surrounding context included merely for readability — extra context belongs in "note", not padded into "quote". Omit "quote" entirely when the finding is about the document as a whole (or a large stretch of it) rather than one specific span — don't force a quote onto a finding that's really about the bigger picture; a misleading anchor is worse than none. A quote-less finding should also omit "suggestion" — there's nothing specific to replace.
 - Keep "note" short and specific: what you noticed and why it matters, not a lecture. Any reasoning, description of the fix, or commentary belongs here — never in "suggestion".
 - "suggestion" is inserted verbatim in place of THE ENTIRE "quote" the moment the author clicks Accept — it must be a complete, self-contained replacement for all of "quote", not just the part that changed. If only a fragment of "quote" actually needs editing, narrow "quote" down to just that fragment rather than leaving "suggestion" as a partial replacement — accepting a suggestion that covers less than the full quote silently deletes whatever text was left out. It must be ONLY the exact replacement text: no commentary, no prefacing like "Consider..." or "Fix X; simplify to...", no explanation of what changed, no surrounding quotation marks. If you catch yourself writing anything other than drop-in prose into "suggestion", that content belongs in "note" instead. Only include "suggestion" when you have one concrete replacement in mind — omit it entirely for observations that need the author's own judgment (structural or tonal notes, "why doesn't this land" style questions, etc.).
 - Report at most 15 findings, prioritizing the most useful ones.
@@ -58,31 +58,44 @@ export async function runReviewPass({ editor, providerId, apiKey, model, instruc
   const batchAt = new Date().toISOString();
   let applied = 0;
   let skipped = 0;
+  const unanchored = [];
   for (const finding of findings) {
-    if (!finding?.quote?.trim()) {
+    if (!finding?.note?.trim()) {
       skipped++;
       continue;
     }
-    const range = findQuoteRange(editor.state.doc, finding.quote);
-    if (!range) {
-      skipped++;
-      continue;
-    }
+    const quote = finding.quote?.trim() || null;
+    const range = quote ? findQuoteRange(editor.state.doc, quote) : null;
     const id = `${passId}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
-    tr.addMark(range.from, range.to, markType.create({
-      id,
-      passId,
-      passLabel,
-      category: finding.category || null,
-      note: finding.note || "",
-      suggestion: finding.suggestion || null,
-      createdAt: batchAt,
-    }));
-    applied++;
+    if (range) {
+      tr.addMark(range.from, range.to, markType.create({
+        id,
+        passId,
+        passLabel,
+        category: finding.category || null,
+        note: finding.note || "",
+        suggestion: finding.suggestion || null,
+        createdAt: batchAt,
+      }));
+      applied++;
+    } else {
+      // No quote given, or a quote that couldn't be matched back into the
+      // doc — surfaced as a document-level finding instead of dropped.
+      // Deliberately no `suggestion`/position: nothing concrete to replace
+      // or highlight.
+      unanchored.push({
+        id,
+        passId,
+        passLabel,
+        category: finding.category || null,
+        note: finding.note || "",
+        createdAt: batchAt,
+      });
+    }
   }
   if (applied > 0) editor.view.dispatch(tr);
 
-  return { applied, skipped, total: findings.length, scoped: Boolean(selectionText), passId, batchAt };
+  return { applied, skipped, unanchored, total: findings.length, scoped: Boolean(selectionText), passId, batchAt };
 }
 
 // Flattens the document into one string plus a per-character map back to

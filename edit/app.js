@@ -33,6 +33,12 @@ const dismissAllBtn = document.getElementById("dismiss-all-btn");
 // buildFindingCard() reads this to set the class correctly at creation
 // time instead, so it's right regardless of render order.
 let activeFindingId = null;
+// Unanchored (document-level) findings for the current doc — not backed by
+// any ProseMirror mark, so tracked here and persisted alongside the doc
+// itself (see storage.js's docFindings field). renderFindings() reads this
+// directly, which is reachable via syncUI() during editor construction, so
+// it has to live in this pre-editor TDZ-safe block too (see the note above).
+let docFindings = [];
 // What the current review-status text describes, so syncUI can tell when
 // it's gone stale (see checkStatusStaleness). null means either nothing
 // is showing, or what's showing doesn't need staleness tracking (a
@@ -111,6 +117,7 @@ function startNewDoc(markdown = STARTER_MARKDOWN, title = "Untitled") {
   currentDocId = newId();
   currentCreatedAt = new Date().toISOString();
   currentSlug = uniqueSlug(title);
+  docFindings = [];
   titleInput.value = title;
   setMarkdownContent(editor, markdown, { emitUpdate: false });
   setLastOpenId(currentDocId);
@@ -123,6 +130,7 @@ function loadIntoEditor(record) {
   currentCreatedAt = record.createdAt;
   // Backfills a slug for docs saved before this feature existed.
   currentSlug = record.slug || uniqueSlug(record.title || "Untitled", record.id);
+  docFindings = record.docFindings || [];
   titleInput.value = record.title || "Untitled";
   setJSONContent(editor, record.content, { emitUpdate: false });
   setLastOpenId(currentDocId);
@@ -152,6 +160,7 @@ function persistNow() {
     slug: currentSlug,
     content: getJSON(editor),
     createdAt: currentCreatedAt,
+    docFindings,
   });
   setSaveStatus("saved");
   updateLocationHash();
@@ -583,9 +592,11 @@ const passChipsEl = document.getElementById("pass-chips");
 const customInstructionInput = document.getElementById("custom-instruction-input");
 
 dismissAllBtn.addEventListener("click", () => {
-  const n = dismissAllFindings(editor);
+  const n = dismissAllFindings(editor) + docFindings.length;
+  if (docFindings.length > 0) docFindings = [];
   if (n > 0) {
     persistNow();
+    renderFindings();
     setReviewStatus(`Dismissed ${n}.`, false, false, { hadFindings: false, selectionKey: reviewSelectionKey() });
   }
 });
@@ -681,8 +692,13 @@ async function runPass({ passId, passLabel, instruction, triggerEl }) {
       styleGuide: config.styleGuide,
     });
     // runReviewPass already dispatched its own transaction above, which
-    // synchronously re-ran syncUI -> renderFindings by the time we get here.
+    // synchronously re-ran syncUI -> renderFindings by the time we get here
+    // — but only when it applied at least one anchored mark. A batch that's
+    // entirely unanchored findings never touches the doc, so nothing else
+    // would trigger a re-render; do it explicitly below.
+    if (result.unanchored.length > 0) docFindings.push(...result.unanchored);
     persistNow();
+    if (result.unanchored.length > 0) renderFindings();
     const scopeNote = result.scoped ? " (scoped to your selection)" : "";
     // What this status describes, so it can be told apart from stale later
     // (see checkStatusStaleness): the exact batch it created, if any, plus
@@ -691,15 +707,17 @@ async function runPass({ passId, passLabel, instruction, triggerEl }) {
     const context = {
       passId: result.passId,
       batchAt: result.batchAt,
-      hadFindings: result.applied > 0,
+      hadFindings: result.applied > 0 || result.unanchored.length > 0,
       selectionKey: reviewSelectionKey(),
     };
     if (result.total === 0) {
       setReviewStatus(`${passLabel}: nothing flagged${scopeNote} — looks clean.`, false, false, context);
-    } else if (result.skipped > 0) {
-      setReviewStatus(`${passLabel}: found ${result.applied} of ${result.total}${scopeNote} — ${result.skipped} couldn't be matched back to exact text and were skipped.`, false, false, context);
     } else {
-      setReviewStatus(`${passLabel}: found ${result.applied}${scopeNote}.`, false, false, context);
+      const bits = [];
+      if (result.applied > 0) bits.push(`${result.applied} in the text`);
+      if (result.unanchored.length > 0) bits.push(`${result.unanchored.length} general`);
+      const skippedNote = result.skipped > 0 ? ` — ${result.skipped} couldn't be matched back to exact text and were skipped.` : "";
+      setReviewStatus(`${passLabel}: found ${bits.join(", ")}${scopeNote}.${skippedNote}`, false, false, context);
     }
     return true;
   } catch (err) {
@@ -753,7 +771,8 @@ function checkStatusStaleness() {
   if (!lastStatusContext) return;
   const { passId, batchAt, hadFindings, selectionKey } = lastStatusContext;
   const selectionChanged = reviewSelectionKey() !== selectionKey;
-  const batchIsEmpty = hadFindings && !listFindings(editor).some((f) => f.passId === passId && f.createdAt === batchAt);
+  const batchInBatch = (f) => f.passId === passId && f.createdAt === batchAt;
+  const batchIsEmpty = hadFindings && !listFindings(editor).some(batchInBatch) && !docFindings.some(batchInBatch);
   if (selectionChanged || batchIsEmpty) {
     setReviewStatus("", false);
   }
@@ -786,7 +805,15 @@ function updateReviewScopeNote() {
 }
 
 function renderFindings() {
-  const findings = listFindings(editor);
+  // Anchored (mark-based) and unanchored (document-level, in docFindings)
+  // findings are unified here into one list for grouping/sorting/rendering
+  // — the split only matters again inside buildFindingCard, which reduces
+  // the affordances (no highlight, no suggestion, dismiss-only) for the
+  // unanchored kind.
+  const findings = [
+    ...listFindings(editor).map((f) => ({ ...f, anchored: true })),
+    ...docFindings.map((f) => ({ ...f, anchored: false })),
+  ];
   dismissAllBtn.hidden = findings.length === 0;
   findingsListEl.innerHTML = "";
   if (findings.length === 0) {
@@ -829,9 +856,16 @@ function renderFindings() {
     header.appendChild(count);
     group.appendChild(header);
 
-    // Newest-first within the group too; ties (same batch) fall back to
-    // document order, which is the sensible reading order for one run.
-    const orderedItems = [...items].sort((a, b) => timeOf(b) - timeOf(a) || a.from - b.from);
+    // Unanchored findings sort first within the group — general/overview
+    // context ahead of the position-specific ones — newest first among
+    // themselves. Anchored findings follow, newest-first, with ties (same
+    // batch) falling back to document order, the sensible reading order
+    // for one run.
+    const orderedItems = [...items].sort((a, b) => {
+      if (a.anchored !== b.anchored) return a.anchored ? 1 : -1;
+      if (a.anchored) return timeOf(b) - timeOf(a) || a.from - b.from;
+      return timeOf(b) - timeOf(a);
+    });
     for (const finding of orderedItems) {
       group.appendChild(buildFindingCard(finding));
     }
@@ -922,8 +956,12 @@ function buildFindingCard(finding) {
   dismissBtn.textContent = "Dismiss";
   dismissBtn.addEventListener("click", (e) => {
     e.stopPropagation();
-    resolveFinding(editor, finding.id);
-    persistNow();
+    if (finding.anchored) {
+      resolveFinding(editor, finding.id);
+      persistNow();
+    } else {
+      dismissDocFinding(finding.id);
+    }
   });
   actions.appendChild(dismissBtn);
 
@@ -933,7 +971,9 @@ function buildFindingCard(finding) {
     // focusEditor: false — see the comment on focusFinding() in review.js.
     // Keeping DOM focus on the card (rather than the editor) is what lets
     // up/down arrow keep walking the card list right after a click.
-    focusFinding(editor, finding.id, { focusEditor: false });
+    // Unanchored findings have no mark/position to jump to — nothing to
+    // focus in the editor at all.
+    if (finding.anchored) focusFinding(editor, finding.id, { focusEditor: false });
     highlightCard(finding.id);
     // The selection change above fires onSelectionUpdate -> syncUI() ->
     // renderFindings(), rebuilding the whole card list (innerHTML = "")
@@ -946,6 +986,19 @@ function buildFindingCard(finding) {
   });
 
   return card;
+}
+
+// Unanchored findings have no mark, so nothing here dispatches a
+// ProseMirror transaction to trigger the usual syncUI -> renderFindings
+// chain — persist and re-render explicitly, mirroring what resolveFinding
+// gets for free.
+function dismissDocFinding(id) {
+  const idx = docFindings.findIndex((f) => f.id === id);
+  if (idx === -1) return false;
+  docFindings.splice(idx, 1);
+  persistNow();
+  renderFindings();
+  return true;
 }
 
 function autosizeTextarea(el) {

@@ -20,17 +20,17 @@ const FINDINGS_TOOL = {
             quote: {
               type: "string",
               description:
-                "The exact, character-for-character substring from the document this finding is about. Keep it as short and precise as the issue allows — just the span that needs to change, not extra surrounding context (put that in note instead).",
+                "The exact, character-for-character substring from the document this finding is about. Keep it as short and precise as the issue allows — just the span that needs to change, not extra surrounding context (put that in note instead). Omit this field entirely for a finding about the document as a whole that isn't tied to one specific span — don't force a quote onto it just to have one.",
             },
             note: { type: "string", description: "A short explanation of what you noticed and why it matters. Any reasoning or description of a fix goes here, never in suggestion." },
             suggestion: {
               type: "string",
               description:
-                "ONLY the exact replacement text for the ENTIRE quote, suitable for a direct drop-in swap when the author clicks Accept — a partial replacement would silently delete whatever part of quote it leaves out, so narrow quote down first if only a fragment of it actually changes. No commentary, no explanation, no prefacing like \"Consider...\" or \"Fix X; simplify to...\", no surrounding quotation marks. Omit this field entirely if there's no single concrete replacement.",
+                "ONLY the exact replacement text for the ENTIRE quote, suitable for a direct drop-in swap when the author clicks Accept — a partial replacement would silently delete whatever part of quote it leaves out, so narrow quote down first if only a fragment of it actually changes. No commentary, no explanation, no prefacing like \"Consider...\" or \"Fix X; simplify to...\", no surrounding quotation marks. Omit this field entirely if there's no single concrete replacement, and always when quote itself is omitted.",
             },
             category: { type: "string" },
           },
-          required: ["quote", "note"],
+          required: ["note"],
         },
       },
     },
