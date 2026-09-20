@@ -1,4 +1,4 @@
-import { createEditor, getMarkdown, setMarkdownContent, getJSON, setJSONContent, wordCount, setActiveFinding } from "./editor.js";
+import { createEditor, getMarkdown, setMarkdownContent, getJSON, setJSONContent, wordCount, setActiveFinding, setPendingSelectionVisible } from "./editor.js";
 import { newId, loadLibraryIndex, loadDoc, saveDoc, deleteDoc, getLastOpenId, setLastOpenId, loadConfig, saveConfig, uniqueSlug, findIdBySlug } from "./storage.js";
 import { PROVIDERS } from "./llm/provider.js";
 import { runReviewPass, listFindings, resolveFinding, dismissAllFindings, focusFinding } from "./review.js";
@@ -20,6 +20,7 @@ const titleInput = document.getElementById("doc-title");
 const saveStatusEl = document.getElementById("save-status");
 const reviewPanel = document.getElementById("review-panel");
 const reviewScopeNote = document.getElementById("review-scope-note");
+const reviewStatus = document.getElementById("review-status");
 const findingsListEl = document.getElementById("findings-list");
 const dismissAllBtn = document.getElementById("dismiss-all-btn");
 // Which finding is "active" (card + in-editor highlight both get the
@@ -31,6 +32,11 @@ const dismissAllBtn = document.getElementById("dismiss-all-btn");
 // buildFindingCard() reads this to set the class correctly at creation
 // time instead, so it's right regardless of render order.
 let activeFindingId = null;
+// What the current review-status text describes, so syncUI can tell when
+// it's gone stale (see checkStatusStaleness). null means either nothing
+// is showing, or what's showing doesn't need staleness tracking (a
+// transient busy message, always immediately replaced).
+let lastStatusContext = null;
 
 let currentDocId = null;
 let currentCreatedAt = null;
@@ -45,6 +51,13 @@ const editor = createEditor({
   // trigger an autosave — a selection move alone isn't a change to save.
   onUpdate: () => { syncUI(); scheduleSave(); },
   onSelectionUpdate: syncUI,
+  // Keeps a real selection visibly highlighted (via a Decoration) even
+  // after focus leaves the editor — e.g. clicking into "ask something
+  // specific" — since the browser otherwise only paints selected text
+  // while the contenteditable itself has focus. See editor.js's
+  // pendingSelectionKey plugin.
+  onFocus: (ed) => setPendingSelectionVisible(ed, false),
+  onBlur: (ed) => setPendingSelectionVisible(ed, true),
 });
 
 bootDoc();
@@ -52,6 +65,7 @@ bootDoc();
 function syncUI() {
   updateWordCount();
   updateToolbarState();
+  checkStatusStaleness();
   updateReviewScopeNote();
   // The panel is permanently visible, so this always keeps the sidebar
   // honest whenever findings change for any reason — accept/dismiss, a
@@ -487,13 +501,12 @@ settingsModal.querySelectorAll(".provider-config").forEach((section) => {
 
 const passChipsEl = document.getElementById("pass-chips");
 const customInstructionInput = document.getElementById("custom-instruction-input");
-const reviewStatus = document.getElementById("review-status");
 
 dismissAllBtn.addEventListener("click", () => {
   const n = dismissAllFindings(editor);
   if (n > 0) {
     persistNow();
-    setReviewStatus(`Dismissed ${n}.`, false);
+    setReviewStatus(`Dismissed ${n}.`, false, false, { hadFindings: false, selectionKey: reviewSelectionKey() });
   }
 });
 
@@ -591,16 +604,26 @@ async function runPass({ passId, passLabel, instruction, triggerEl }) {
     // synchronously re-ran syncUI -> renderFindings by the time we get here.
     persistNow();
     const scopeNote = result.scoped ? " (scoped to your selection)" : "";
+    // What this status describes, so it can be told apart from stale later
+    // (see checkStatusStaleness): the exact batch it created, if any, plus
+    // the selection it ran against — either going empty is enough reason
+    // for the message to stop being relevant.
+    const context = {
+      passId: result.passId,
+      batchAt: result.batchAt,
+      hadFindings: result.applied > 0,
+      selectionKey: reviewSelectionKey(),
+    };
     if (result.total === 0) {
-      setReviewStatus(`${passLabel}: nothing flagged${scopeNote} — looks clean.`, false);
+      setReviewStatus(`${passLabel}: nothing flagged${scopeNote} — looks clean.`, false, false, context);
     } else if (result.skipped > 0) {
-      setReviewStatus(`${passLabel}: found ${result.applied} of ${result.total}${scopeNote} — ${result.skipped} couldn't be matched back to exact text and were skipped.`, false);
+      setReviewStatus(`${passLabel}: found ${result.applied} of ${result.total}${scopeNote} — ${result.skipped} couldn't be matched back to exact text and were skipped.`, false, false, context);
     } else {
-      setReviewStatus(`${passLabel}: found ${result.applied}${scopeNote}.`, false);
+      setReviewStatus(`${passLabel}: found ${result.applied}${scopeNote}.`, false, false, context);
     }
     return true;
   } catch (err) {
-    setReviewStatus(`${passLabel}: ${err.message || "review pass failed"}`, true);
+    setReviewStatus(`${passLabel}: ${err.message || "review pass failed"}`, true, false, { hadFindings: false, selectionKey: reviewSelectionKey() });
     return false;
   } finally {
     setChipsDisabled(false);
@@ -623,14 +646,47 @@ function setChipsDisabled(disabled, activeEl) {
   dismissAllBtn.disabled = disabled;
 }
 
-function setReviewStatus(text, isError, isBusy) {
+// context: what the message describes, for checkStatusStaleness to judge
+// later — omitted (or passed as null) for messages that don't need
+// tracking (the transient busy message, always immediately replaced by
+// the real result regardless).
+function setReviewStatus(text, isError, isBusy, context) {
   reviewStatus.textContent = text;
   reviewStatus.hidden = !text;
   reviewStatus.classList.toggle("is-error", Boolean(isError));
   reviewStatus.classList.toggle("is-busy", Boolean(isBusy));
+  lastStatusContext = text && !isBusy ? context || null : null;
+}
+
+function reviewSelectionKey() {
+  const { empty, from, to } = editor.state.selection;
+  return empty ? "empty" : `${from}:${to}`;
+}
+
+// The status line describes a past action, with no built-in way to know
+// when its own subject stops being true — e.g. "found 1" stays put even
+// after that finding gets accepted or dismissed, describing something
+// that no longer exists. Runs before updateReviewScopeNote in syncUI so a
+// status that goes stale immediately falls back to showing the scope
+// note (if a selection is still active) in the same pass, not next tick.
+function checkStatusStaleness() {
+  if (!lastStatusContext) return;
+  const { passId, batchAt, hadFindings, selectionKey } = lastStatusContext;
+  const selectionChanged = reviewSelectionKey() !== selectionKey;
+  const batchIsEmpty = hadFindings && !listFindings(editor).some((f) => f.passId === passId && f.createdAt === batchAt);
+  if (selectionChanged || batchIsEmpty) {
+    setReviewStatus("", false);
+  }
 }
 
 function updateReviewScopeNote() {
+  // The status line takes precedence — showing both at once is redundant
+  // (the status text already says "(scoped to your selection)" when
+  // relevant) and, worse, can describe two different things at a glance.
+  if (!reviewStatus.hidden) {
+    reviewScopeNote.hidden = true;
+    return;
+  }
   const { empty, from, to } = editor.state.selection;
   if (empty) {
     reviewScopeNote.hidden = true;

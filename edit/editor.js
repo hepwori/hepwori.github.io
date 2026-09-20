@@ -3,7 +3,7 @@
 // ./vendor/ rather than pulled live from esm.sh at runtime, so nothing
 // executes from a third-party origin. See CLAUDE.md's "vendored
 // dependencies" note and vendor/update-vendor.mjs for how/why.
-import { Editor, Mark, mergeAttributes } from "./vendor/@tiptap/core@3.31.3.q-b43df6e3.mjs";
+import { Editor, Mark, Extension, mergeAttributes } from "./vendor/@tiptap/core@3.31.3.q-b43df6e3.mjs";
 import StarterKit from "./vendor/@tiptap/starter-kit@3.31.3.q-b43df6e3.mjs";
 import Link from "./vendor/@tiptap/extension-link@3.31.3.q-b43df6e3.mjs";
 import Placeholder from "./vendor/@tiptap/extension-placeholder@3.31.3.q-b43df6e3.mjs";
@@ -31,6 +31,51 @@ export const activeFindingKey = new PluginKey("activeFindingHighlight");
 export function setActiveFinding(editor, id) {
   editor.view.dispatch(editor.state.tr.setMeta(activeFindingKey, id || null));
 }
+
+// The browser only paints "selected text" while the contenteditable
+// actually has focus — clicking into the ask box (or anywhere else that
+// takes focus off the editor) makes a real, live ProseMirror selection
+// invisible, even though it's still exactly there. Same fix shape as
+// activeFindingKey above: a Decoration, toggled on/off via editor
+// focus/blur (see createEditor's onFocus/onBlur below), recomputed from
+// the *current* selection on every transaction while visible rather than
+// a stashed range — so it also tracks correctly if something else moves
+// the selection while the editor is blurred (e.g. clicking a finding
+// card).
+export const pendingSelectionKey = new PluginKey("pendingSelectionHighlight");
+
+export function setPendingSelectionVisible(editor, visible) {
+  editor.view.dispatch(editor.state.tr.setMeta(pendingSelectionKey, visible));
+}
+
+const PendingSelectionHighlight = Extension.create({
+  name: "pendingSelectionHighlight",
+  addProseMirrorPlugins() {
+    return [
+      new Plugin({
+        key: pendingSelectionKey,
+        state: {
+          init() {
+            return { visible: false, decorations: DecorationSet.empty };
+          },
+          apply(tr, prev, _oldState, newState) {
+            const meta = tr.getMeta(pendingSelectionKey);
+            const visible = meta !== undefined ? meta : prev.visible;
+            const { from, to, empty } = newState.selection;
+            const decorations =
+              visible && !empty ? DecorationSet.create(newState.doc, [Decoration.inline(from, to, { class: "pending-scope" })]) : DecorationSet.empty;
+            return { visible, decorations };
+          },
+        },
+        props: {
+          decorations(state) {
+            return pendingSelectionKey.getState(state).decorations;
+          },
+        },
+      }),
+    ];
+  },
+});
 
 // A review finding, applied as a real mark so ProseMirror's position
 // mapping keeps it attached to the right text as the doc is edited —
@@ -187,7 +232,7 @@ export const ReviewFlag = Mark.create({
   },
 });
 
-export function createEditor({ element, content, onUpdate, onSelectionUpdate }) {
+export function createEditor({ element, content, onUpdate, onSelectionUpdate, onFocus, onBlur }) {
   // The paste handler needs the editor instance, which doesn't exist until
   // after `new Editor(...)` returns — so it's handed a thunk and the real
   // reference is filled in right after construction.
@@ -202,6 +247,7 @@ export function createEditor({ element, content, onUpdate, onSelectionUpdate }) 
       Placeholder.configure({ placeholder: "Start writing…" }),
       Markdown,
       ReviewFlag,
+      PendingSelectionHighlight,
     ],
     content: content || "",
     editorProps: {
@@ -209,6 +255,8 @@ export function createEditor({ element, content, onUpdate, onSelectionUpdate }) 
     },
     onUpdate: onUpdate ? ({ editor }) => onUpdate(editor) : undefined,
     onSelectionUpdate: onSelectionUpdate ? ({ editor }) => onSelectionUpdate(editor) : undefined,
+    onFocus: onFocus ? ({ editor }) => onFocus(editor) : undefined,
+    onBlur: onBlur ? ({ editor }) => onBlur(editor) : undefined,
   });
   editorRef = editor;
   return editor;

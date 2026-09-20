@@ -82,7 +82,7 @@ export async function runReviewPass({ editor, providerId, apiKey, model, instruc
   }
   if (applied > 0) editor.view.dispatch(tr);
 
-  return { applied, skipped, total: findings.length, scoped: Boolean(selectionText) };
+  return { applied, skipped, total: findings.length, scoped: Boolean(selectionText), passId, batchAt };
 }
 
 // Flattens the document into one string plus a per-character map back to

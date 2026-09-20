@@ -266,6 +266,17 @@ body {
   border-radius: 2px;
 }
 
+/* Keeps a real selection visible once focus leaves the editor (e.g.
+   clicking into "ask something specific") — see editor.js's
+   pendingSelectionKey plugin. Deliberately a plain background, not the
+   same box-shadow trick as .is-focused above: this can land on plain
+   unflagged text (no existing background to darken), so it needs to
+   supply its own. */
+.tiptap .pending-scope {
+  background: var(--accent-soft);
+  border-radius: 2px;
+}
+
 /* ---- review panel ---- */
 
 #review-panel {
