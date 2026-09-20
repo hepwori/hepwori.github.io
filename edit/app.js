@@ -736,6 +736,24 @@ function buildFindingCard(finding) {
     sugInput.spellcheck = false;
     sugInput.addEventListener("click", (e) => e.stopPropagation());
     sugInput.addEventListener("input", () => autosizeTextarea(sugInput));
+    // Focus alone should activate the card too — via Tab, not just a
+    // click (click's stopPropagation above only stops the *card's* click
+    // handler from double-firing; it doesn't cover keyboard focus at all).
+    sugInput.addEventListener("focus", () => {
+      if (activeFindingId === finding.id) return; // already active, avoid redundant work
+      focusFinding(editor, finding.id, { focusEditor: false });
+      highlightCard(finding.id);
+      // Same rebuild-races-focus issue as the card click handler below:
+      // the selection change above triggers a synchronous renderFindings()
+      // rebuild (innerHTML = ""), which destroys the very textarea that's
+      // mid-focus — re-focus the freshly rebuilt one so the user isn't
+      // silently kicked out of it. Its own focus listener fires again,
+      // but activeFindingId is already correct by then, so the guard
+      // above short-circuits it.
+      document
+        .querySelector(`.finding-card[data-finding-id="${CSS.escape(finding.id)}"] .finding-suggestion`)
+        ?.focus({ preventScroll: true });
+    });
     card.appendChild(sugInput);
     requestAnimationFrame(() => autosizeTextarea(sugInput));
   }
