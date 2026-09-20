@@ -4,9 +4,7 @@
 // get a fixed, memorable hue. A custom instruction has no natural color of
 // its own, so its hue is hashed from the instruction text instead — the
 // same question asked twice looks the same, different questions land on
-// different (but still pastel, still "in family") hues. Same trick as the
-// per-doc favicon identicons, just synchronous since this runs on every
-// render rather than once per doc load.
+// different (but still pastel, still "in family") hues.
 
 const FIXED_HUES = {
   grammar: 142, // green

@@ -2,7 +2,6 @@ import { createEditor, getMarkdown, setMarkdownContent, getJSON, setJSONContent,
 import { newId, loadLibraryIndex, loadDoc, saveDoc, deleteDoc, getLastOpenId, setLastOpenId, loadConfig, saveConfig, uniqueSlug, findIdBySlug } from "./storage.js";
 import { PROVIDERS } from "./llm/provider.js";
 import { runReviewPass, listFindings, resolveFinding, dismissAllFindings, focusFinding } from "./review.js";
-import { setDocFavicon } from "./favicon.js";
 import { passBg, passFg } from "./passColors.js";
 import { generateOutline, outlineToMarkdown } from "./generative.js";
 
@@ -91,7 +90,6 @@ function startNewDoc(markdown = STARTER_MARKDOWN, title = "Untitled") {
   titleInput.value = title;
   setMarkdownContent(editor, markdown, { emitUpdate: false });
   setLastOpenId(currentDocId);
-  setDocFavicon(currentDocId);
   persistNow();
   syncUI();
 }
@@ -104,7 +102,6 @@ function loadIntoEditor(record) {
   titleInput.value = record.title || "Untitled";
   setJSONContent(editor, record.content, { emitUpdate: false });
   setLastOpenId(currentDocId);
-  setDocFavicon(currentDocId);
   updateLocationHash();
   if (!record.slug) saveDoc({ ...record, slug: currentSlug });
   setSaveStatus("saved");

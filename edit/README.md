@@ -12,7 +12,7 @@ open the page and start writing. it's a normal WYSIWYG editor — **bold**, *ita
 - **import…** — paste in a markdown draft from somewhere else and it replaces the current doc.
 - **copy markdown** — grab the current doc as clean markdown, ready to paste elsewhere.
 - pasting rich text (from a webpage, a doc) or raw markdown directly into the editor both convert to real formatting automatically.
-- each doc gets a link (`edit/#/your-doc-title`) once you give it a real title, so you can bookmark or share a specific one. open tabs also get a unique little icon per doc, so you can tell them apart at a glance.
+- each doc gets a link (`edit/#/your-doc-title`) once you give it a real title, so you can bookmark or share a specific one.
 
 ### AI review
 
