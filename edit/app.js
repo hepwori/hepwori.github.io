@@ -932,8 +932,20 @@ importModal.addEventListener("click", (e) => {
 window.addEventListener("keydown", (e) => {
   if (e.key === "Escape") {
     // Generic: closes whichever .modal (import, library, ...) is open.
-    for (const modal of document.querySelectorAll(".modal:not([hidden])")) {
-      modal.hidden = true;
+    const openModals = document.querySelectorAll(".modal:not([hidden])");
+    if (openModals.length > 0) {
+      for (const modal of openModals) modal.hidden = true;
+      return;
+    }
+    // Otherwise, if focus is anywhere in the review panel (the
+    // custom-instruction input via Cmd/Ctrl+/, a pass chip, a finding
+    // card reached via arrow-nav, ...), pop back to the editor. ProseMirror
+    // keeps its selection alive across a DOM blur on its own, so a plain
+    // focus() lands you back exactly where you were writing — no need to
+    // snapshot/restore a position by hand.
+    if (reviewPanel.contains(document.activeElement)) {
+      e.preventDefault();
+      editor.commands.focus();
     }
     return;
   }
