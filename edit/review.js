@@ -192,17 +192,25 @@ export function dismissAllFindings(editor) {
   return findings.length;
 }
 
-// focusEditor: false updates the real ProseMirror selection and scrolls it
-// into view (so the flagged span is visibly selected) without moving DOM
-// focus into the editor's contenteditable. Card clicks use this — real
-// editor focus() is scheduled by Tiptap on a later animation frame, which
-// would otherwise silently steal focus back from the card a moment after
-// it was set, breaking the up/down arrow-key navigation between cards.
+// focusEditor: false updates the real ProseMirror selection (so the
+// flagged span is visibly selected) without moving DOM focus into the
+// editor's contenteditable. Card clicks use this — real editor focus() is
+// scheduled by Tiptap on a later animation frame, which would otherwise
+// silently steal focus back from the card a moment after it was set,
+// breaking the up/down arrow-key navigation between cards.
 export function focusFinding(editor, id, { focusEditor = true } = {}) {
   const finding = listFindings(editor).find((f) => f.id === id);
   if (!finding) return false;
   let chain = editor.chain();
   if (focusEditor) chain = chain.focus();
-  chain.setTextSelection({ from: finding.from, to: finding.to }).scrollIntoView().run();
+  chain.setTextSelection({ from: finding.from, to: finding.to }).run();
+  // Not ProseMirror's own chain .scrollIntoView() command: it computes the
+  // scroll target from the browser's *native* selection, which only
+  // tracks a contenteditable's ProseMirror state while that element
+  // actually has DOM focus — with focusEditor: false it silently no-ops
+  // (confirmed via Playwright: clicking a card left scrollTop untouched).
+  // Scrolling the mark's own DOM node works regardless of focus state, so
+  // use that uniformly instead of two different mechanisms for one job.
+  document.querySelector(`mark.review-flag[data-review-id="${CSS.escape(id)}"]`)?.scrollIntoView({ block: "center" });
   return true;
 }
