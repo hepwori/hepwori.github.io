@@ -4,6 +4,12 @@
 // tab. Never logs headers, so an API key (sent as x-goog-api-key/x-api-key,
 // never in the body) can't end up in here even by accident.
 const MAX_ENTRIES = 20;
+// Gemini in particular has been observed hanging for minutes before
+// eventually 503-ing — better to fail fast and let the author retry than
+// leave the spinner running indefinitely. Applied uniformly to every LLM
+// call (both providers, runPass/generateOutline/testConnection alike)
+// since they all funnel through loggedFetch below.
+const TIMEOUT_MS = 60_000;
 let entries = [];
 const listeners = new Set();
 
@@ -51,7 +57,10 @@ export async function loggedFetch(provider, kind, url, options) {
     at: new Date(startedAt).toISOString(),
   };
   try {
-    const res = await fetch(url, options);
+    // options.signal is never set by any call site today, so this always
+    // wins — but honor a caller-supplied one instead of clobbering it, in
+    // case that changes later.
+    const res = await fetch(url, { ...options, signal: options?.signal || AbortSignal.timeout(TIMEOUT_MS) });
     const text = await res.clone().text();
     entry.status = res.status;
     entry.ok = res.ok;
@@ -65,6 +74,12 @@ export async function loggedFetch(provider, kind, url, options) {
     entry.durationMs = Date.now() - startedAt;
     entries = [entry, ...entries].slice(0, MAX_ENTRIES);
     notify();
+    // Rethrow a message worth showing in the status line — the raw
+    // DOMException text ("signal timed out", browser-dependent) stays in
+    // the debug log entry above, not lost, just not what surfaces in the UI.
+    if (err?.name === "TimeoutError") {
+      throw new Error(`${provider} didn't respond within ${TIMEOUT_MS / 1000}s — timed out.`);
+    }
     throw err;
   }
 }
