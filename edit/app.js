@@ -2,7 +2,7 @@ import { createEditor, getMarkdown, setMarkdownContent, getJSON, setJSONContent,
 import { newId, loadLibraryIndex, loadDoc, saveDoc, deleteDoc, getLastOpenId, setLastOpenId, loadConfig, saveConfig, uniqueSlug, findIdBySlug } from "./storage.js";
 import { PROVIDERS } from "./llm/provider.js";
 import { runReviewPass, listFindings, resolveFinding, dismissAllFindings, focusFinding } from "./review.js";
-import { passBg, passFg } from "./passColors.js";
+import { passHueVar } from "./passColors.js";
 import { generateOutline, outlineToMarkdown } from "./generative.js";
 import { getCallLog, clearCallLog, onCallLogChange } from "./llm/debugLog.js";
 
@@ -350,6 +350,50 @@ function relativeTime(iso) {
 const settingsModal = document.getElementById("settings-modal");
 let config = loadConfig();
 reviewPanel.dataset.activeCardStyle = config.experimental.activeCardStyle;
+
+// ---- theme (light/dark) ----
+//
+// No override stored (the common case) means "follow the OS/browser
+// setting" — handled entirely by style.css's prefers-color-scheme media
+// query, no JS involved. The toggle button sets an explicit override,
+// persisted to its own small key (edit.theme.v1, same pattern as
+// edit.reviewPanelWidth.v1/edit.lastOpen.v1 — a standalone key rather than
+// folded into edit.config.v1, since it's read before the editor/config
+// even exist, by index.html's inline anti-flash script). This lives
+// outside the pre-editor TDZ-safe block on purpose — nothing it touches is
+// reachable from syncUI().
+
+const THEME_KEY = "edit.theme.v1";
+const themeToggleBtn = document.getElementById("theme-toggle-btn");
+const darkMediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+
+function effectiveTheme() {
+  const stored = localStorage.getItem(THEME_KEY);
+  if (stored === "light" || stored === "dark") return stored;
+  return darkMediaQuery.matches ? "dark" : "light";
+}
+
+function updateThemeToggleUI() {
+  const isDark = effectiveTheme() === "dark";
+  themeToggleBtn.textContent = isDark ? "☀️" : "🌙";
+  themeToggleBtn.title = isDark ? "Switch to light mode" : "Switch to dark mode";
+}
+
+themeToggleBtn.addEventListener("click", () => {
+  const next = effectiveTheme() === "dark" ? "light" : "dark";
+  localStorage.setItem(THEME_KEY, next);
+  document.documentElement.dataset.theme = next;
+  updateThemeToggleUI();
+});
+
+// No explicit override yet: keep following the OS/browser setting live
+// (e.g. an OS that switches to dark at sunset) rather than freezing the
+// toggle's icon at whatever it was when the page loaded.
+darkMediaQuery.addEventListener("change", () => {
+  if (!localStorage.getItem(THEME_KEY)) updateThemeToggleUI();
+});
+
+updateThemeToggleUI();
 
 // ---- debug panel ----
 
@@ -848,7 +892,7 @@ function renderFindings() {
     header.className = "findings-group-header";
     const dot = document.createElement("span");
     dot.className = "pass-color-dot";
-    dot.style.background = passFg(passId, label);
+    dot.style.setProperty("--pass-hue", passHueVar(passId, label));
     header.append(dot, document.createTextNode(label));
     const count = document.createElement("span");
     count.className = "findings-group-count";
@@ -879,13 +923,13 @@ function buildFindingCard(finding) {
   card.classList.toggle("is-focused", finding.id === activeFindingId);
   card.dataset.findingId = finding.id;
   card.tabIndex = 0; // focusable, so Up/Down can walk the list (see the review-panel keydown handler)
-  card.style.background = passBg(finding.passId, finding.passLabel);
-  card.style.borderLeftColor = passFg(finding.passId, finding.passLabel);
+  // --pass-hue inherits down to .finding-category below for free — no
+  // need to set it again there.
+  card.style.setProperty("--pass-hue", passHueVar(finding.passId, finding.passLabel));
 
   if (finding.category) {
     const cat = document.createElement("div");
     cat.className = "finding-category";
-    cat.style.color = passFg(finding.passId, finding.passLabel);
     cat.textContent = finding.category;
     card.appendChild(cat);
   }

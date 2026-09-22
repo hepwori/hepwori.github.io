@@ -5,9 +5,74 @@
   --panel: #ffffff;
   --line: #e6e1d8;
   --accent: #b5562c;
+  --accent-hover: #9c4a24;
   --accent-soft: #f3e2d6;
+  --good: #3a7a4e;
+  --good-soft: #e3f1e6;
+  --overlay: rgba(36, 33, 29, 0.35);
+  --code-bg: #1c1a17;
+  --code-fg: #f3efe8;
+  /* Hue is set inline per finding (passColors.js's passHueVar) — constant
+     across light/dark, so JS never needs to know which theme is active.
+     Saturation/lightness live here instead, themed like everything else,
+     and every pass-colored element (marks, cards, the group-header dot)
+     computes its actual color from these via hsl(var(--pass-hue) ...). */
+  --pass-bg-s: 55%;
+  --pass-bg-l: 91%;
+  --pass-fg-s: 45%;
+  --pass-fg-l: 32%;
   --serif: "Source Serif 4", Georgia, serif;
   --sans: "Public Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+/* Dark mode: system preference by default, or an explicit override via the
+   topbar toggle (app.js's theme.js-equivalent wiring persists
+   edit.theme.v1 and sets [data-theme] on <html>, read before first paint by
+   a small inline script in index.html so there's no flash of the wrong
+   theme). :not([data-theme="light"]) lets an explicit light choice win over
+   a dark system preference; the [data-theme="dark"] block below covers the
+   reverse (explicit dark regardless of system preference). Kept as a warm
+   dark palette (not neutral gray/black) to match the rest of the app's
+   serif/terracotta identity rather than reading as a generic invert. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ink: #ece7e0;
+    --ink-soft: #a89e8f;
+    --paper: #1c1a17;
+    --panel: #242119;
+    --line: #3a352c;
+    --accent: #e5814f;
+    --accent-hover: #f0985f;
+    --accent-soft: #402a1c;
+    --good: #7cc794;
+    --good-soft: #1f3524;
+    --overlay: rgba(0, 0, 0, 0.55);
+    --code-bg: #100f0c;
+    --code-fg: #e9e4da;
+    --pass-bg-s: 38%;
+    --pass-bg-l: 22%;
+    --pass-fg-s: 55%;
+    --pass-fg-l: 74%;
+  }
+}
+:root[data-theme="dark"] {
+  --ink: #ece7e0;
+  --ink-soft: #a89e8f;
+  --paper: #1c1a17;
+  --panel: #242119;
+  --line: #3a352c;
+  --accent: #e5814f;
+  --accent-hover: #f0985f;
+  --accent-soft: #402a1c;
+  --good: #7cc794;
+  --good-soft: #1f3524;
+  --overlay: rgba(0, 0, 0, 0.55);
+  --code-bg: #100f0c;
+  --code-fg: #e9e4da;
+  --pass-bg-s: 38%;
+  --pass-bg-l: 22%;
+  --pass-fg-s: 55%;
+  --pass-fg-l: 74%;
 }
 
 * { box-sizing: border-box; }
@@ -35,7 +100,7 @@ button.primary {
   border-color: var(--accent);
   color: white;
 }
-button.primary:hover { background: #9c4a24; }
+button.primary:hover { background: var(--accent-hover); }
 button.ghost { background: transparent; }
 button.ghost:hover { background: var(--paper); }
 button.small { font-size: 12px; padding: 5px 10px; }
@@ -215,8 +280,9 @@ body {
   font-size: 0.85em;
 }
 .tiptap pre {
-  background: #1c1a17;
-  color: #f3efe8;
+  background: var(--code-bg);
+  color: var(--code-fg);
+  border: 1px solid var(--line);
   border-radius: 8px;
   padding: 14px 16px;
   overflow-x: auto;
@@ -241,10 +307,14 @@ body {
 }
 
 /* ---- review flag mark ---- */
-/* Background color is pass-specific, set inline per mark (passColors.js) —
-   hover/focus just darkens whatever hue is already there, so it works
-   regardless of which pass (or hashed custom-instruction color) it is. */
+/* Hue is pass-specific, set inline per mark as --pass-hue (passColors.js) —
+   the actual background comes from here, combined with the theme-aware
+   --pass-bg-s/-l tokens above, so it stays correct even if the theme
+   toggles after the mark was already rendered. Hover/focus just darkens
+   whatever hue is already there, so it works regardless of which pass (or
+   hashed custom-instruction color) it is. */
 .tiptap mark.review-flag {
+  background: hsl(var(--pass-hue) var(--pass-bg-s) var(--pass-bg-l));
   color: inherit;
   border-radius: 3px;
   padding: 0 1px;
@@ -426,6 +496,7 @@ body {
   height: 8px;
   border-radius: 50%;
   flex: 0 0 auto;
+  background: hsl(var(--pass-hue) var(--pass-fg-s) var(--pass-fg-l));
 }
 .findings-group-count {
   font-weight: 400;
@@ -433,23 +504,35 @@ body {
   letter-spacing: normal;
 }
 
-/* Background + border-left color are pass-specific, set inline per card
-   (see passColors.js) — this just sets up the shape they land in. */
+/* Hue is pass-specific, set inline per card as --pass-hue (see
+   passColors.js) — background/border-left color computed from it here,
+   same theme-aware tokens as the in-editor mark above, so a card and its
+   highlighted text always agree regardless of theme. */
 .finding-card {
+  background: hsl(var(--pass-hue) var(--pass-bg-s) var(--pass-bg-l));
   border: 1px solid transparent;
-  border-left: 4px solid transparent;
+  border-left: 4px solid hsl(var(--pass-hue) var(--pass-fg-s) var(--pass-fg-l));
   border-radius: 8px;
   padding: 10px 12px;
   margin-bottom: 8px;
   cursor: pointer;
 }
+/* border-color longhands, not the shorthand — the shorthand would also
+   overwrite border-left-color (the pass accent, set above) with these
+   neutral tones, which used to be prevented only by JS setting
+   border-left-color inline (higher specificity than any stylesheet rule).
+   Now that it's a stylesheet rule too, it needs protecting explicitly. */
 .finding-card:hover {
-  border-color: var(--ink-soft);
+  border-top-color: var(--ink-soft);
+  border-right-color: var(--ink-soft);
+  border-bottom-color: var(--ink-soft);
 }
 .finding-card:focus,
 .finding-card.is-focused {
   outline: none;
-  border-color: var(--ink);
+  border-top-color: var(--ink);
+  border-right-color: var(--ink);
+  border-bottom-color: var(--ink);
 }
 /* Active-card indicator: which of these actually applies is picked live
    in Settings > Experimental (`#review-panel`'s data-active-card-style,
@@ -478,6 +561,7 @@ body {
 }
 .finding-card .finding-category {
   display: inline-block;
+  color: hsl(var(--pass-hue) var(--pass-fg-s) var(--pass-fg-l));
   font-family: var(--sans);
   font-size: 11px;
   font-weight: 600;
@@ -520,7 +604,7 @@ textarea.finding-suggestion:focus {
 .modal {
   position: fixed;
   inset: 0;
-  background: rgba(36, 33, 29, 0.35);
+  background: var(--overlay);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -575,8 +659,8 @@ textarea.finding-suggestion:focus {
   color: var(--accent);
 }
 .debug-entry-status.is-ok {
-  background: #e3f1e6;
-  color: #3a7a4e;
+  background: var(--good-soft);
+  color: var(--good);
 }
 .debug-entry-meta {
   color: var(--ink-soft);
@@ -798,7 +882,7 @@ textarea.finding-suggestion:focus {
   font-size: 12px;
   color: var(--ink-soft);
 }
-.test-status.ok { color: #3a7a4e; }
+.test-status.ok { color: var(--good); }
 .test-status.error { color: var(--accent); }
 
 /* ---- experimental settings ---- */

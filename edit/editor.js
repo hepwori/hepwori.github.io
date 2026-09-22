@@ -12,7 +12,7 @@ import { Plugin, PluginKey } from "./vendor/@tiptap/pm@3.31.3/state.q-b43df6e3.m
 import { Mapping } from "./vendor/@tiptap/pm@3.31.3/transform.q-b43df6e3.mjs";
 import { Decoration, DecorationSet } from "./vendor/@tiptap/pm@3.31.3/view.q-b43df6e3.mjs";
 import { createPasteHandler } from "./paste.js";
-import { passBg } from "./passColors.js";
+import { passHueVar } from "./passColors.js";
 
 // Which finding is "active" — its card and its in-editor highlight both
 // get the darker treatment (see app.js's highlightCard). This is plugin
@@ -128,8 +128,10 @@ export const ReviewFlag = Mark.create({
     return [{ tag: "mark.review-flag" }];
   },
   renderHTML({ HTMLAttributes }) {
-    const bg = passBg(HTMLAttributes["data-pass-id"], HTMLAttributes["data-pass-label"]);
-    return ["mark", mergeAttributes(HTMLAttributes, { class: "review-flag", style: `background:${bg}` }), 0];
+    const hue = passHueVar(HTMLAttributes["data-pass-id"], HTMLAttributes["data-pass-label"]);
+    // Background itself comes from style.css's `.tiptap mark.review-flag`
+    // rule (theme-aware --pass-bg-s/-l tokens) — see passHueVar's comment.
+    return ["mark", mergeAttributes(HTMLAttributes, { class: "review-flag", style: `--pass-hue:${hue}` }), 0];
   },
 
   // Editing text under a flag clears it — a stale suggestion for text

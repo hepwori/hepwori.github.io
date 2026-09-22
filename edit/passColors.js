@@ -25,10 +25,13 @@ export function passHue(passId, passLabel) {
   return hashHue(passLabel || passId || "");
 }
 
-export function passBg(passId, passLabel) {
-  return `hsl(${passHue(passId, passLabel)}, 55%, 91%)`;
-}
-
-export function passFg(passId, passLabel) {
-  return `hsl(${passHue(passId, passLabel)}, 45%, 32%)`;
+// Callers set this as an inline `--pass-hue` custom property on the
+// element and let CSS (style.css's --pass-bg-s/-l and --pass-fg-s/-l
+// tokens) compute the actual background/foreground colors from it, rather
+// than baking a resolved hsl() string into the element here. That keeps a
+// mark's or card's color following the live theme automatically —
+// including a toggle after the mark was already rendered — with this
+// module never needing to know or recompute anything about light vs. dark.
+export function passHueVar(passId, passLabel) {
+  return String(passHue(passId, passLabel));
 }

@@ -13,6 +13,7 @@ open the page and start writing. it's a normal WYSIWYG editor — **bold**, *ita
 - **copy markdown** — grab the current doc as clean markdown, ready to paste elsewhere.
 - pasting rich text (from a webpage, a doc) or raw markdown directly into the editor both convert to real formatting automatically.
 - each doc gets a link (`edit/#/your-doc-title`) once you give it a real title, so you can bookmark or share a specific one.
+- **dark mode** — follows your OS/browser setting automatically. Prefer it always on (or always off) regardless of that? Click the 🌙/☀️ button in the topbar to override; it remembers your choice.
 
 ### AI review
 
