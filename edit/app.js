@@ -119,6 +119,7 @@ function startNewDoc(markdown = STARTER_MARKDOWN, title = "Untitled") {
   currentSlug = uniqueSlug(title);
   docFindings = [];
   titleInput.value = title;
+  updateDocumentTitle();
   setMarkdownContent(editor, markdown, { emitUpdate: false });
   setLastOpenId(currentDocId);
   persistNow();
@@ -132,6 +133,7 @@ function loadIntoEditor(record) {
   currentSlug = record.slug || uniqueSlug(record.title || "Untitled", record.id);
   docFindings = record.docFindings || [];
   titleInput.value = record.title || "Untitled";
+  updateDocumentTitle();
   setJSONContent(editor, record.content, { emitUpdate: false });
   setLastOpenId(currentDocId);
   updateLocationHash();
@@ -201,9 +203,16 @@ document.addEventListener("visibilitychange", () => {
 
 // ---- title ----
 
-titleInput.addEventListener("input", scheduleSave);
+// Doc title leads (not "Editor — ...") so it's still the identifying part
+// when a browser tab is too narrow to show the whole thing.
+function updateDocumentTitle() {
+  document.title = `${titleInput.value.trim() || "Untitled"} — Editor`;
+}
+
+titleInput.addEventListener("input", () => { updateDocumentTitle(); scheduleSave(); });
 titleInput.addEventListener("blur", () => {
   if (!titleInput.value.trim()) titleInput.value = "Untitled";
+  updateDocumentTitle();
   persistNow();
 });
 
