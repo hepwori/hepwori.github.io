@@ -10,6 +10,14 @@
 //     `unanchored` results. Optional/defaults to [] for docs saved before
 //     this field existed; no migration needed.
 //   edit.lastOpen.v1        -> doc id, so reloading the page resumes where you left off
+//   edit.config.v1          -> LLM connection settings, style guide, passes (see "LLM connection settings" below)
+//   edit.theme.v1            -> "light"/"dark" override (app.js owns this one directly — see style.css's dark mode)
+//   edit.reviewPanelWidth.v1 -> dragged review-panel width in px (app.js owns this one directly)
+//
+// Every key this app uses starts with "edit." — a deliberate convention,
+// not just a namespacing habit: hepwori.github.io hosts several unrelated
+// projects on the same origin (shared localStorage), and resetEverything()
+// below sweeps by this prefix rather than a hardcoded key list.
 //
 // slug locks in once a doc gets a real (non-"Untitled") title — see
 // app.js's persistNow — so a link to a doc (edit/#/<slug>) keeps working
@@ -120,22 +128,40 @@ export function setLastOpenId(id) {
 
 const CONFIG_KEY = "edit.config.v1";
 
-// Seed set for `passes` — shown as chips in the Review panel, each one
-// fully editable (label + instruction) from Settings, plus add/remove.
-// This is only the *default* a fresh config starts with; a saved config's
-// own `passes` array (even a heavily edited one) always wins wholesale —
-// see loadConfig's merge below.
-function defaultPasses() {
-  return [
-    { id: "grammar", label: "Grammar", instruction: "Find grammar, spelling, and punctuation errors. Flag each one with a brief note and, where the fix is unambiguous, a corrected replacement." },
-    { id: "flow", label: "Flow", instruction: "Look for sentences or transitions that are awkward, hard to follow, or disrupt the piece's rhythm. Explain what's off and, where you can, suggest a smoother replacement." },
-    { id: "filler", label: "Filler words", instruction: `Find filler words, hedges, and throat-clearing phrases (e.g. "in order to", "it's worth noting that", "I think that") that could be cut or tightened without losing meaning.` },
-    { id: "passive", label: "Passive voice", instruction: "Find sentences that are genuinely in passive voice (the subject receives the action, e.g. \"the ball was thrown by him\" not \"he threw the ball\") AND where switching to active would clearly read better. Suggest the active rewrite. Do not flag sentences that are already active voice." },
-    { id: "structure", label: "Structure", instruction: "Look at the piece's overall structure and organization — ordering, section balance, whether ideas build logically. Flag structural issues. A finding about the piece as a whole doesn't need a quote — say so directly rather than forcing an anchor onto one span." },
-  ];
+// The style guide + passes half of the defaults lives in its own checked-in
+// JSON file, not hardcoded here — the point is that it's a plain, readable,
+// directly-editable artifact Isaac can iterate on with Claude: tweak the
+// live settings in-app, export the current ones (Debug panel), hand the
+// JSON to Claude, it becomes the new edit/defaults.json, fresh installs
+// pick it up. Fetched with a plain `fetch` (not a JSON module import —
+// `import ... with {type:"json"}` would be synchronous and avoid the
+// async-boot wrinkle below, but it's a parse-time failure on any browser
+// that doesn't support it, e.g. Safari as of this writing; `fetch` already
+// works everywhere, so it's the one that doesn't need reworking if this
+// ever needs to run somewhere other than Isaac's own Chrome).
+const DEFAULTS_URL = new URL("./defaults.json", import.meta.url);
+
+async function fetchPromptDefaults() {
+  try {
+    const res = await fetch(DEFAULTS_URL);
+    if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+    const data = await res.json();
+    return {
+      styleGuide: typeof data.styleGuide === "string" ? data.styleGuide : "",
+      passes: Array.isArray(data.passes) ? data.passes : [],
+    };
+  } catch (err) {
+    // Same-origin static file, should never actually fail in normal use —
+    // but a missing/broken defaults.json shouldn't take the whole app down
+    // with it. Falls back to an empty style guide and no preset chips
+    // (the custom-instruction box still works) rather than throwing.
+    console.warn("edit/defaults.json failed to load, falling back to empty prompt defaults:", err);
+    return { styleGuide: "", passes: [] };
+  }
 }
 
-function defaultConfig() {
+async function defaultConfig() {
+  const { styleGuide, passes } = await fetchPromptDefaults();
   return {
     activeProvider: "gemini",
     gemini: { apiKey: "", model: "gemini-2.5-flash" },
@@ -143,8 +169,8 @@ function defaultConfig() {
     // Free-text context given to the LLM for every review pass and the
     // generative outline mode alike — "write like X", a house style, tone
     // notes, whatever. Empty means no style context is injected.
-    styleGuide: "",
-    passes: defaultPasses(),
+    styleGuide,
+    passes,
     // Scratch space for trying out UI treatments live against real content,
     // instead of guessing from screenshots — see the Settings modal's
     // "Experimental" section. Not meant to accumulate forever: once a
@@ -153,10 +179,11 @@ function defaultConfig() {
   };
 }
 
-export function loadConfig() {
+export async function loadConfig() {
+  const base = await defaultConfig();
   try {
     const raw = localStorage.getItem(CONFIG_KEY);
-    if (!raw) return defaultConfig();
+    if (!raw) return base;
     // Merge over defaults so a config saved before a new field existed
     // (or before a provider was added) still comes back complete. `passes`
     // and `styleGuide` are plain top-level fields, so the spread already
@@ -164,7 +191,6 @@ export function loadConfig() {
     // passes array) wins wholesale when present, the default seed applies
     // only when the field is missing entirely (an older saved config).
     const stored = JSON.parse(raw);
-    const base = defaultConfig();
     return {
       ...base,
       ...stored,
@@ -173,10 +199,36 @@ export function loadConfig() {
       experimental: { ...base.experimental, ...stored.experimental },
     };
   } catch {
-    return defaultConfig();
+    return base;
   }
 }
 
 export function saveConfig(config) {
   localStorage.setItem(CONFIG_KEY, JSON.stringify(config));
+}
+
+// ---- reset (Debug panel) ----
+//
+// Both are destructive and both reload the page afterward rather than
+// trying to live-rewire every bit of already-rendered UI state.
+
+// Discards customizations, falling back to edit/defaults.json (or the
+// hardcoded gemini/claude/experimental defaults) on the next load.
+export function resetConfigToDefaults() {
+  localStorage.removeItem(CONFIG_KEY);
+}
+
+// The "start over completely" button for onboarding work — every doc,
+// every setting, every key. Sweeps by prefix rather than naming each key
+// individually (LIBRARY_KEY/DOC_KEY_PREFIX/LAST_OPEN_KEY/CONFIG_KEY here,
+// plus a couple more app.js owns directly — edit.theme.v1,
+// edit.reviewPanelWidth.v1) so a future new key is covered automatically
+// without this needing to be kept in sync. Every key this app uses starts
+// with "edit." — see the module comment at the top of this file — and nothing
+// outside that prefix is touched, since hepwori.github.io hosts several
+// unrelated projects sharing this same origin's localStorage.
+export function resetEverything() {
+  for (const key of Object.keys(localStorage)) {
+    if (key.startsWith("edit.")) localStorage.removeItem(key);
+  }
 }

@@ -135,6 +135,22 @@ try {
     </div>
     <p class="hint">The last 20 raw requests/responses sent to your provider, newest first &mdash; not saved anywhere, cleared on reload. API keys are sent as headers, not request bodies, so they never show up here.</p>
     <div id="debug-log-list" class="debug-log-list"></div>
+
+    <div class="debug-section">
+      <h3>Export prompt defaults</h3>
+      <p class="hint">Current writing style + review passes, as JSON. Paste this to Claude to make it the new shipped default (<code>edit/defaults.json</code>).</p>
+      <textarea id="defaults-export-textarea" class="defaults-export-textarea" readonly spellcheck="false"></textarea>
+    </div>
+
+    <div class="debug-section debug-section-danger">
+      <h3>Reset</h3>
+      <p class="hint">Both discard whatever's in this browser and can't be undone.</p>
+      <div class="debug-reset-row">
+        <button id="reset-config-btn" class="ghost small">Reset settings to defaults</button>
+        <button id="reset-everything-btn" class="ghost small">Reset everything (docs, keys, all)</button>
+      </div>
+    </div>
+
     <div class="modal-actions">
       <button id="debug-close-btn" class="primary">Close</button>
     </div>

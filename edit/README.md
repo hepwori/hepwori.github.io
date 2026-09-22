@@ -29,6 +29,8 @@ some findings are about the piece as a whole rather than one specific passage �
 
 **debug** (top right) — the last 20 raw requests/responses sent to your LLM provider, if you want to see exactly what was asked and what came back. nothing's saved; it clears on reload, and your API key never appears in it (it's sent as a header, not part of the logged request body).
 
+debug also has a couple of dev-facing tools: **export prompt defaults** dumps your current writing style + review passes as JSON, for handing to Claude when you want a good configuration to become the new shipped default. and two reset buttons — **reset settings to defaults** (clears your style guide/passes, keeps your docs and keys) and **reset everything** (docs, keys, all of it — the "start over from a blank slate" button).
+
 ### generative outline mode
 
 **library → generate outline…** — describe the piece you want to write in a sentence or two and get back a title suggestion plus a set of headings, each with a starter question to help you begin drafting that section. it creates a new doc with that structure — no generated prose, ever, just something to draft into.

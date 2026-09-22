@@ -1,5 +1,5 @@
 import { createEditor, getMarkdown, setMarkdownContent, getJSON, setJSONContent, wordCount, setActiveFinding, setPendingSelectionVisible } from "./editor.js";
-import { newId, loadLibraryIndex, loadDoc, saveDoc, deleteDoc, getLastOpenId, setLastOpenId, loadConfig, saveConfig, uniqueSlug, findIdBySlug } from "./storage.js";
+import { newId, loadLibraryIndex, loadDoc, saveDoc, deleteDoc, getLastOpenId, setLastOpenId, loadConfig, saveConfig, uniqueSlug, findIdBySlug, resetConfigToDefaults, resetEverything } from "./storage.js";
 import { PROVIDERS } from "./llm/provider.js";
 import { runReviewPass, listFindings, resolveFinding, dismissAllFindings, focusFinding } from "./review.js";
 import { passHueVar } from "./passColors.js";
@@ -147,6 +147,16 @@ function scheduleSave() {
 
 function persistNow() {
   clearTimeout(saveTimer);
+  // Without this, saveTimer keeps holding its last (now-fired-or-flushed)
+  // setTimeout id forever — a non-zero number is still truthy, so
+  // beforeunload/visibilitychange's `if (saveTimer)` guard below would
+  // read "there's a pending save" as permanently true after the *first*
+  // ever autosave, re-persisting on every later unload whether or not
+  // anything actually changed. Caught via the new Debug "reset everything"
+  // button: location.reload() fires beforeunload, which re-ran persistNow
+  // with the pre-reset in-memory doc still loaded, silently resurrecting
+  // the doc/library entries resetEverything() had just cleared.
+  saveTimer = null;
   const title = titleInput.value.trim() || "Untitled";
   // The slug locks in once the doc gets a real title, so a link to it
   // keeps working through later renames. Until then (still "Untitled"),
@@ -348,7 +358,12 @@ function relativeTime(iso) {
 // ---- settings (LLM connection) ----
 
 const settingsModal = document.getElementById("settings-modal");
-let config = loadConfig();
+// loadConfig() is async (it fetches edit/defaults.json for the style guide
+// + passes half of the defaults — see storage.js) — top-level await pauses
+// the rest of this module's top-level code until it resolves, which is
+// fine here: nothing above this line (editor creation, bootDoc()) touches
+// `config`, only functions defined below it that get *called* later.
+let config = await loadConfig();
 reviewPanel.dataset.activeCardStyle = config.experimental.activeCardStyle;
 
 // ---- theme (light/dark) ----
@@ -403,6 +418,7 @@ const debugLogList = document.getElementById("debug-log-list");
 document.getElementById("debug-btn").addEventListener("click", () => {
   debugModal.hidden = false;
   renderDebugLog();
+  renderDefaultsExport();
 });
 document.getElementById("debug-close-btn").addEventListener("click", () => {
   debugModal.hidden = true;
@@ -432,6 +448,31 @@ function renderDebugLog() {
   }
   entries.forEach((entry, i) => debugLogList.appendChild(buildDebugEntry(entry, i === 0)));
 }
+
+// ---- dev tools: export current prompt defaults, reset (Debug panel) ----
+//
+// Isaac's own workflow, not an end-user feature — this is why it lives in
+// Debug rather than Settings. The idea: tweak the writing style + review
+// passes live in Settings (already fully editable) until they're in a
+// place worth keeping, then copy this JSON to Claude to become the new
+// edit/defaults.json. See storage.js's fetchPromptDefaults/defaultConfig.
+const defaultsExportTextarea = document.getElementById("defaults-export-textarea");
+function renderDefaultsExport() {
+  defaultsExportTextarea.value = JSON.stringify({ styleGuide: config.styleGuide, passes: config.passes }, null, 2);
+}
+defaultsExportTextarea.addEventListener("focus", () => defaultsExportTextarea.select());
+
+document.getElementById("reset-config-btn").addEventListener("click", () => {
+  if (!confirm("Reset your writing style and review passes back to the shipped defaults? Your docs and API keys are untouched. This can't be undone.")) return;
+  resetConfigToDefaults();
+  location.reload();
+});
+
+document.getElementById("reset-everything-btn").addEventListener("click", () => {
+  if (!confirm("Delete EVERYTHING in this browser — every doc, your API keys, all settings? This can't be undone.")) return;
+  resetEverything();
+  location.reload();
+});
 
 // Every value here (request/response bodies) came back from the LLM
 // provider — untrusted, per CLAUDE.md's "LLM output is untrusted" note.
