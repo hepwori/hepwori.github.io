@@ -633,20 +633,22 @@ function renderTraceChart(key) {
   });
 
   const datasets = withGPS.map(({ r, pts }, i) => {
-    const isLast = i === withGPS.length - 1;
-    // older rides: light grey (#d0d0cb) → dark grey (#707070); newest ride: green
-    const t = withGPS.length > 1 ? i / (withGPS.length - 1) : 1;
-    const grey = Math.round(208 - t * 96); // 208 → 112
-    const color = isLast ? 'rgba(29,158,117,0.9)' : `rgba(${grey},${grey},${grey - 5},0.55)`;
+    const n = withGPS.length;
+    const t = n > 1 ? i / (n - 1) : 1; // 0=oldest, 1=newest
+    // colour: lerp grey(160,160,155) → green(29,158,117); alpha 0.25 → 0.9
+    const lerp = (a, b) => Math.round(a + (b - a) * t);
+    const r_ = lerp(160, 29), g_ = lerp(160, 158), b_ = lerp(155, 117);
+    const a = (0.25 + t * 0.65).toFixed(2);
+    const color = `rgba(${r_},${g_},${b_},${a})`;
     return {
       label: r.date.toLocaleDateString(),
       data: pts,
       borderColor: color,
-      borderWidth: isLast ? 2 : 1,
+      borderWidth: t > 0.85 ? 2 : 1,
       fill: false,
       tension: 0.2,
       pointRadius: 0,
-      order: isLast ? 0 : 1,  // draw most recent on top
+      order: n - i,  // newest (highest i) → lowest order → drawn on top
     };
   });
 
