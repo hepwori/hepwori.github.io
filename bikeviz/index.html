@@ -632,23 +632,33 @@ function renderTraceChart(key) {
     if (pts && pts.length >= 2) withGPS.push({ r, pts });
   });
 
+  const n = withGPS.length;
+  const recentN = 10;
   const datasets = withGPS.map(({ r, pts }, i) => {
-    const n = withGPS.length;
-    const t = n > 1 ? i / (n - 1) : 1; // 0=oldest, 1=newest
-    // colour: lerp grey(160,160,155) → green(29,158,117); alpha 0.25 → 0.9
-    const lerp = (a, b) => Math.round(a + (b - a) * t);
-    const r_ = lerp(160, 29), g_ = lerp(160, 158), b_ = lerp(155, 117);
-    const a = (0.25 + t * 0.65).toFixed(2);
-    const color = `rgba(${r_},${g_},${b_},${a})`;
+    const recentIdx = i - (n - recentN); // <0 = old, 0..recentN-1 = recent
+    let color, width;
+    if (recentIdx < 0) {
+      // old rides: single faint grey, all identical
+      color = 'rgba(140,140,135,0.18)';
+      width = 1;
+    } else {
+      // last 10: grey → green gradient
+      const t = recentN > 1 ? recentIdx / (recentN - 1) : 1;
+      const lerp = (a, b) => Math.round(a + (b - a) * t);
+      const rv = lerp(140, 29), gv = lerp(140, 158), bv = lerp(135, 117);
+      const a = (0.4 + t * 0.55).toFixed(2);
+      color = `rgba(${rv},${gv},${bv},${a})`;
+      width = t > 0.8 ? 2 : 1;
+    }
     return {
       label: r.date.toLocaleDateString(),
       data: pts,
       borderColor: color,
-      borderWidth: t > 0.85 ? 2 : 1,
+      borderWidth: width,
       fill: false,
       tension: 0.2,
       pointRadius: 0,
-      order: n - i,  // newest (highest i) → lowest order → drawn on top
+      order: n - i,
     };
   });
 
