@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Spin the wheels for a random product management interview question.">
+<title>PM interview question slot machine</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>%F0%9F%8E%B0</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&display=swap">
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #000; --ink: #fff; --muted: #9a9a9a; --line: #444; --accent: #ffd43b;
+    --item: 2.4em; /* two lines of text per reel slot */
+  }
+  * { box-sizing: border-box; }
+  html { background: var(--bg); }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    min-height: 100dvh;
+    padding: 1.5rem max(1rem, env(safe-area-inset-right)) 1.5rem max(1rem, env(safe-area-inset-left));
+    font-family: "Montserrat", system-ui, sans-serif;
+    color: var(--ink);
+    background: var(--bg);
+    text-align: center;
+  }
+  main {
+    min-height: calc(100vh - 3rem);
+    min-height: calc(100dvh - 3rem);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2rem;
+  }
+  h1 {
+    margin: 0;
+    font-size: .8rem;
+    font-weight: 600;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .reels {
+    width: 100%;
+    max-width: 44rem;
+    display: flex;
+    flex-direction: column;
+    gap: .75rem;
+    font-size: clamp(1.25rem, 4.5vw + .35rem, 2.5rem);
+    line-height: 1.2;
+  }
+  .reel {
+    height: var(--item);
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: .4em;
+    background: #0b0b0b;
+    /* fade top and bottom edges so the strip looks like it's rolling */
+    -webkit-mask-image: linear-gradient(transparent, #000 18%, #000 82%, transparent);
+            mask-image: linear-gradient(transparent, #000 18%, #000 82%, transparent);
+  }
+  .reel.landed { border-color: var(--accent); }
+  .strip { will-change: transform; }
+  .item {
+    height: var(--item);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 .75em;
+    overflow-wrap: break-word;
+  }
+  button {
+    font: inherit;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #000;
+    background: var(--accent);
+    border: 0;
+    border-radius: 999px;
+    padding: .75rem 2.5rem;
+    min-height: 44px;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+  button:disabled { opacity: .4; cursor: default; }
+  button:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+  .sr-only {
+    position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
+    overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+  }
+  noscript { color: var(--muted); }
+</style>
+</head>
+<body>
+<main>
+  <h1>PM interview question slot machine</h1>
+  <div class="reels" id="reels" aria-hidden="true"></div>
+  <p id="result" class="sr-only" aria-live="polite"></p>
+  <noscript>Enable JavaScript to generate a question.</noscript>
+  <button id="spin" type="button">spin</button>
+</main>
+<script>
+const tasks = [
+  'Design',
+  'Bring to market',
+  'Estimate the TAM of',
+  'Identify product metrics for',
+  'Suggest product priorities for',
+  'Suggest AI-powered features for',
+];
+
+const products = [
+  'refrigerator', 'car', 'vending machine', 'thermostat', 'teleportation device',
+  'microwave', 'camera', 'mobile phone', 'toothbrush', 'streaming service',
+  'smart home', 'electric kettle', 'toaster', 'laptop', 'alarm clock',
+  'recipe application', 'video chat app', 'mood analyzer',
+  'in-car entertainment system', 'sandwich maker', 'in-flight entertainment system',
+  'music streaming device', 'self-driving car', 'bike', 'time machine',
+  'travel planner', 'roller skate', 'smoke detector',
+  'paperclip',
+];
+
+const audiences = [
+  'kids', 'the older generation', 'business people', 'knowledge workers',
+  'deaf people', 'late adopters of tech', 'rural dwellers',
+  'the next generation of internet users', 'the visually impaired',
+  'people who live alone', 'parents',
+  'cats',
+];
+
+const withArticle = (word) => (/^[aeiou]/i.test(word) ? 'an ' : 'a ') + word;
+const randomOf = (items) => items[Math.floor(Math.random() * items.length)];
+
+// each reel: its pool of display strings and how long it spins (staggered stops)
+const reels = [
+  { items: tasks, ms: 1400 },
+  { items: products.map(withArticle), ms: 2200 },
+  { items: audiences.map((a) => 'for ' + a), ms: 3000 },
+].map((r) => ({ ...r, el: null, strip: null, current: null }));
+
+const FILLER = 18; // items scrolled past before landing
+const reelsEl = document.getElementById('reels');
+const resultEl = document.getElementById('result');
+const spinEl = document.getElementById('spin');
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
+
+for (const r of reels) {
+  r.el = document.createElement('div');
+  r.el.className = 'reel';
+  r.strip = document.createElement('div');
+  r.strip.className = 'strip';
+  r.el.append(r.strip);
+  reelsEl.append(r.el);
+}
+
+function fill(r, texts) {
+  r.strip.replaceChildren(...texts.map((t) => {
+    const d = document.createElement('div');
+    d.className = 'item';
+    d.textContent = t;
+    return d;
+  }));
+}
+
+function spinReel(r) {
+  // start on whatever is showing now, roll through random filler, land on a fresh pick
+  const from = r.current ?? randomOf(r.items);
+  const to = randomOf(r.items);
+  const texts = [from];
+  for (let i = 0; i < FILLER; i++) texts.push(randomOf(r.items));
+  texts.push(to);
+  r.el.classList.remove('landed');
+  r.current = to;
+  fill(r, texts);
+  const end = `translateY(calc(var(--item) * -${texts.length - 1}))`;
+
+  if (reduceMotion.matches) {
+    r.strip.style.transition = 'none';
+    r.strip.style.transform = end;
+    r.el.classList.add('landed');
+    return Promise.resolve();
+  }
+  r.strip.style.transition = 'none';
+  r.strip.style.transform = 'translateY(0)';
+  r.strip.getBoundingClientRect(); // commit the start position
+  return new Promise((resolve) => {
+    r.strip.style.transition = `transform ${r.ms}ms cubic-bezier(.12,.7,.2,1)`;
+    r.strip.style.transform = end;
+    setTimeout(() => { r.el.classList.add('landed'); resolve(); }, r.ms);
+  });
+}
+
+async function spin() {
+  spinEl.disabled = true;
+  resultEl.textContent = '';
+  await Promise.all(reels.map(spinReel));
+  resultEl.textContent = reels.map((r) => r.current).join(' ');
+  spinEl.disabled = false;
+  spinEl.focus({ preventScroll: true });
+}
+
+spinEl.addEventListener('click', spin);
+spin();
+</script>
+</body>
+</html>
