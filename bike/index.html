@@ -5,95 +5,177 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>bike manifold</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>%F0%9F%9A%B4</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root {
     color-scheme: light;
-    --page: #f5f4f0; --panel: #fdfcfa; --text: #1b1a17; --text2: #5a5649; --muted: #928d7c;
-    --border: rgba(27,26,23,.12); --accent: #d9480f; --accent2: #1c7ed6; --canvas: #eceae3;
-    --grid: #8a877c;
+    --bg: #ede7da; --card: #fcfaf5; --ink: #1c1f26; --ink2: #555a66; --muted: #8c8a84;
+    --line: rgba(28,31,38,.09); --line2: rgba(28,31,38,.16); --track: rgba(28,31,38,.13);
+    --shadow: 0 1px 2px rgba(60,45,15,.06), 0 14px 30px -18px rgba(60,45,15,.35);
+    --x: #0ca678; --y: #7048e8; --slice: #f08c00; --s1: #e8590c; --s2: #1c7ed6;
+    --stage1: #faf6ec; --stage2: #ddd4c1; --grid: #8a8576;
+    --f-ui: "Inter", system-ui, sans-serif; --f-disp: "Fraunces", Georgia, serif; --f-mono: "JetBrains Mono", ui-monospace, monospace;
   }
   @media (prefers-color-scheme: dark) {
     :root {
       color-scheme: dark;
-      --page: #121316; --panel: #1a1c20; --text: #ecebe6; --text2: #b3b0a5; --muted: #77746a;
-      --border: rgba(236,235,230,.12); --accent: #ff8a4c; --accent2: #5aa9f5; --canvas: #0d0e11;
-      --grid: #6d6b64;
+      --bg: #090d12; --card: #121821; --ink: #e9eef5; --ink2: #a3acba; --muted: #6a7484;
+      --line: rgba(233,238,245,.08); --line2: rgba(233,238,245,.15); --track: rgba(233,238,245,.14);
+      --shadow: 0 1px 2px rgba(0,0,0,.4), 0 18px 34px -20px rgba(0,0,0,.8);
+      --x: #38d9a9; --y: #9775fa; --slice: #ffb020; --s1: #ff922b; --s2: #4dabf7;
+      --stage1: #1b2432; --stage2: #080b10; --grid: #5e6675;
     }
   }
   * { box-sizing: border-box; }
-  body { margin: 0; background: var(--page); color: var(--text); font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
-  header { padding: 14px 16px 6px; max-width: 1500px; margin: 0 auto; }
-  h1 { font-size: 20px; margin: 0; letter-spacing: -.01em; }
-  header p { margin: 2px 0 0; color: var(--text2); max-width: 70ch; }
-  main { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 12px; padding: 8px 16px 24px; max-width: 1500px; margin: 0 auto; align-items: start; }
-  @media (max-width: 920px) { main { grid-template-columns: 1fr; } }
-  .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; }
-  #stage { position: relative; height: min(72vh, 720px); min-height: 380px; overflow: hidden; background: var(--canvas); }
+  html { background: var(--bg); }
+  body { margin: 0; color: var(--ink); font: 14px/1.5 var(--f-ui); background:
+    radial-gradient(1100px 500px at 8% -10%, color-mix(in srgb, var(--s1) 10%, transparent), transparent 70%),
+    radial-gradient(900px 500px at 100% 0%, color-mix(in srgb, var(--y) 9%, transparent), transparent 70%), var(--bg); min-height: 100vh; }
+  .wrap { max-width: 1560px; margin: 0 auto; padding: 0 20px; }
+
+  header { padding: 26px 0 14px; display: flex; gap: 20px; align-items: end; justify-content: space-between; flex-wrap: wrap; }
+  h1 { font: 600 40px/1 var(--f-disp); letter-spacing: -.02em; margin: 0; font-variation-settings: "opsz" 144; }
+  h1 em { font-style: italic; font-weight: 400; color: var(--s1); }
+  header p { margin: 8px 0 0; color: var(--ink2); max-width: 64ch; }
+  .legendchips { display: flex; gap: 14px; font-size: 12px; color: var(--ink2); flex-wrap: wrap; }
+  .legendchips span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; background: var(--c); }
+
+  main { display: grid; grid-template-columns: minmax(0, 1fr) 372px; gap: 18px; align-items: start; padding-bottom: 40px; }
+  .col { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+  @media (max-width: 1040px) { main { grid-template-columns: 1fr; } }
+  aside { position: sticky; top: 14px; display: flex; flex-direction: column; gap: 14px; max-height: calc(100vh - 28px); overflow: auto; scrollbar-width: thin; padding: 2px; }
+  @media (max-width: 1040px) { aside { position: static; max-height: none; } }
+
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow); }
+  .cardhead { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: end; justify-content: space-between; padding: 14px 16px 10px; }
+  .eyebrow { font: 600 10.5px/1 var(--f-ui); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+  h2 { font: 600 20px/1.15 var(--f-disp); letter-spacing: -.01em; margin: 4px 0 0; }
+  h2 small { font: 400 13px var(--f-ui); color: var(--ink2); letter-spacing: 0; }
+
+  select, input[type=number] { font: 500 13px var(--f-ui); color: var(--ink); background: color-mix(in srgb, var(--ink) 5%, transparent); border: 1px solid var(--line); border-radius: 9px; padding: 6px 9px; outline: none; }
+  select { appearance: none; padding-right: 26px; cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%238c8a84' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 9px center; }
+  select:focus, input[type=number]:focus { border-color: var(--s2); }
+  .field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .field > span { font: 600 10px/1 var(--f-ui); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+  .field > span i { font-style: normal; display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; background: var(--c); }
+  .selrow { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; padding: 0 16px 12px; }
+  @media (max-width: 640px) { .selrow { grid-template-columns: 1fr 1fr; } }
+
+  #stage { position: relative; height: min(66vh, 640px); min-height: 380px; overflow: hidden; border-top: 1px solid var(--line); border-radius: 0 0 16px 16px; background: radial-gradient(ellipse 80% 70% at 50% 35%, var(--stage1), var(--stage2)); }
   #stage canvas { display: block; width: 100%; height: 100%; touch-action: none; }
-  #tip { position: absolute; pointer-events: none; padding: 5px 8px; border-radius: 6px; background: rgba(20,20,20,.88); color: #fff; font-size: 12px; white-space: pre; display: none; font-variant-numeric: tabular-nums; }
-  #hint { position: absolute; left: 10px; bottom: 8px; font-size: 11px; color: var(--muted); }
-  #legend { position: absolute; right: 12px; top: 10px; width: 150px; font-size: 11px; color: var(--text2); }
-  #legend .bar { height: 8px; border-radius: 4px; margin: 3px 0; }
-  #legend .ends { display: flex; justify-content: space-between; font-variant-numeric: tabular-nums; }
-  .selrow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; padding: 10px; border-bottom: 1px solid var(--border); }
-  @media (max-width: 560px) { .selrow { grid-template-columns: 1fr 1fr; } }
-  .selrow label, .gear label { display: flex; flex-direction: column; gap: 2px; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
-  select { font: inherit; font-size: 13px; padding: 4px 6px; border: 1px solid var(--border); border-radius: 6px; background: var(--page); color: var(--text); text-transform: none; letter-spacing: 0; }
-  aside { display: flex; flex-direction: column; gap: 12px; }
-  .box { padding: 10px 12px; }
-  .box h2 { font-size: 11px; margin: 0 0 6px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; font-weight: 600; }
-  .readout { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px 6px; }
-  .readout div { min-width: 0; }
-  .readout b { display: block; font-size: 19px; font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
-  .readout span { font-size: 11px; color: var(--muted); }
-  .brk { margin-top: 10px; display: grid; grid-template-columns: 78px 1fr 52px; gap: 3px 8px; align-items: center; font-size: 12px; color: var(--text2); }
-  .brk i { display: block; height: 8px; border-radius: 4px; min-width: 1px; }
-  .brk em { font-style: normal; text-align: right; font-variant-numeric: tabular-nums; color: var(--text); }
-  .row { display: grid; grid-template-columns: 1fr auto; gap: 0 8px; margin: 7px 0; }
-  .row label { font-size: 13px; display: flex; gap: 6px; align-items: baseline; }
+  #tip, #ctip { position: absolute; pointer-events: none; padding: 7px 10px; border-radius: 9px; background: color-mix(in srgb, var(--card) 92%, transparent); color: var(--ink); border: 1px solid var(--line2); box-shadow: var(--shadow); font: 500 12px/1.5 var(--f-mono); white-space: pre; display: none; backdrop-filter: blur(6px); z-index: 3; }
+  #hint { position: absolute; left: 14px; bottom: 10px; font-size: 11px; color: var(--muted); }
+  #stagetools { position: absolute; left: 14px; top: 12px; display: flex; gap: 12px; align-items: center; font-size: 12px; color: var(--ink2); }
+  #legend { position: absolute; right: 16px; top: 12px; width: 168px; font-size: 11px; color: var(--ink2); }
+  #legend .bar { height: 7px; border-radius: 4px; margin: 5px 0 3px; }
+  #legend .ends { display: flex; justify-content: space-between; font: 400 10.5px var(--f-mono); color: var(--ink2); }
+  label.chk { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; user-select: none; }
+  input[type=checkbox] { accent-color: var(--slice); }
+
+  /* slice chart */
+  .seg { display: inline-flex; padding: 3px; border-radius: 11px; background: color-mix(in srgb, var(--ink) 6%, transparent); gap: 2px; }
+  .seg button { font: 500 12px var(--f-ui); color: var(--ink2); border: 0; background: transparent; padding: 5px 11px; border-radius: 8px; cursor: pointer; white-space: nowrap; }
+  .seg button.on { background: var(--card); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.15); font-weight: 600; }
+  .seg.modes { display: flex; width: 100%; }
+  .seg.modes label { flex: 1; text-align: center; padding: 6px 4px; border-radius: 8px; cursor: pointer; font-size: 12px; color: var(--ink2); }
+  .seg.modes label:has(input:checked) { background: var(--card); color: var(--ink); font-weight: 600; box-shadow: 0 1px 3px rgba(0,0,0,.15); }
+  .seg.modes input { display: none; }
+  .sliceopts { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; padding: 0 16px 6px; }
+  .holdbox { display: flex; gap: 12px; align-items: center; flex: 1; min-width: 260px; }
+  .holdbox .nm { font-size: 12px; color: var(--ink2); white-space: nowrap; }
+  .holdbox .nm b { color: var(--slice); }
+  #holdOut { font: 500 14px var(--f-mono); min-width: 6.5em; text-align: right; }
+  #chart { position: relative; padding: 0 6px 8px 6px; touch-action: pan-y; user-select: none; }
+  #chart svg { display: block; width: 100%; overflow: visible; cursor: crosshair; }
+  #chart text { font-family: var(--f-mono); font-size: 10.5px; }
+  .chartkey { display: flex; gap: 16px; padding: 0 16px 12px; font-size: 12px; color: var(--ink2); flex-wrap: wrap; align-items: center; }
+  .chartkey span::before { content: ""; display: inline-block; width: 18px; height: 3px; border-radius: 2px; margin-right: 6px; vertical-align: 3px; background: var(--c); }
+
+  /* sidebar */
+  .hero { padding: 16px 18px 6px; }
+  .big { font: 600 68px/0.95 var(--f-disp); letter-spacing: -.03em; font-variation-settings: "opsz" 144; font-variant-numeric: lining-nums; }
+  .big small { font: 500 15px var(--f-ui); color: var(--muted); letter-spacing: 0; margin-left: 6px; }
+  .herosub { font: 400 12px var(--f-mono); color: var(--ink2); margin-top: 4px; }
+  .tiles { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid var(--line); margin-top: 12px; }
+  .tiles > div { padding: 10px 14px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); min-width: 0; }
+  .tiles > div:nth-child(3n) { border-right: 0; } .tiles > div:nth-last-child(-n+3) { border-bottom: 0; }
+  .tiles b { display: block; font: 500 17px/1.2 var(--f-mono); letter-spacing: -.02em; white-space: nowrap; }
+  .tiles b u { text-decoration: none; font-size: 10.5px; color: var(--muted); margin-left: 3px; letter-spacing: 0; }
+  .tiles span { font-size: 10.5px; color: var(--muted); }
+  .stack { display: flex; height: 10px; border-radius: 5px; overflow: hidden; margin: 0 18px; background: var(--track); gap: 2px; }
+  .stack i { display: block; min-width: 2px; }
+  .stackleg { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; padding: 8px 18px 4px; font-size: 11px; color: var(--ink2); }
+  .stackleg b { display: block; font: 500 13px var(--f-mono); color: var(--ink); }
+  .stackleg span::before { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 2px; margin-right: 5px; background: var(--c); }
+  .fine { padding: 4px 18px 14px; font-size: 11px; color: var(--muted); }
+
+  #ctl { padding: 12px 14px 8px; }
+  details.sec { border-top: 1px solid var(--line); padding: 2px 0; }
+  details.sec:first-of-type { border-top: 0; }
+  details.sec summary { list-style: none; cursor: pointer; padding: 9px 2px; display: flex; justify-content: space-between; align-items: center; }
+  details.sec summary::-webkit-details-marker { display: none; }
+  details.sec summary::after { content: "+"; color: var(--muted); font: 400 16px var(--f-mono); }
+  details.sec[open] summary::after { content: "–"; }
+  .row { display: grid; grid-template-columns: 1fr auto; gap: 0 8px; margin: 2px 0 10px; }
+  .row label { font-size: 13px; display: flex; gap: 7px; align-items: baseline; flex-wrap: wrap; }
   .row .note { color: var(--muted); font-size: 11px; }
-  .row output { font-variant-numeric: tabular-nums; font-weight: 600; font-size: 13px; }
-  .row input[type=range] { grid-column: 1 / -1; width: 100%; margin: 2px 0 0; accent-color: var(--accent); }
-  .chip { font-size: 10px; font-weight: 700; padding: 0 5px; border-radius: 4px; color: #fff; }
-  .chip.x { background: var(--accent); } .chip.y { background: var(--accent2); }
-  .presets { display: flex; gap: 4px; flex-wrap: wrap; margin: 0 0 4px; }
-  button { font: inherit; font-size: 12px; padding: 2px 8px; border: 1px solid var(--border); background: var(--page); color: var(--text); border-radius: 6px; cursor: pointer; }
-  button:hover { border-color: var(--text2); }
-  .seg { display: flex; border: 1px solid var(--border); border-radius: 7px; overflow: hidden; margin-bottom: 4px; }
-  .seg label { flex: 1; text-align: center; padding: 4px 6px; cursor: pointer; font-size: 12px; }
-  .seg input { display: none; }
-  .seg input:checked + span { font-weight: 700; }
-  .seg label:has(input:checked) { background: var(--accent); color: #fff; }
-  .gear { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px; }
-  #shift { border-top: 1px solid var(--border); }
-  .fit { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; font-size: 13px; margin-bottom: 8px; }
-  .fit input { width: 4.2em; font: inherit; padding: 2px 4px; border: 1px solid var(--border); border-radius: 5px; background: var(--page); color: var(--text); }
-  #fitMsg { color: var(--text2); font-size: 12px; }
-  #cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 8px; margin-bottom: 8px; }
-  .card { border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; font-size: 12px; color: var(--text2); }
-  .card h3 { margin: 0 0 3px; font-size: 13px; color: var(--text); }
-  .card b { color: var(--text); font-variant-numeric: tabular-nums; }
-  .card .d { color: var(--accent); }
-  .card.cur { background: var(--page); }
-  .tblwrap { max-height: 300px; overflow: auto; border: 1px solid var(--border); border-radius: 8px; }
-  #ladder { border-collapse: collapse; width: 100%; font-size: 12px; font-variant-numeric: tabular-nums; }
-  #ladder th { position: sticky; top: 0; background: var(--panel); font-size: 10px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); text-align: right; padding: 4px 6px; }
-  #ladder td { text-align: right; padding: 3px 6px; border-top: 1px solid var(--border); }
-  #ladder th:first-child, #ladder td:first-child { text-align: left; }
-  #ladder tr.go { cursor: pointer; } #ladder tr.go:hover { background: var(--page); }
-  #ladder tr.cur { background: var(--page); font-weight: 700; box-shadow: inset 3px 0 var(--accent); }
-  #ladder .xc { color: var(--muted); font-size: 10px; }
-  .doc { grid-column: 1 / -1; padding: 12px 16px; }
-  .doc h2 { font-size: 15px; margin: 0 0 6px; }
-  .doc h3 { font-size: 13px; margin: 14px 0 4px; }
+  .row output { font: 500 13px var(--f-mono); }
+  .row input[type=range] { grid-column: 1 / -1; }
+  .chip { font: 700 9.5px/1 var(--f-ui); padding: 3px 5px; border-radius: 4px; color: #fff; letter-spacing: .04em; }
+  .chip.x { background: var(--x); } .chip.y { background: var(--y); } .chip.h { background: var(--slice); color: #000; }
+  input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 20px; background: transparent; margin: 0; cursor: pointer; --fill: var(--ink); }
+  input[type=range]::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: linear-gradient(90deg, var(--fill) var(--p, 50%), var(--track) var(--p, 50%)); }
+  input[type=range]::-moz-range-track { height: 4px; border-radius: 2px; background: var(--track); }
+  input[type=range]::-moz-range-progress { height: 4px; border-radius: 2px; background: var(--fill); }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; margin-top: -6px; border-radius: 50%; background: var(--card); border: 2px solid var(--fill); box-shadow: 0 1px 4px rgba(0,0,0,.3); }
+  input[type=range]::-moz-range-thumb { width: 12px; height: 12px; border-radius: 50%; background: var(--card); border: 2px solid var(--fill); }
+  #holdSlider { --fill: var(--slice); }
+  .row.isx input[type=range] { --fill: var(--x); } .row.isy input[type=range] { --fill: var(--y); }
+  .presets { display: flex; gap: 5px; flex-wrap: wrap; margin: 0 0 8px; align-items: center; }
+  .presets > span { font-size: 11px; color: var(--muted); }
+  button.pill { font: 500 12px var(--f-ui); padding: 4px 10px; border: 1px solid var(--line2); background: transparent; color: var(--ink); border-radius: 999px; cursor: pointer; }
+  button.pill:hover { background: color-mix(in srgb, var(--ink) 7%, transparent); }
+  button.pill.solid { background: var(--ink); color: var(--card); border-color: var(--ink); }
+  .gear { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 4px 0 4px; }
+  .gearnote { font-size: 11px; color: var(--muted); padding-bottom: 6px; }
+
+  /* shift explorer */
+  .fit { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; font-size: 13px; padding: 0 16px 12px; color: var(--ink2); }
+  .fit input { width: 4.6em; }
+  #fitMsg { color: var(--ink2); font-size: 12px; flex-basis: 100%; }
+  #cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 10px; padding: 0 16px 12px; }
+  .scard { border: 1px solid var(--line); border-radius: 12px; padding: 11px 13px; font-size: 12px; color: var(--ink2); line-height: 1.7; }
+  .scard h3 { margin: 0 0 4px; font: 600 15px var(--f-disp); color: var(--ink); }
+  .scard h3 small { font: 400 11px var(--f-ui); color: var(--muted); }
+  .scard b { color: var(--ink); font: 500 12.5px var(--f-mono); }
+  .scard .d { color: var(--s1); font: 400 11.5px var(--f-mono); }
+  .scard.cur { background: color-mix(in srgb, var(--slice) 11%, transparent); border-color: color-mix(in srgb, var(--slice) 40%, transparent); }
+  .tblwrap { max-height: 320px; overflow: auto; border-top: 1px solid var(--line); border-radius: 0 0 16px 16px; }
+  #ladder { border-collapse: collapse; width: 100%; font: 400 12px var(--f-mono); }
+  #ladder th { position: sticky; top: 0; background: var(--card); font: 600 9.5px var(--f-ui); text-transform: uppercase; letter-spacing: .07em; color: var(--muted); text-align: right; padding: 8px 8px; border-bottom: 1px solid var(--line); }
+  #ladder td { text-align: right; padding: 5px 8px; border-top: 1px solid var(--line); }
+  #ladder th:first-child, #ladder td:first-child { text-align: left; padding-left: 16px; }
+  #ladder tr.go { cursor: pointer; } #ladder tr.go:hover { background: color-mix(in srgb, var(--ink) 5%, transparent); }
+  #ladder tr.cur { background: color-mix(in srgb, var(--slice) 14%, transparent); font-weight: 500; }
+  #ladder .xc { color: var(--muted); font: 400 9.5px var(--f-ui); margin-left: 4px; }
+
+  /* docs */
+  .doc { padding: 22px 26px 26px; margin-bottom: 40px; }
+  .doc h2 { font-size: 24px; margin: 0 0 8px; }
+  .doc h3 { font: 600 17px var(--f-disp); margin: 20px 0 4px; }
+  .doc p { max-width: 80ch; color: var(--ink2); }
   .doc table { border-collapse: collapse; width: 100%; font-size: 13px; }
-  .doc td, .doc th { text-align: left; vertical-align: top; padding: 5px 8px 5px 0; border-top: 1px solid var(--border); }
-  .doc th { color: var(--muted); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; border-top: 0; }
-  .tag { font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 9px; white-space: nowrap; }
-  .t-ok { background: rgba(43,138,62,.18); color: #2b8a3e; } .t-gd { background: rgba(240,140,0,.2); color: #d9730d; } .t-no { background: rgba(224,49,49,.16); color: #e03131; }
+  .doc td, .doc th { text-align: left; vertical-align: top; padding: 8px 12px 8px 0; border-top: 1px solid var(--line); color: var(--ink2); }
+  .doc td:first-child { color: var(--ink); font-weight: 600; white-space: nowrap; }
+  .doc th { color: var(--muted); font: 600 10px var(--f-ui); text-transform: uppercase; letter-spacing: .1em; border-top: 0; }
+  .tag { font: 700 10px var(--f-ui); padding: 2px 8px; border-radius: 99px; white-space: nowrap; letter-spacing: .02em; }
+  .t-ok { background: rgba(43,138,62,.16); color: #2b8a3e; } .t-gd { background: rgba(240,140,0,.18); color: #b86200; } .t-no { background: rgba(224,49,49,.14); color: #d6336c; }
   @media (prefers-color-scheme: dark) { .t-ok { color: #69db7c; } .t-gd { color: #ffa94d; } .t-no { color: #ff8787; } }
-  code { font-size: 12px; background: var(--page); padding: 1px 4px; border-radius: 4px; }
-  pre { background: var(--page); padding: 8px 10px; border-radius: 6px; overflow-x: auto; font-size: 12px; }
+  code { font: 400 12px var(--f-mono); background: color-mix(in srgb, var(--ink) 7%, transparent); padding: 1px 5px; border-radius: 5px; }
+  pre { font: 400 13px var(--f-mono); background: color-mix(in srgb, var(--ink) 6%, transparent); padding: 12px 14px; border-radius: 10px; overflow-x: auto; color: var(--ink); }
+  @media (max-width: 700px) { .doc td:first-child { white-space: normal; } h1 { font-size: 32px; } .big { font-size: 56px; } .doc { padding: 16px; } .doc table { display: block; overflow-x: auto; } }
 </style>
 <script type="importmap">
 { "imports": {
@@ -103,50 +185,64 @@
 </script>
 </head>
 <body>
+<div class="wrap">
 <header>
-  <h1>bike manifold</h1>
-  <p>steady-state power balance for a 180 lb rider on a ~$4k road bike, smooth pavement. pick any two variables as the floor axes, pick what to plot as height and color, and wiggle everything else. click the surface to jump there.</p>
+  <div>
+    <h1>bike <em>manifold</em></h1>
+    <p>steady-state power balance for a 180 lb rider on a ~$4k road bike, smooth pavement. explore the surface in 3d, slide the plane to cut a 2d slice, and see what a shift does.</p>
+  </div>
+  <div class="legendchips"><span style="--c:var(--x)">x axis</span><span style="--c:var(--y)">y axis</span><span style="--c:var(--slice)">slice plane</span></div>
 </header>
+
 <main>
-  <section class="panel">
-    <div class="selrow">
-      <label>x axis <select id="selX"></select></label>
-      <label>y axis (depth) <select id="selY"></select></label>
-      <label>height <select id="selZ"></select></label>
-      <label>color <select id="selC"></select></label>
-    </div>
-    <div id="stage">
-      <div id="tip"></div>
-      <div id="legend"><div id="legT"></div><div class="bar" id="legBar"></div><div class="ends"><span id="legLo"></span><span id="legHi"></span></div></div>
-      <label style="position:absolute;left:10px;top:8px;font-size:11px;color:var(--text2)"><input type="checkbox" id="autoscale" checked> autoscale height</label>
-      <div id="hint">drag = orbit · scroll = zoom · right-drag = pan · click = set point</div>
-    </div>
-    <div class="box" id="shift">
-      <h2>shift explorer <span style="text-transform:none;letter-spacing:0;font-weight:400">— from the marker's gear, cadence, power and conditions</span></h2>
+  <div class="col">
+    <section class="card" id="surfcard">
+      <div class="cardhead"><div><div class="eyebrow">the manifold</div><h2>surface <small id="surfTitle"></small></h2></div></div>
+      <div class="selrow">
+        <label class="field" style="--c:var(--x)"><span><i></i>x axis</span><select id="selX"></select></label>
+        <label class="field" style="--c:var(--y)"><span><i></i>y axis (depth)</span><select id="selY"></select></label>
+        <label class="field"><span>height</span><select id="selZ"></select></label>
+        <label class="field"><span>color</span><select id="selC"></select></label>
+      </div>
+      <div id="stage">
+        <div id="tip"></div>
+        <div id="stagetools"><label class="chk"><input type="checkbox" id="autoscale" checked> autoscale height</label><label class="chk"><input type="checkbox" id="clip" checked> clip tall outliers</label></div>
+        <div id="legend"><div id="legT"></div><div class="bar" id="legBar"></div><div class="ends"><span id="legLo"></span><span id="legHi"></span></div></div>
+        <div id="hint">drag = orbit · scroll = zoom · drag the amber bars = move the slice · click surface = set point</div>
+      </div>
+    </section>
+
+    <section class="card" id="slicecard">
+      <div class="cardhead">
+        <div><div class="eyebrow">the slice</div><h2 id="sliceTitle"></h2></div>
+        <div class="seg" id="hold"></div>
+      </div>
+      <div class="sliceopts">
+        <div class="holdbox"><span class="nm" id="holdName"></span><input type="range" id="holdSlider"><output id="holdOut"></output></div>
+        <label class="field" style="--c:var(--s1)"><span><i></i>left axis</span><select id="selL"></select></label>
+        <label class="field" style="--c:var(--s2)"><span><i></i>right axis</span><select id="selR"></select></label>
+        <label class="chk" id="snapWrap"><input type="checkbox" id="snap" checked> snap to real gears</label>
+      </div>
+      <div id="chart"><div id="ctip"></div></div>
+      <div class="chartkey" id="chartkey"></div>
+    </section>
+
+    <section class="card" id="shift">
+      <div class="cardhead"><div><div class="eyebrow">shifting</div><h2>shift explorer <small>from the marker's gear, cadence, power and conditions</small></h2></div></div>
       <div class="fit">
-        <b>my ride:</b>
+        <b style="color:var(--ink)">my ride</b>
         <label><input id="fitP" type="number" value="180" min="0" step="5"> W</label>
         <label><input id="fitV" type="number" value="18" min="1" step="0.1"> mph</label>
         <label><input id="fitC" type="number" value="95" min="30" step="1"> rpm</label>
-        <button id="fitGo">use as baseline + fit CdA</button>
+        <button class="pill solid" id="fitGo">use as baseline + fit CdA</button>
         <span id="fitMsg"></span>
       </div>
       <div id="cards"></div>
       <div class="tblwrap"><table id="ladder"></table></div>
-    </div>
-  </section>
+    </section>
 
-  <aside>
-    <div class="panel box">
-      <h2>at the marker</h2>
-      <div class="readout" id="readout"></div>
-      <div class="brk" id="brk"></div>
-    </div>
-    <div class="panel box" id="ctl"></div>
-  </aside>
-
-  <section class="panel doc" id="doc">
-    <h2>model &amp; assumptions</h2>
+      <section class="card doc" id="doc">
+    <div class="eyebrow">fine print</div><h2>model &amp; assumptions</h2>
     <p>everything is a <b>steady-state power balance</b>: at constant speed, what the rider puts into the cranks (minus drivetrain loss) equals the power burned against gravity, rolling resistance, and air.</p>
 <pre>η·P = v · [ m·g·(sinθ + Crr·cosθ) + ½·ρ·CdA·(v + w)·|v + w| ]</pre>
     <p>in "power → speed" mode the page solves this for v (largest root, so tailwinds behave). in "speed → power" mode it's just evaluated. cadence then falls out of speed and gear: <code>cadence = v / (wheel circumference × chainring/cog)</code>, and torque is <code>P / ω</code>.</p>
@@ -166,10 +262,32 @@
       <tr><td>rider output</td><td>power is an input, independent of cadence</td><td><span class="tag t-gd">good enough</span></td><td>real people have a power-cadence-fatigue envelope; they can't hold anything anywhere. torque is average over the pedal stroke</td></tr>
       <tr><td>gearing</td><td>2×12, 50/34 × 11-34, 700×28 circumference 2136 mm</td><td><span class="tag t-ok">solid</span></td><td>no tire squish or slip. auto gear = combo with cadence nearest your target, no shift hysteresis, so cadence in auto mode is a sawtooth</td></tr>
     </table>
+    <h3>how the slice works</h3>
+    <p>the amber plane cuts the surface at a fixed value of one axis variable (drag its bars, use the slider above the chart, or click the chart). the 2d chart is exactly the curve where plane meets surface, with any two outputs on left and right axes. in gear + cadence mode, hold cadence and the x axis is gear ratio: that's power and speed across every gear at one cadence. with "snap to real gears" the marker jumps between actual ring/cog combos.</p>
     <h3>coming up</h3>
-    <p>more views (cadence-vs-speed lines per gear), shareable URLs, fit CdA/Crr from your own ride data.</p>
+    <p>shareable URLs, fitting CdA/Crr from your own ride files.</p>
   </section>
+  </div>
+
+  <aside>
+    <section class="card">
+      <div class="hero">
+        <div class="eyebrow" style="margin-bottom:8px">at the marker</div>
+        <div class="big" id="heroBig"></div>
+        <div class="herosub" id="heroSub"></div>
+      </div>
+      <div class="tiles" id="readout"></div>
+    </section>
+    <section class="card" style="padding-top:14px">
+      <div class="eyebrow" style="padding:0 18px 8px">where the watts go</div>
+      <div class="stack" id="stack"></div>
+      <div class="stackleg" id="stackleg"></div>
+      <div class="fine" id="finePrint"></div>
+    </section>
+    <section class="card" id="ctl"></section>
+  </aside>
 </main>
+</div>
 <script type="module" src="app.js"></script>
 </body>
 </html>
