@@ -1,93 +1,119 @@
 <!DOCTYPE html>
-<html>
-	<head>
-		<meta charset="utf-8">
-		<title>PM Interview Question Generator</title>
-		<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Montserrat">
-		<style>
-		body {
-			font-family: 'Montserrat', serif;
-			color: white;
-			background-color: black;
-			text-align: center;
-		}
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Random product management interview questions.">
+<title>PM interview question generator</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>%F0%9F%8E%B2</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&display=swap">
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #000; --ink: #fff; --muted: #9a9a9a; --line: #444;
+  }
+  * { box-sizing: border-box; }
+  html { background: var(--bg); }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    min-height: 100dvh;
+    padding: 1.5rem max(1rem, env(safe-area-inset-right)) 1.5rem max(1rem, env(safe-area-inset-left));
+    font-family: "Montserrat", system-ui, sans-serif;
+    color: var(--ink);
+    background: var(--bg);
+    text-align: center;
+  }
+  main {
+    min-height: calc(100vh - 3rem);
+    min-height: calc(100dvh - 3rem);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2rem;
+  }
+  h1 {
+    margin: 0;
+    font-size: .8rem;
+    font-weight: 600;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  #question {
+    margin: 0;
+    max-width: 18em;
+    font-size: clamp(1.75rem, 6vw + .5rem, 4rem);
+    font-weight: 400;
+    line-height: 1.2;
+    text-wrap: balance;
+    overflow-wrap: break-word;
+  }
+  button {
+    font: inherit;
+    font-size: 1rem;
+    color: var(--ink);
+    background: none;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: .75rem 1.75rem;
+    min-height: 44px;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+  button:hover { border-color: var(--muted); }
+  button:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+  noscript { color: var(--muted); }
+</style>
+</head>
+<body>
+<main>
+  <h1>PM interview question generator</h1>
+  <p id="question" aria-live="polite"><noscript>Enable JavaScript to generate a question.</noscript></p>
+  <button id="again" type="button">Another</button>
+</main>
+<script>
+const tasks = [
+  'Design',
+  'Bring to market',
+  'Estimate the TAM of',
+  'Identify product metrics for',
+  'Suggest product priorities for',
+];
 
-		#question {
-			font-size: 48pt;
-			margin: 50vh 100pt 0;
-			transform: translateY(-50%);
-		}
-		
-		#again {
-			font-size: 14pt;
-			cursor: pointer;
-			color: gray;
-		}
-		</style>
-		<script>
+const products = [
+  'refrigerator', 'car', 'vending machine', 'thermostat', 'teleportation device',
+  'microwave', 'camera', 'mobile phone', 'toothbrush', 'streaming service',
+  'smart home', 'electric kettle', 'toaster', 'laptop', 'alarm clock',
+  'recipe application', 'video chat app', 'mood analyzer',
+  'in-car entertainment system', 'sandwich maker', 'in-flight entertainment system',
+  'music streaming device', 'self-driving car', 'bike', 'time machine',
+  'travel planner', 'roller skate', 'smoke detector',
+];
 
-		function randomOf(items) {
-			return items[Math.floor(Math.random()*items.length)];
-		}
+const audiences = [
+  'kids', 'the older generation', 'business people', 'knowledge workers',
+  'deaf people', 'late adopters of tech', 'rural dwellers',
+  'the next generation of internet users', 'the visually impaired',
+  'people who live alone', 'parents',
+];
 
-		function articalize(item) {
-			if ('aeiou'.indexOf(item[0]) > -1)
-				return 'an ' + item;
-			else
-				return 'a ' + item;
-		}
+const randomOf = (items) => items[Math.floor(Math.random() * items.length)];
+const withArticle = (word) => (/^[aeiou]/i.test(word) ? 'an ' : 'a ') + word;
 
-		function createQuestion() {
-			var q = document.getElementById('question');
-			var task = ['Design', 'Bring to market', 'Estimate the TAM of', 'Identify product metrics for', 'Suggest product priorities for'];
-			var product = ['refrigerator',
-							'car',
-							'vending machine',
-							'thermostat',
-							'teleportation device',
-							'microwave',
-							'camera',
-							'mobile phone',
-							'toothbrush',
-							'streaming service',
-							'smart home',
-							'eletric kettle',
-							'toaster',
-							'laptop',
-							'alarm clock',
-							'recipe application',
-							'video chat app',
-							'mood analyzer',
-							'in-car entertainment system',
-							'sandwich maker',
-							'in-flight entertainment system',
-							'music streaming device',
-							'self-driving car',
-							'bike',
-				       			'time machine',
-				       			'travel planner',
-							'roller skate',
-							'smoke detector'];
-			var audience = ['kids',
-							'the older generation',
-							'business people',
-							'knowledge workers',
-							'deaf people',
-							'late adopters of tech',
-							'rural dwellers',
-							'the next generation of internet users',
-							'the visually impaired',
-							'people who live alone',
-							'parents'];
-			q.innerText = randomOf(task) + ' ' + articalize(randomOf(product)) + ' for ' + randomOf(audience);
-			}
-		</script>
-		<title></title>
-	</head>
-	<body onload='createQuestion()'>
-		<div id='question'>
+const questionEl = document.getElementById('question');
+const againEl = document.getElementById('again');
 
-		</div>
-		<div id='again' onclick='createQuestion()'>another</div>
-	</body>
+function createQuestion() {
+  questionEl.textContent =
+    `${randomOf(tasks)} ${withArticle(randomOf(products))} for ${randomOf(audiences)}`;
+}
+
+againEl.addEventListener('click', createQuestion);
+createQuestion();
+</script>
+</body>
 </html>
