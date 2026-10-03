@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>bike manifold</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>%F0%9F%9A%B4</text></svg>">
+<style>
+  :root {
+    color-scheme: light;
+    --page: #f5f4f0; --panel: #fdfcfa; --text: #1b1a17; --text2: #5a5649; --muted: #928d7c;
+    --border: rgba(27,26,23,.12); --accent: #d9480f; --accent2: #1c7ed6; --canvas: #eceae3;
+    --grid: #8a877c;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      color-scheme: dark;
+      --page: #121316; --panel: #1a1c20; --text: #ecebe6; --text2: #b3b0a5; --muted: #77746a;
+      --border: rgba(236,235,230,.12); --accent: #ff8a4c; --accent2: #5aa9f5; --canvas: #0d0e11;
+      --grid: #6d6b64;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--page); color: var(--text); font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  header { padding: 14px 16px 6px; max-width: 1500px; margin: 0 auto; }
+  h1 { font-size: 20px; margin: 0; letter-spacing: -.01em; }
+  header p { margin: 2px 0 0; color: var(--text2); max-width: 70ch; }
+  main { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 12px; padding: 8px 16px 24px; max-width: 1500px; margin: 0 auto; align-items: start; }
+  @media (max-width: 920px) { main { grid-template-columns: 1fr; } }
+  .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; }
+  #stage { position: relative; height: min(72vh, 720px); min-height: 380px; overflow: hidden; background: var(--canvas); }
+  #stage canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+  #tip { position: absolute; pointer-events: none; padding: 5px 8px; border-radius: 6px; background: rgba(20,20,20,.88); color: #fff; font-size: 12px; white-space: pre; display: none; font-variant-numeric: tabular-nums; }
+  #hint { position: absolute; left: 10px; bottom: 8px; font-size: 11px; color: var(--muted); }
+  #legend { position: absolute; right: 12px; top: 10px; width: 150px; font-size: 11px; color: var(--text2); }
+  #legend .bar { height: 8px; border-radius: 4px; margin: 3px 0; }
+  #legend .ends { display: flex; justify-content: space-between; font-variant-numeric: tabular-nums; }
+  .selrow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; padding: 10px; border-bottom: 1px solid var(--border); }
+  @media (max-width: 560px) { .selrow { grid-template-columns: 1fr 1fr; } }
+  .selrow label, .gear label { display: flex; flex-direction: column; gap: 2px; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+  select { font: inherit; font-size: 13px; padding: 4px 6px; border: 1px solid var(--border); border-radius: 6px; background: var(--page); color: var(--text); text-transform: none; letter-spacing: 0; }
+  aside { display: flex; flex-direction: column; gap: 12px; }
+  .box { padding: 10px 12px; }
+  .box h2 { font-size: 11px; margin: 0 0 6px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; font-weight: 600; }
+  .readout { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px 6px; }
+  .readout div { min-width: 0; }
+  .readout b { display: block; font-size: 19px; font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+  .readout span { font-size: 11px; color: var(--muted); }
+  .brk { margin-top: 10px; display: grid; grid-template-columns: 78px 1fr 52px; gap: 3px 8px; align-items: center; font-size: 12px; color: var(--text2); }
+  .brk i { display: block; height: 8px; border-radius: 4px; min-width: 1px; }
+  .brk em { font-style: normal; text-align: right; font-variant-numeric: tabular-nums; color: var(--text); }
+  .row { display: grid; grid-template-columns: 1fr auto; gap: 0 8px; margin: 7px 0; }
+  .row label { font-size: 13px; display: flex; gap: 6px; align-items: baseline; }
+  .row .note { color: var(--muted); font-size: 11px; }
+  .row output { font-variant-numeric: tabular-nums; font-weight: 600; font-size: 13px; }
+  .row input[type=range] { grid-column: 1 / -1; width: 100%; margin: 2px 0 0; accent-color: var(--accent); }
+  .chip { font-size: 10px; font-weight: 700; padding: 0 5px; border-radius: 4px; color: #fff; }
+  .chip.x { background: var(--accent); } .chip.y { background: var(--accent2); }
+  .presets { display: flex; gap: 4px; flex-wrap: wrap; margin: 0 0 4px; }
+  button { font: inherit; font-size: 12px; padding: 2px 8px; border: 1px solid var(--border); background: var(--page); color: var(--text); border-radius: 6px; cursor: pointer; }
+  button:hover { border-color: var(--text2); }
+  .seg { display: flex; border: 1px solid var(--border); border-radius: 7px; overflow: hidden; margin-bottom: 4px; }
+  .seg label { flex: 1; text-align: center; padding: 4px 6px; cursor: pointer; font-size: 12px; }
+  .seg input { display: none; }
+  .seg input:checked + span { font-weight: 700; }
+  .seg label:has(input:checked) { background: var(--accent); color: #fff; }
+  .gear { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px; }
+  .doc { grid-column: 1 / -1; padding: 12px 16px; }
+  .doc h2 { font-size: 15px; margin: 0 0 6px; }
+  .doc h3 { font-size: 13px; margin: 14px 0 4px; }
+  .doc table { border-collapse: collapse; width: 100%; font-size: 13px; }
+  .doc td, .doc th { text-align: left; vertical-align: top; padding: 5px 8px 5px 0; border-top: 1px solid var(--border); }
+  .doc th { color: var(--muted); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; border-top: 0; }
+  .tag { font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 9px; white-space: nowrap; }
+  .t-ok { background: rgba(43,138,62,.18); color: #2b8a3e; } .t-gd { background: rgba(240,140,0,.2); color: #d9730d; } .t-no { background: rgba(224,49,49,.16); color: #e03131; }
+  @media (prefers-color-scheme: dark) { .t-ok { color: #69db7c; } .t-gd { color: #ffa94d; } .t-no { color: #ff8787; } }
+  code { font-size: 12px; background: var(--page); padding: 1px 4px; border-radius: 4px; }
+  pre { background: var(--page); padding: 8px 10px; border-radius: 6px; overflow-x: auto; font-size: 12px; }
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<header>
+  <h1>bike manifold</h1>
+  <p>steady-state power balance for a 180 lb rider on a ~$4k road bike, smooth pavement. pick any two variables as the floor axes, pick what to plot as height and color, and wiggle everything else. click the surface to jump there.</p>
+</header>
+<main>
+  <section class="panel">
+    <div class="selrow">
+      <label>x axis <select id="selX"></select></label>
+      <label>y axis (depth) <select id="selY"></select></label>
+      <label>height <select id="selZ"></select></label>
+      <label>color <select id="selC"></select></label>
+    </div>
+    <div id="stage">
+      <div id="tip"></div>
+      <div id="legend"><div id="legT"></div><div class="bar" id="legBar"></div><div class="ends"><span id="legLo"></span><span id="legHi"></span></div></div>
+      <label style="position:absolute;left:10px;top:8px;font-size:11px;color:var(--text2)"><input type="checkbox" id="autoscale" checked> autoscale height</label>
+      <div id="hint">drag = orbit · scroll = zoom · right-drag = pan · click = set point</div>
+    </div>
+  </section>
+
+  <aside>
+    <div class="panel box">
+      <h2>at the marker</h2>
+      <div class="readout" id="readout"></div>
+      <div class="brk" id="brk"></div>
+    </div>
+    <div class="panel box" id="ctl"></div>
+  </aside>
+
+  <section class="panel doc" id="doc">
+    <h2>model &amp; assumptions</h2>
+    <p>everything is a <b>steady-state power balance</b>: at constant speed, what the rider puts into the cranks (minus drivetrain loss) equals the power burned against gravity, rolling resistance, and air.</p>
+<pre>η·P = v · [ m·g·(sinθ + Crr·cosθ) + ½·ρ·CdA·(v + w)·|v + w| ]</pre>
+    <p>in "power → speed" mode the page solves this for v (largest root, so tailwinds behave). in "speed → power" mode it's just evaluated. cadence then falls out of speed and gear: <code>cadence = v / (wheel circumference × chainring/cog)</code>, and torque is <code>P / ω</code>.</p>
+    <p><span class="tag t-ok">solid</span> physics is standard and fine · <span class="tag t-gd">good enough</span> simplified, small or bounded error · <span class="tag t-no">crude</span> don't trust in that regime</p>
+    <table>
+      <tr><th>thing</th><th>assumed</th><th></th><th>what's being waved at</th></tr>
+      <tr><td>rider &amp; bike</td><td>180 lb rider, 19 lb bike (alloy/carbon endurance w/ pedals), 8 lb kit → 207 lb total</td><td><span class="tag t-ok">solid</span></td><td>just sliders</td></tr>
+      <tr><td>CdA</td><td>0.34 m² (hoods). presets: tuck 0.27, drops 0.30, tops 0.40</td><td><span class="tag t-gd">good enough</span></td><td>the biggest uncertainty here, ±15% easily. treated as constant: really it varies with yaw angle, posture, clothing and a little with speed</td></tr>
+      <tr><td>wind</td><td>one number: net headwind along the direction of travel</td><td><span class="tag t-gd">good enough</span></td><td>crosswind and yaw effects, gusts, gradient with height, and drafting are ignored. real rides average over direction changes, which isn't the same as a net wind of zero</td></tr>
+      <tr><td>rolling resistance</td><td>Crr 0.0045 (28 mm tires, smooth pavement), times cosθ</td><td><span class="tag t-gd">good enough</span></td><td>constant with speed. really it creeps up with speed, pressure, temperature and surface. bearings are lumped into this and the drivetrain number</td></tr>
+      <tr><td>drivetrain</td><td>97.5% efficient, constant</td><td><span class="tag t-gd">good enough</span></td><td>really 96-99% depending on gear, cross-chaining, lube, chain wear, power. no cross-chain penalty in auto gear</td></tr>
+      <tr><td>air density</td><td>ISA barometric pressure at altitude, ideal gas at temperature, dry air</td><td><span class="tag t-ok">solid</span></td><td>humidity (&lt;1%) and weather pressure swings ignored</td></tr>
+      <tr><td>grade</td><td>rise/run as %, θ = atan(grade)</td><td><span class="tag t-ok">solid</span></td><td>a constant slope. real roads wiggle</td></tr>
+      <tr><td>steady state</td><td>constant speed, no acceleration</td><td><span class="tag t-gd">good enough</span></td><td>wheel inertia and kinetic energy don't appear. fine for sustained efforts, bad for sprints, stop-and-go, and rolling terrain</td></tr>
+      <tr><td>descents</td><td>no braking, no change of position; solver caps at 40 m/s (~90 mph)</td><td><span class="tag t-no">crude</span></td><td>real riders brake, tuck, corner and chicken out. anything past ~40 mph is a physics fantasy</td></tr>
+      <tr><td>low speed</td><td>modeled as if you could balance at 0.5 mph</td><td><span class="tag t-no">crude</span></td><td>steep, low-power corners are where the surface goes to places you can't ride</td></tr>
+      <tr><td>rider output</td><td>power is an input, independent of cadence</td><td><span class="tag t-gd">good enough</span></td><td>real people have a power-cadence-fatigue envelope; they can't hold anything anywhere. torque is average over the pedal stroke</td></tr>
+      <tr><td>gearing</td><td>2×12, 50/34 × 11-34, 700×28 circumference 2136 mm</td><td><span class="tag t-ok">solid</span></td><td>no tire squish or slip. auto gear = combo with cadence nearest your target, no shift hysteresis, so cadence in auto mode is a sawtooth</td></tr>
+    </table>
+    <h3>coming up</h3>
+    <p>more views (cadence-vs-speed lines per gear), shareable URLs, fit CdA/Crr from your own ride data.</p>
+  </section>
+</main>
+<script type="module" src="app.js"></script>
+</body>
+</html>
