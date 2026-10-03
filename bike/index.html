@@ -65,6 +65,24 @@
   .seg input:checked + span { font-weight: 700; }
   .seg label:has(input:checked) { background: var(--accent); color: #fff; }
   .gear { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px; }
+  #shift { border-top: 1px solid var(--border); }
+  .fit { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; font-size: 13px; margin-bottom: 8px; }
+  .fit input { width: 4.2em; font: inherit; padding: 2px 4px; border: 1px solid var(--border); border-radius: 5px; background: var(--page); color: var(--text); }
+  #fitMsg { color: var(--text2); font-size: 12px; }
+  #cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 8px; margin-bottom: 8px; }
+  .card { border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; font-size: 12px; color: var(--text2); }
+  .card h3 { margin: 0 0 3px; font-size: 13px; color: var(--text); }
+  .card b { color: var(--text); font-variant-numeric: tabular-nums; }
+  .card .d { color: var(--accent); }
+  .card.cur { background: var(--page); }
+  .tblwrap { max-height: 300px; overflow: auto; border: 1px solid var(--border); border-radius: 8px; }
+  #ladder { border-collapse: collapse; width: 100%; font-size: 12px; font-variant-numeric: tabular-nums; }
+  #ladder th { position: sticky; top: 0; background: var(--panel); font-size: 10px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); text-align: right; padding: 4px 6px; }
+  #ladder td { text-align: right; padding: 3px 6px; border-top: 1px solid var(--border); }
+  #ladder th:first-child, #ladder td:first-child { text-align: left; }
+  #ladder tr.go { cursor: pointer; } #ladder tr.go:hover { background: var(--page); }
+  #ladder tr.cur { background: var(--page); font-weight: 700; box-shadow: inset 3px 0 var(--accent); }
+  #ladder .xc { color: var(--muted); font-size: 10px; }
   .doc { grid-column: 1 / -1; padding: 12px 16px; }
   .doc h2 { font-size: 15px; margin: 0 0 6px; }
   .doc h3 { font-size: 13px; margin: 14px 0 4px; }
@@ -102,6 +120,19 @@
       <div id="legend"><div id="legT"></div><div class="bar" id="legBar"></div><div class="ends"><span id="legLo"></span><span id="legHi"></span></div></div>
       <label style="position:absolute;left:10px;top:8px;font-size:11px;color:var(--text2)"><input type="checkbox" id="autoscale" checked> autoscale height</label>
       <div id="hint">drag = orbit · scroll = zoom · right-drag = pan · click = set point</div>
+    </div>
+    <div class="box" id="shift">
+      <h2>shift explorer <span style="text-transform:none;letter-spacing:0;font-weight:400">— from the marker's gear, cadence, power and conditions</span></h2>
+      <div class="fit">
+        <b>my ride:</b>
+        <label><input id="fitP" type="number" value="180" min="0" step="5"> W</label>
+        <label><input id="fitV" type="number" value="18" min="1" step="0.1"> mph</label>
+        <label><input id="fitC" type="number" value="95" min="30" step="1"> rpm</label>
+        <button id="fitGo">use as baseline + fit CdA</button>
+        <span id="fitMsg"></span>
+      </div>
+      <div id="cards"></div>
+      <div class="tblwrap"><table id="ladder"></table></div>
     </div>
   </section>
 

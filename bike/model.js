@@ -15,18 +15,20 @@ const id = (x) => x;
 // every adjustable variable. min/max/step/def are in DISPLAY units; toSI/fromSI convert.
 export const VARS = [
   { id: 'power',  group: 'engine',  label: 'power (crank)',  unit: 'W',    min: 0,    max: 600,  step: 5,     def: 200,   dec: 0, toSI: id, fromSI: id },
+  { id: 'cad',    group: 'engine',  label: 'cadence',        unit: 'rpm',  min: 40,   max: 130,  step: 1,     def: 90,    dec: 0, toSI: id, fromSI: id },
+  { id: 'ratio',  group: 'engine',  label: 'gear ratio',     unit: '',     min: 0.9,  max: 4.6,  step: 0.02,  def: 2.8,   dec: 2, toSI: id, fromSI: id, note: 'chainring ÷ cog' },
   { id: 'speed',  group: 'engine',  label: 'speed',          unit: 'mph',  min: 0,    max: 45,   step: 0.5,   def: 17,    dec: 1, toSI: (d) => d * MPH, fromSI: (s) => s / MPH },
   { id: 'grade',  group: 'terrain', label: 'grade',          unit: '%',    min: -10,  max: 18,   step: 0.5,   def: 0,     dec: 1, toSI: id, fromSI: id },
   { id: 'wind',   group: 'terrain', label: 'net headwind',   unit: 'mph',  min: -20,  max: 20,   step: 1,     def: 0,     dec: 0, toSI: (d) => d * MPH, fromSI: (s) => s / MPH, note: '+ = headwind, − = tailwind' },
   { id: 'alt',    group: 'terrain', label: 'altitude',       unit: 'ft',   min: 0,    max: 10000, step: 100,  def: 500,   dec: 0, toSI: (d) => d * FT, fromSI: (s) => s / FT },
   { id: 'temp',   group: 'terrain', label: 'temperature',    unit: '°F',   min: 20,   max: 105,  step: 1,     def: 65,    dec: 0, toSI: (d) => (d - 32) * 5 / 9, fromSI: (s) => s * 9 / 5 + 32 },
-  { id: 'cda',    group: 'bike',    label: 'CdA',            unit: 'm²',   min: 0.20, max: 0.50, step: 0.005, def: 0.34,  dec: 3, toSI: id, fromSI: id, note: 'drag area: bike + rider' },
+  { id: 'cda',    group: 'bike',    label: 'CdA',            unit: 'm²',   min: 0.15, max: 0.60, step: 0.005, def: 0.34,  dec: 3, toSI: id, fromSI: id, note: 'drag area: bike + rider' },
   { id: 'crr',    group: 'bike',    label: 'Crr',            unit: '',     min: 0.002, max: 0.012, step: 0.0005, def: 0.0045, dec: 4, toSI: id, fromSI: id, note: 'rolling resistance coeff.' },
   { id: 'rider',  group: 'bike',    label: 'rider mass',     unit: 'lb',   min: 110,  max: 260,  step: 1,     def: 180,   dec: 0, toSI: (d) => d * LB, fromSI: (s) => s / LB },
   { id: 'bike',   group: 'bike',    label: 'bike mass',      unit: 'lb',   min: 14,   max: 30,   step: 0.5,   def: 19,    dec: 1, toSI: (d) => d * LB, fromSI: (s) => s / LB },
   { id: 'kit',    group: 'bike',    label: 'kit mass',       unit: 'lb',   min: 0,    max: 20,   step: 0.5,   def: 8,     dec: 1, toSI: (d) => d * LB, fromSI: (s) => s / LB, note: 'helmet, shoes, clothes, bottles, tools' },
   { id: 'eta',    group: 'bike',    label: 'drivetrain eff.', unit: '%',   min: 90,   max: 99,   step: 0.1,   def: 97.5,  dec: 1, toSI: (d) => d / 100, fromSI: (s) => s * 100 },
-  { id: 'tcad',   group: 'gearing', label: 'target cadence', unit: 'rpm',  min: 50,   max: 130,  step: 1,     def: 90,    dec: 0, toSI: id, fromSI: id, noAxis: true },
+  { id: 'tcad',   group: 'gearing', label: 'auto-gear target cadence', unit: 'rpm',  min: 50,   max: 130,  step: 1,     def: 90,    dec: 0, toSI: id, fromSI: id, noAxis: true },
 ];
 export const VAR = Object.fromEntries(VARS.map((v) => [v.id, v]));
 export const defaults = () => Object.fromEntries(VARS.map((v) => [v.id, v.toSI(v.def)]));
@@ -82,12 +84,14 @@ export function compute(s, mode = 'power', gear = {}) {
   if (mode === 'power') {
     p = s.power; pw = p * s.eta; v = solveSpeed(pw, k);
   } else {
-    v = s.speed; pw = v * force(v, k);
+    v = mode === 'cadence' ? (s.cad * s.ratio * GEARS.circ) / 60 : s.speed;
+    pw = v * force(v, k);
     p = pw >= 0 ? pw / s.eta : pw; // negative = braking needed (no drivetrain involved)
   }
   const va = v + s.wind;
   const grav = k.mg * k.sin * v, roll = k.mg * s.crr * k.cos * v, aero = 0.5 * rho * s.cda * va * Math.abs(va) * v;
-  const g = pickGear(v, s.tcad, gear.ring, gear.cog);
+  let g = pickGear(v, s.tcad, gear.ring, gear.cog);
+  if (mode === 'cadence') g = { ...nearestGear(s.ratio), cad: s.cad };
   const cad = g.cad;
   const omega = (cad * 2 * Math.PI) / 60;
   const resist = Math.max(aero, 0) + roll + Math.max(grav, 0);
@@ -115,3 +119,31 @@ export const OUTPUTS = [
   { id: 'aeroShare', label: 'aero share of resistance', unit: '%', dec: 0, get: (r) => r.aeroShare * 100 },
 ];
 export const OUT = Object.fromEntries(OUTPUTS.map((o) => [o.id, o]));
+
+// ---- gears & shifting ----
+export const allGears = () => GEARS.rings.flatMap((ring) => GEARS.cogs.map((cog) => ({
+  ring, cog, ratio: ring / cog,
+  xchain: (ring === GEARS.rings[0] && cog >= GEARS.cogs[GEARS.cogs.length - 3]) || (ring === GEARS.rings[GEARS.rings.length - 1] && cog <= GEARS.cogs[2]),
+}))).sort((a, b) => a.ratio - b.ratio);
+export function nearestGear(ratio) {
+  return allGears().reduce((b, g) => (Math.abs(g.ratio - ratio) < Math.abs(b.ratio - ratio) ? g : b));
+}
+export const speedAt = (cad, ratio) => (cad * ratio * GEARS.circ) / 60;
+
+// CdA that makes (power, speed) consistent with everything else in s
+export function fitCda(s, power, v) {
+  const theta = Math.atan(s.grade / 100), m = s.rider + s.bike + s.kit, rho = airDensity(s.alt, s.temp);
+  const va = v + s.wind, drag = 0.5 * rho * va * Math.abs(va);
+  const rest = m * G * (Math.sin(theta) + s.crr * Math.cos(theta));
+  return Math.abs(drag) < 1e-6 ? NaN : (s.eta * power / v - rest) / drag;
+}
+
+// what happens in each gear, from the current operating point `base` (result of compute)
+export function shiftTable(s, base) {
+  const rows = allGears().map((g) => {
+    const hc = compute({ ...s, cad: base.cad, ratio: g.ratio }, 'cadence');            // hold cadence → power changes
+    const hp = compute({ ...s, power: base.p }, 'power', { ring: g.ring, cog: g.cog }); // hold power → cadence changes
+    return { ...g, hc, hp, cur: g.ring === base.ring && g.cog === base.cog };
+  });
+  return rows;
+}

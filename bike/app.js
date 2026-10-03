@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { VARS, VAR, OUTPUTS, OUT, GEARS, defaults, compute } from './model.js';
+import { VARS, VAR, OUTPUTS, OUT, GEARS, defaults, compute, nearestGear, speedAt, fitCda, shiftTable } from './model.js';
 
 const $ = (id) => document.getElementById(id);
 const S = 5, H = 4, N = 56; // half-width of floor, height of box, grid resolution
@@ -14,7 +14,10 @@ const disp = (id) => VAR[id].fromSI(state[id]);
 const fmt = (v, dec) => (Number.isFinite(v) ? v.toFixed(dec) : '—');
 const gear = () => ({ ring: ui.ring === 'auto' ? 'auto' : +ui.ring, cog: ui.cog === 'auto' ? 'auto' : +ui.cog });
 const run = (over = {}) => compute({ ...state, ...over }, ui.mode, gear());
-const axisVars = () => VARS.filter((v) => !v.noAxis && v.id !== (ui.mode === 'power' ? 'speed' : 'power'));
+const ENGINE = { power: ['power'], speed: ['speed'], cadence: ['cad', 'ratio'] };
+const DEP = { power: 'speed', speed: 'power', cadence: 'power' };
+const MODE_DEFAULT = { power: ['power', 'grade', 'speed'], speed: ['speed', 'grade', 'power'], cadence: ['ratio', 'cad', 'power'] };
+const axisVars = () => VARS.filter((v) => !v.noAxis && (v.group !== 'engine' || ENGINE[ui.mode].includes(v.id)));
 
 // ---------- controls ----------
 const rows = {};
@@ -26,8 +29,8 @@ function buildControls() {
     const h = document.createElement('h2'); h.textContent = title; h.style.marginTop = g === 'engine' ? '0' : '14px'; ctl.appendChild(h);
     if (g === 'engine') {
       const seg = document.createElement('div'); seg.className = 'seg';
-      seg.innerHTML = `<label><input type="radio" name="mode" value="power" checked><span>power → speed</span></label><label><input type="radio" name="mode" value="speed"><span>speed → power</span></label>`;
-      seg.addEventListener('change', (e) => { ui.mode = e.target.value; fixAxes(); buildSelects(); sync(); });
+      seg.innerHTML = `<label><input type="radio" name="mode" value="power" checked><span>power → speed</span></label><label><input type="radio" name="mode" value="speed"><span>speed → power</span></label><label><input type="radio" name="mode" value="cadence"><span>gear + cadence</span></label>`;
+      seg.addEventListener('change', (e) => setMode(e.target.value));
       ctl.appendChild(seg);
     }
     if (g === 'bike') {
@@ -66,13 +69,17 @@ function buildSelects() {
   const outs = OUTPUTS.map((o) => [o.id, `${o.label} (${o.unit})`]);
   fill($('selZ'), outs, ui.z); fill($('selC'), outs, ui.c);
 }
-function fixAxes() {
+// switch mode, carrying the current operating point over so the marker doesn't jump
+function setMode(mode, quiet) {
+  const r = run();
+  state.power = Math.max(r.p, 0); state.speed = r.v; state.cad = r.cad; state.ratio = r.ring / r.cog;
+  ui.mode = mode;
   const ok = new Set(axisVars().map((v) => v.id));
-  const dep = ui.mode === 'power' ? 'speed' : 'power', ind = ui.mode === 'power' ? 'power' : 'speed';
-  if (!ok.has(ui.x)) ui.x = ui.x === dep ? ind : 'power';
-  if (!ok.has(ui.y)) ui.y = ui.y === dep ? ind : 'grade';
-  if (ui.x === ui.y) ui.y = [...ok].find((i) => i !== ui.x);
-  if (ui.z === ind) ui.z = dep; // the independent engine var is now an input, plot the other
+  if (!ok.has(ui.x) || !ok.has(ui.y) || ui.x === ui.y) [ui.x, ui.y] = MODE_DEFAULT[mode];
+  if (ENGINE[mode].includes(ui.z) || (mode === 'cadence' && ui.z === 'cad')) ui.z = DEP[mode];
+  zRange = null;
+  const radio = document.querySelector(`input[name=mode][value=${mode}]`); if (radio) radio.checked = true;
+  buildSelects(); if (!quiet) sync();
 }
 for (const k of ['X', 'Y', 'Z', 'C']) {
   $('sel' + k).addEventListener('change', (e) => {
@@ -251,7 +258,7 @@ function updateReadout(r) {
   $('readout').innerHTML = [
     cell(`${fmt(r.v / 0.44704, 1)} mph`, `${fmt(r.v * 3.6, 1)} km/h`),
     cell(`${fmt(r.p, 0)} W`, ui.mode === 'speed' && r.p < 0 ? 'braking needed' : `${fmt(r.wkg, 2)} W/kg`),
-    cell(`${fmt(r.cad, 0)} rpm`, `${r.ring}×${r.cog}`),
+    cell(`${fmt(r.cad, 0)} rpm`, `${r.ring}×${r.cog} · ratio ${fmt(r.ring / r.cog, 2)}`),
     cell(`${fmt(r.torque, 1)} N·m`, 'crank torque'),
     cell(`${fmt(r.pace, 1)}`, 'min / mile'),
     cell(`${fmt(r.climb, 0)} ft/h`, 'climb rate'),
@@ -265,13 +272,46 @@ function updateReadout(r) {
     row.out.textContent = `${fmt(d, v.dec)} ${v.unit}`; row.inp.value = d;
     row.chip.textContent = v.id === ui.x ? 'X' : v.id === ui.y ? 'Y' : ''; row.chip.className = 'chip ' + (v.id === ui.x ? 'x' : v.id === ui.y ? 'y' : '');
     row.chip.style.display = row.chip.textContent ? '' : 'none';
-    const hide = (ui.mode === 'power' && v.id === 'speed') || (ui.mode === 'speed' && v.id === 'power');
+    const hide = v.group === 'engine' && !ENGINE[ui.mode].includes(v.id);
     row.el.style.display = hide ? 'none' : '';
   }
   const oc = OUT[ui.c];
   $('legT').textContent = `color: ${oc.label}`; $('legLo').textContent = `${fmt(cr[0], oc.dec)} ${oc.unit}`; $('legHi').textContent = `${fmt(cr[1], oc.dec)} ${oc.unit}`;
   $('legBar').style.background = `linear-gradient(90deg, ${[0, .25, .5, .75, 1].map((t) => 'rgb(' + viridis(t).map((c) => Math.round(c * 255)).join(',') + ')').join(',')})`;
 }
+
+// ---------- shift explorer ----------
+const sgn = (x, d = 0) => (Math.abs(x) < 0.5 * Math.pow(10, -d) ? '±' : x >= 0 ? '+' : '−') + Math.abs(x).toFixed(d);
+function updateShift(r) {
+  const rows = shiftTable(state, r), mph = (v) => v / 0.44704;
+  const cur = rows.find((x) => x.cur) || rows[0];
+  const same = rows.filter((x) => x.ring === r.ring).sort((p, q) => p.ratio - q.ratio), i = same.findIndex((x) => x.cur);
+  const card = (title, g) => {
+    if (!g) return `<div class="card"><h3>${title}</h3>end of the cassette</div>`;
+    const dRatio = (g.ratio / cur.ratio - 1) * 100;
+    return `<div class="card"><h3>${title} → ${g.ring}×${g.cog} <span style="font-weight:400">(${sgn(dRatio, 0)}% gear)</span></h3>
+      hold <b>${fmt(r.cad, 0)} rpm</b>: <b>${fmt(mph(g.hc.v), 1)} mph</b> <span class="d">(${sgn(mph(g.hc.v) - mph(r.v), 1)})</span>, needs <b>${fmt(g.hc.p, 0)} W</b> <span class="d">(${sgn(g.hc.p - r.p)})</span><br>
+      hold <b>${fmt(r.p, 0)} W</b>: <b>${fmt(g.hp.cad, 0)} rpm</b> <span class="d">(${sgn(g.hp.cad - r.cad)})</span>, <b>${fmt(mph(g.hp.v), 1)} mph</b> <span class="d">(${sgn(mph(g.hp.v) - mph(r.v), 2)})</span></div>`;
+  };
+  $('cards').innerHTML = card('shift down (easier)', same[i - 1]) + `<div class="card cur"><h3>now: ${r.ring}×${r.cog}</h3><b>${fmt(mph(r.v), 1)} mph</b> · <b>${fmt(r.cad, 0)} rpm</b> · <b>${fmt(r.p, 0)} W</b><br>${fmt(r.torque, 1)} N·m at the crank</div>` + card('shift up (harder)', same[i + 1]);
+  $('ladder').innerHTML = `<tr><th>gear</th><th>ratio</th><th>Δ gear</th><th>mph @ ${fmt(r.cad, 0)} rpm</th><th>W needed</th><th>ΔW</th><th>rpm @ ${fmt(r.p, 0)} W</th><th>mph</th></tr>` +
+    rows.map((x) => `<tr class="go ${x.cur ? 'cur' : ''}" data-r="${x.ring}" data-c="${x.cog}"><td>${x.ring}×${x.cog}${x.xchain ? ' <span class="xc">x-chain</span>' : ''}</td><td>${fmt(x.ratio, 2)}</td><td>${x.cur ? '' : sgn((x.ratio / cur.ratio - 1) * 100, 0) + '%'}</td><td>${fmt(mph(x.hc.v), 1)}</td><td>${fmt(x.hc.p, 0)}</td><td>${x.cur ? '' : sgn(x.hc.p - r.p)}</td><td>${fmt(x.hp.cad, 0)}</td><td>${fmt(mph(x.hp.v), 1)}</td></tr>`).join('');
+}
+$('ladder').addEventListener('click', (e) => {
+  const tr = e.target.closest('tr.go'); if (!tr) return;
+  const r = run(); setMode('cadence', true);
+  state.cad = r.cad; state.ratio = +tr.dataset.r / +tr.dataset.c; sync();
+});
+$('fitGo').addEventListener('click', () => {
+  const P = +$('fitP').value, mph = +$('fitV').value, cad = +$('fitC').value;
+  if (!(P > 0 && mph > 0 && cad > 0)) return;
+  const g = nearestGear((mph * 0.44704 * 60) / (cad * GEARS.circ)), v = speedAt(cad, g.ratio);
+  const cda = fitCda(state, P, v);
+  if (!(cda > 0)) { $('fitMsg').textContent = "can't fit: that point implies negative drag (check grade/wind)."; return; }
+  state.cda = cda; setMode('cadence', true);
+  state.cad = cad; state.ratio = g.ratio; sync();
+  $('fitMsg').textContent = `nearest gear ${g.ring}×${g.cog} → ${fmt(v / 0.44704, 1)} mph; fit CdA ${fmt(cda, 3)} m² at current grade/wind/mass/Crr${cda > 0.5 ? ' (high: maybe a headwind, a false flat, or heavier Crr)' : ''}.`;
+});
 
 // ---------- main loop ----------
 let dirty = true;
@@ -280,7 +320,7 @@ function frame() {
   if (dirty) {
     dirty = false;
     evalGrid(); updateSurface(); updateDecor();
-    const r = run(); updateMarker(r); updateReadout(r);
+    const r = run(); updateMarker(r); updateReadout(r); updateShift(r);
   }
   controls.update(); renderer.render(scene, camera);
   requestAnimationFrame(frame);
