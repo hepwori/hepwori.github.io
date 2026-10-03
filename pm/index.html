@@ -73,7 +73,7 @@
 <main>
   <h1>PM interview question generator</h1>
   <p id="question" aria-live="polite"><noscript>Enable JavaScript to generate a question.</noscript></p>
-  <button id="again" type="button">Another</button>
+  <button id="again" type="button">another</button>
 </main>
 <script>
 const tasks = [
@@ -82,6 +82,7 @@ const tasks = [
   'Estimate the TAM of',
   'Identify product metrics for',
   'Suggest product priorities for',
+  'Apply AI to',
 ];
 
 const products = [
@@ -92,6 +93,7 @@ const products = [
   'in-car entertainment system', 'sandwich maker', 'in-flight entertainment system',
   'music streaming device', 'self-driving car', 'bike', 'time machine',
   'travel planner', 'roller skate', 'smoke detector',
+  'paperclip',
 ];
 
 const audiences = [
@@ -99,6 +101,7 @@ const audiences = [
   'deaf people', 'late adopters of tech', 'rural dwellers',
   'the next generation of internet users', 'the visually impaired',
   'people who live alone', 'parents',
+  'cats',
 ];
 
 const randomOf = (items) => items[Math.floor(Math.random() * items.length)];
