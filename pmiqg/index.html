@@ -89,6 +89,15 @@
     touch-action: manipulation;
   }
   #spin { margin-top: 1.4rem; }
+  #link {
+    margin-top: .5rem;
+    padding: .5rem;
+    font-size: .8rem;
+    color: var(--muted);
+  }
+  #link:hover { color: var(--ink); }
+  #link:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  #link[aria-disabled="true"] { opacity: .4; pointer-events: none; }
   button:disabled { opacity: .4; cursor: default; }
   button:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
   .sr-only {
@@ -105,6 +114,7 @@
   <p id="result" class="sr-only" aria-live="polite"></p>
   <noscript>Enable JavaScript to generate a question.</noscript>
   <button id="spin" type="button">another</button>
+  <a id="link" href="#" aria-disabled="true">link</a>
 </main>
 <script>
 const tasks = [
@@ -136,6 +146,13 @@ const audiences = [
 ];
 
 const withArticle = (word) => (/^[aeiou]/i.test(word) ? 'an ' : 'a ') + word;
+// permalink keys: a short hash of each reel's display text, so links survive
+// reordering or adding to the lists (they only break if that exact text changes)
+const keyOf = (text) => {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 0x01000193);
+  return (h >>> 0).toString(36);
+};
 const randomOf = (items) => items[Math.floor(Math.random() * items.length)];
 
 // each reel: its pool of display strings and how long it spins (staggered stops)
@@ -147,6 +164,7 @@ const reels = [
 
 const FILLER = 18; // items scrolled past before landing
 const reelsEl = document.getElementById('reels');
+const linkEl = document.getElementById('link');
 const resultEl = document.getElementById('result');
 const spinEl = document.getElementById('spin');
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
@@ -169,10 +187,9 @@ function fill(r, texts) {
   }));
 }
 
-function spinReel(r) {
+function spinReel(r, to = randomOf(r.items)) {
   // start on whatever is showing now, roll through random filler, land on a fresh pick
   const from = r.current ?? randomOf(r.items);
-  const to = randomOf(r.items);
   const texts = [from];
   for (let i = 0; i < FILLER; i++) texts.push(randomOf(r.items));
   texts.push(to);
@@ -197,17 +214,62 @@ function spinReel(r) {
   });
 }
 
-async function spin() {
+// "#key.key.key" -> one display string per reel, or null if it doesn't fully resolve
+function picksFromHash() {
+  const keys = location.hash.slice(1).split('.');
+  if (keys.length !== reels.length) return null;
+  const picks = reels.map((r, i) => r.items.find((t) => keyOf(t) === keys[i]));
+  return picks.every(Boolean) ? picks : null;
+}
+
+const permalinkHash = () => '#' + reels.map((r) => keyOf(r.current)).join('.');
+
+async function spin(picks = null) {
   spinEl.disabled = true;
+  linkEl.setAttribute('aria-disabled', 'true');
+  linkEl.textContent = 'link';
   resultEl.textContent = '';
-  await Promise.all(reels.map(spinReel));
+  await Promise.all(reels.map((r, i) => spinReel(r, picks?.[i])));
   resultEl.textContent = reels.map((r) => r.current).join(' ');
+  linkEl.href = permalinkHash();
+  linkEl.removeAttribute('aria-disabled');
   spinEl.disabled = false;
   spinEl.focus({ preventScroll: true });
 }
 
-spinEl.addEventListener('click', spin);
-spin();
+async function copyToClipboard(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    const ta = document.createElement('textarea'); // older browsers / insecure contexts
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.append(ta);
+    ta.select();
+    const ok = document.execCommand('copy');
+    ta.remove();
+    return ok;
+  }
+}
+
+spinEl.addEventListener('click', () => {
+  // a fresh random combo no longer matches whatever fragment is in the URL
+  if (location.hash) history.replaceState(null, '', location.pathname + location.search);
+  spin();
+});
+
+linkEl.addEventListener('click', async (e) => {
+  e.preventDefault();
+  if (linkEl.getAttribute('aria-disabled') === 'true') return;
+  history.replaceState(null, '', permalinkHash());
+  const ok = await copyToClipboard(location.href);
+  linkEl.textContent = ok ? 'copied' : 'copy the url above';
+  setTimeout(() => { linkEl.textContent = 'link'; }, 1800);
+});
+
+spin(picksFromHash());
 </script>
 </body>
 </html>
