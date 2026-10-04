@@ -2,7 +2,7 @@
 
 a spoof of product-management interview questions. three slot-machine reels (task, product, audience) spin and land on something like "Suggest AI-powered features for a paperclip for cats".
 
-- live: https://isaa.ch/toys/pmiqg/ (also `hepwori.github.io/pmiqg/`)
+- live: https://isaa.ch/toys/interview/ (also `hepwori.github.io/interview/`)
 - **another** spins again; **link** copies a permalink to the current combination
 - permalink fragment is three characters, one per reel: the item's position in its list, base 62 (`#000` is the first item of each). a bad or out-of-range fragment just falls back to a random spin
 - respects `prefers-reduced-motion` (no animation, lands instantly)
