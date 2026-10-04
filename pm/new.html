@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="Spin the wheels for a random product management interview question.">
-<title>PM interview question slot machine</title>
+<meta name="description" content="Random product management interview question.">
+<title>PM interview question generator</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>%F0%9F%8E%B0</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -13,7 +13,7 @@
   :root {
     color-scheme: dark;
     --bg: #000; --ink: #fff; --muted: #9a9a9a; --line: #444; --accent: #ffd43b;
-    --item: 2.4em; /* two lines of text per reel slot */
+    --item: 2.4em; /* narrow screens: two lines of text per reel slot */
   }
   * { box-sizing: border-box; }
   html { background: var(--bg); }
@@ -34,7 +34,7 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 2rem;
+    gap: 1.5rem;
   }
   h1 {
     margin: 0;
@@ -46,11 +46,11 @@
   }
   .reels {
     width: 100%;
-    max-width: 44rem;
+    max-width: 60rem;
     display: flex;
     flex-direction: column;
-    gap: .75rem;
-    font-size: clamp(1.25rem, 4.5vw + .35rem, 2.5rem);
+    gap: .4rem;
+    font-size: clamp(1.25rem, 4.5vw + .35rem, 2rem);
     line-height: 1.2;
   }
   .reel {
@@ -63,6 +63,8 @@
     -webkit-mask-image: linear-gradient(transparent, #000 18%, #000 82%, transparent);
             mask-image: linear-gradient(transparent, #000 18%, #000 82%, transparent);
   }
+  /* wide enough for the longest string on one line, so slots can be shorter */
+  @media (min-width: 56rem) { :root { --item: 1.7em; } }
   .reel.landed { border-color: var(--accent); }
   .strip { will-change: transform; }
   .item {
@@ -97,11 +99,11 @@
 </head>
 <body>
 <main>
-  <h1>PM interview question slot machine</h1>
+  <h1>PM interview question generator</h1>
   <div class="reels" id="reels" aria-hidden="true"></div>
   <p id="result" class="sr-only" aria-live="polite"></p>
   <noscript>Enable JavaScript to generate a question.</noscript>
-  <button id="spin" type="button">spin</button>
+  <button id="spin" type="button">another</button>
 </main>
 <script>
 const tasks = [
