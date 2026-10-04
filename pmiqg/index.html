@@ -146,13 +146,8 @@ const audiences = [
 ];
 
 const withArticle = (word) => (/^[aeiou]/i.test(word) ? 'an ' : 'a ') + word;
-// permalink keys: a short hash of each reel's display text, so links survive
-// reordering or adding to the lists (they only break if that exact text changes)
-const keyOf = (text) => {
-  let h = 0x811c9dc5;
-  for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 0x01000193);
-  return (h >>> 0).toString(36);
-};
+// permalink: one character per reel, the item's position in its list (base 62)
+const DIGITS = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
 const randomOf = (items) => items[Math.floor(Math.random() * items.length)];
 
 // each reel: its pool of display strings and how long it spins (staggered stops)
@@ -214,15 +209,15 @@ function spinReel(r, to = randomOf(r.items)) {
   });
 }
 
-// "#key.key.key" -> one display string per reel, or null if it doesn't fully resolve
+// "#abc" -> one display string per reel, or null if any ordinal is invalid
 function picksFromHash() {
-  const keys = location.hash.slice(1).split('.');
-  if (keys.length !== reels.length) return null;
-  const picks = reels.map((r, i) => r.items.find((t) => keyOf(t) === keys[i]));
+  const code = location.hash.slice(1);
+  if (code.length !== reels.length) return null;
+  const picks = reels.map((r, i) => r.items[DIGITS.indexOf(code[i])]);
   return picks.every(Boolean) ? picks : null;
 }
 
-const permalinkHash = () => '#' + reels.map((r) => keyOf(r.current)).join('.');
+const permalinkHash = () => '#' + reels.map((r) => DIGITS[r.items.indexOf(r.current)]).join('');
 
 async function spin(picks = null) {
   spinEl.disabled = true;
