@@ -13,7 +13,7 @@ A spoof PM-interview question generator by Isaac Hepworth. Three slot-machine re
 
 ## Deployment & serving
 
-Plain GitHub Pages serves this directory at `hepwori.github.io/pmiqg/`; the `isaa.ch/toys*` Cloudflare Worker (`toys-proxy/`) reverse-proxies it unchanged to `isaa.ch/toys/pmiqg/`. Keep links document-relative so both mounts work (there are currently none). Formerly lived at `/pm`, which now 404s.
+Plain GitHub Pages serves this directory at `hepwori.github.io/interview/`; the `isaa.ch/toys*` Cloudflare Worker (`toys-proxy/`) reverse-proxies it unchanged to `isaa.ch/toys/interview/`. Keep links document-relative so both mounts work (there are currently none). Formerly lived at `/pm`, then `/pmiqg`; both now 404 (the directory name is just `interview`, the project is still "PM interview question generator").
 
 ## How the code works
 
