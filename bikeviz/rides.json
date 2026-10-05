@@ -1,7 +1,7 @@
 {
-  "generated": "2026-09-27T12:47:44.831463+00:00",
+  "generated": "2026-10-05T01:06:51.577829+00:00",
   "source_file": "export.xml",
-  "total_rides": 728,
+  "total_rides": 732,
   "rides": [
     {
       "date": "2015-07-16T17:25:23-06:00",
@@ -11649,6 +11649,70 @@
       "power_avg": 175.4,
       "power_max": 625.0,
       "elev_gain_ft": 876,
+      "source": "Isaac\u2019s Apple\u00a0Watch"
+    },
+    {
+      "date": "2026-09-27T09:09:26-06:00",
+      "dist_mi": 22.0195,
+      "dur_mins": 75.75,
+      "speed_mph": 17.44,
+      "hr_avg": 145.1,
+      "hr_max": 162.0,
+      "hr_min": 87.0,
+      "energy_kcal": 235.4,
+      "cadence_avg": 91.3,
+      "cadence_max": 119.3,
+      "power_avg": 165.9,
+      "power_max": 692.0,
+      "elev_gain_ft": 912,
+      "source": "Isaac\u2019s Apple\u00a0Watch"
+    },
+    {
+      "date": "2026-10-02T17:21:40-06:00",
+      "dist_mi": 21.4068,
+      "dur_mins": 71.14,
+      "speed_mph": 18.055,
+      "hr_avg": 154.5,
+      "hr_max": 168.0,
+      "hr_min": 101.0,
+      "energy_kcal": 234.3,
+      "cadence_avg": 93.5,
+      "cadence_max": 119.5,
+      "power_avg": 181.7,
+      "power_max": 734.0,
+      "elev_gain_ft": 786,
+      "source": "Isaac\u2019s Apple\u00a0Watch"
+    },
+    {
+      "date": "2026-10-03T09:19:29-06:00",
+      "dist_mi": 22.6894,
+      "dur_mins": 76.66,
+      "speed_mph": 17.758,
+      "hr_avg": 155.5,
+      "hr_max": 173.0,
+      "hr_min": 102.0,
+      "energy_kcal": 250.7,
+      "cadence_avg": 93.7,
+      "cadence_max": 118.8,
+      "power_avg": 181.5,
+      "power_max": 816.0,
+      "elev_gain_ft": 862,
+      "source": "Isaac\u2019s Apple\u00a0Watch"
+    },
+    {
+      "date": "2026-10-04T09:17:53-06:00",
+      "dist_mi": 24.1913,
+      "dur_mins": 82.67,
+      "speed_mph": 17.557,
+      "hr_avg": 140.9,
+      "hr_max": 160.0,
+      "hr_min": 103.0,
+      "energy_kcal": 255.2,
+      "cadence_avg": 95.1,
+      "cadence_max": 119.8,
+      "power_avg": 179.8,
+      "power_max": 716.0,
+      "elev_gain_ft": 831,
       "source": "Isaac\u2019s Apple\u00a0Watch"
     }
   ]
